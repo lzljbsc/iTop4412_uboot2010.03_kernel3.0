@@ -276,7 +276,6 @@ LIBS += drivers/video/libvideo.a
 LIBS += drivers/watchdog/libwatchdog.a
 LIBS += common/libcommon.a
 LIBS += libfdt/libfdt.a
-LIBS += api/libapi.a
 LIBS += post/libpost.a
 
 LIBS := $(addprefix $(obj),$(LIBS))
@@ -3805,17 +3804,6 @@ grsim_leon2_config : unconfig
 #########################################################################
 
 clean:
-	@rm -f $(obj)examples/standalone/82559_eeprom			  \
-	       $(obj)examples/standalone/atmel_df_pow2			  \
-	       $(obj)examples/standalone/eepro100_eeprom		  \
-	       $(obj)examples/standalone/hello_world			  \
-	       $(obj)examples/standalone/interrupt			  \
-	       $(obj)examples/standalone/mem_to_mem_idma2intr		  \
-	       $(obj)examples/standalone/sched				  \
-	       $(obj)examples/standalone/smc91111_eeprom		  \
-	       $(obj)examples/standalone/test_burst			  \
-	       $(obj)examples/standalone/timer
-	@rm -f $(obj)examples/api/demo{,.bin}
 	@rm -f $(obj)tools/bmp_logo	   $(obj)tools/easylogo/easylogo  \
 	       $(obj)tools/env/{fw_printenv,fw_setenv}			  \
 	       $(obj)tools/envcrc					  \
@@ -3831,10 +3819,6 @@ clean:
 	       $(obj)u-boot.lds						  \
 	       $(obj)cpu/blackfin/bootrom-asm-offsets.[chs]
 	@rm -f $(obj)include/bmp_logo.h
-	@rm -f $(obj)nand_spl/{u-boot.lds,u-boot-spl,u-boot-spl.map,System.map}
-	@rm -f $(obj)onenand_ipl/onenand-{ipl,ipl.bin,ipl.map}
-	@rm -f $(ONENAND_BIN)
-	@rm -f $(obj)onenand_ipl/u-boot.lds
 	@rm -f $(TIMESTAMP_FILE) $(VERSION_FILE)
 	@find $(OBJTREE) -type f \
 		\( -name 'core' -o -name '*.bak' -o -name '*~' \

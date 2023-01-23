@@ -232,48 +232,14 @@ LIBS += fs/cramfs/libcramfs.a fs/fat/libfat.a fs/fdos/libfdos.a fs/jffs2/libjffs
 	fs/ubifs/libubifs.a
 LIBS += net/libnet.a
 LIBS += disk/libdisk.a
-LIBS += drivers/bios_emulator/libatibiosemu.a
-LIBS += drivers/block/libblock.a
-LIBS += drivers/dma/libdma.a
-LIBS += drivers/fpga/libfpga.a
-LIBS += drivers/gpio/libgpio.a
-LIBS += drivers/hwmon/libhwmon.a
-LIBS += drivers/i2c/libi2c.a
-LIBS += drivers/input/libinput.a
-LIBS += drivers/misc/libmisc.a
 LIBS += drivers/mmc/libmmc.a
-LIBS += drivers/mtd/libmtd.a
-LIBS += drivers/mtd/nand/libnand.a
-LIBS += drivers/mtd/onenand/libonenand.a
-LIBS += drivers/mtd/ubi/libubi.a
-LIBS += drivers/mtd/spi/libspi_flash.a
-LIBS += drivers/net/libnet.a
-LIBS += drivers/net/phy/libphy.a
-LIBS += drivers/pci/libpci.a
 LIBS += drivers/pcmcia/libpcmcia.a
-LIBS += drivers/power/libpower.a
-LIBS += drivers/spi/libspi.a
-ifeq ($(CPU),mpc83xx)
-LIBS += drivers/qe/qe.a
-endif
-ifeq ($(CPU),mpc85xx)
-LIBS += drivers/qe/qe.a
-LIBS += cpu/mpc8xxx/ddr/libddr.a
-LIBS += cpu/mpc8xxx/lib8xxx.a
-endif
-ifeq ($(CPU),mpc86xx)
-LIBS += cpu/mpc8xxx/ddr/libddr.a
-LIBS += cpu/mpc8xxx/lib8xxx.a
-endif
 LIBS += drivers/rtc/librtc.a
-LIBS += drivers/serial/libserial.a
-LIBS += drivers/twserial/libtws.a
 LIBS += drivers/usb/gadget/libusb_gadget.a
 LIBS += drivers/usb/host/libusb_host.a
 LIBS += drivers/usb/musb/libusb_musb.a
 LIBS += drivers/usb/phy/libusb_phy.a
 LIBS += drivers/video/libvideo.a
-LIBS += drivers/watchdog/libwatchdog.a
 LIBS += common/libcommon.a
 LIBS += libfdt/libfdt.a
 LIBS += post/libpost.a

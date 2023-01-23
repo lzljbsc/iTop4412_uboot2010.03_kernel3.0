@@ -29,8 +29,6 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)lib$(BOARD).a
 
 COBJS-y	:= smdkc210.o
-COBJS-$(CONFIG_SAMSUNG_ONENAND)	+= onenand.o
-
 
 
 SOBJS	:= lowlevel_init.o

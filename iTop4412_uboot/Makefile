@@ -230,7 +230,6 @@ LIBS += lib_$(ARCH)/lib$(ARCH).a
 LIBS += fs/cramfs/libcramfs.a fs/fat/libfat.a fs/fdos/libfdos.a fs/jffs2/libjffs2.a \
 	fs/reiserfs/libreiserfs.a fs/ext2/libext2fs.a fs/yaffs2/libyaffs2.a \
 	fs/ubifs/libubifs.a
-LIBS += net/libnet.a
 LIBS += disk/libdisk.a
 LIBS += drivers/mmc/libmmc.a
 LIBS += drivers/pcmcia/libpcmcia.a

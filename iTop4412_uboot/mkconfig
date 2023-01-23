@@ -107,14 +107,24 @@ fi
 if   [ "$7" = "SCP_1GDDR" ] ||   [ "$7" = "SCP_2GDDR" ] || [ "$7" = "SCP_1GDDR_Ubuntu" ] ||   [ "$7" = "SCP_2GDDR_Ubuntu" ]
 then 
      echo "CORE   =  SCP" >> config.mk
-     ln -sf ${SRCTREE}/board/samsung/smdkc210/lowlevel_init_SCP.S  ${SRCTREE}/board/samsung/smdkc210/lowlevel_init.S	
-     ln -sf ${SRCTREE}/cpu/arm_cortexa9/s5pc210/cpu_init_SCP.S     ${SRCTREE}/cpu/arm_cortexa9/s5pc210/cpu_init.S
+     cd ${SRCTREE}/board/samsung/smdkc210/
+     ln -sf lowlevel_init_SCP.S lowlevel_init.S	
+     cd -
+
+     cd ${SRCTREE}/cpu/arm_cortexa9/s5pc210/
+     ln -sf cpu_init_SCP.S cpu_init.S
+     cd -
 
 elif [ "$7" = "POP_1GDDR" ]  ||  [ "$7" = "POP_2GDDR" ] || [ "$7" = "POP_1GDDR_Ubuntu" ] ||  [ "$7" = "POP_2GDDR_Ubuntu" ]
 then
      echo "CORE   =  POP" >>  config.mk
-     ln -sf ${SRCTREE}/board/samsung/smdkc210/lowlevel_init_POP.S  ${SRCTREE}/board/samsung/smdkc210/lowlevel_init.S	
-     ln -sf ${SRCTREE}/cpu/arm_cortexa9/s5pc210/cpu_init_POP.S     ${SRCTREE}/cpu/arm_cortexa9/s5pc210/cpu_init.S
+     cd ${SRCTREE}/board/samsung/smdkc210/
+     ln -sf lowlevel_init_POP.S lowlevel_init.S	
+     cd -
+
+     cd ${SRCTREE}/cpu/arm_cortexa9/s5pc210/
+     ln -sf cpu_init_POP.S cpu_init.S
+     cd -
 else
       echo "make config error,please use correct params......"
       exit 0

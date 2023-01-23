@@ -1,0 +1,17 @@
+*.a
+*.o
+*.depend
+*.map 
+*.srec
+
+u-boot
+u-boot.lds
+u-boot.bin
+u-boot-iTOP-4412.bin
+
+sdfuse_q/add_padding 
+sdfuse_q/add_sign 
+sdfuse_q/chksum
+
+
+

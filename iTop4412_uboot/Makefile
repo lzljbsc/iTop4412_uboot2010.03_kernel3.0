@@ -235,7 +235,6 @@ LIBS += drivers/rtc/librtc.a
 LIBS += drivers/usb/phy/libusb_phy.a
 LIBS += drivers/video/libvideo.a
 LIBS += common/libcommon.a
-LIBS += libfdt/libfdt.a
 LIBS += post/libpost.a
 
 LIBS := $(addprefix $(obj),$(LIBS))

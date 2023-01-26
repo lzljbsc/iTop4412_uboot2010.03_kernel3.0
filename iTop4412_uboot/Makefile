@@ -132,11 +132,6 @@ export obj src
 unexport CDPATH
 
 #########################################################################
-
-ifeq ($(ARCH),powerpc)
-ARCH = ppc
-endif
-
 ifeq ($(obj)include/config.mk,$(wildcard $(obj)include/config.mk))
 
 # Include autoconf.mk before config.mk so that the config options are available
@@ -151,46 +146,9 @@ include $(obj)include/config.mk
 export	ARCH CPU BOARD VENDOR SOC
 
 ifndef CROSS_COMPILE
-ifeq ($(HOSTARCH),$(ARCH))
-CROSS_COMPILE =
-else
-ifeq ($(ARCH),ppc)
-CROSS_COMPILE = ppc_8xx-
-endif
 ifeq ($(ARCH),arm)
 CROSS_COMPILE = /opt/toolchain/arm-2009q3/bin/arm-none-linux-gnueabi-
 endif
-ifeq ($(ARCH),i386)
-CROSS_COMPILE = i386-linux-
-endif
-ifeq ($(ARCH),mips)
-CROSS_COMPILE = mips_4KC-
-endif
-ifeq ($(ARCH),nios)
-CROSS_COMPILE = nios-elf-
-endif
-ifeq ($(ARCH),nios2)
-CROSS_COMPILE = nios2-elf-
-endif
-ifeq ($(ARCH),m68k)
-CROSS_COMPILE = m68k-elf-
-endif
-ifeq ($(ARCH),microblaze)
-CROSS_COMPILE = mb-
-endif
-ifeq ($(ARCH),blackfin)
-CROSS_COMPILE = bfin-uclinux-
-endif
-ifeq ($(ARCH),avr32)
-CROSS_COMPILE = avr32-linux-
-endif
-ifeq ($(ARCH),sh)
-CROSS_COMPILE = sh4-linux-
-endif
-ifeq ($(ARCH),sparc)
-CROSS_COMPILE = sparc-elf-
-endif	# sparc
-endif	# HOSTARCH,ARCH
 endif	# CROSS_COMPILE
 
 export	CROSS_COMPILE
@@ -201,16 +159,6 @@ include $(TOPDIR)/config.mk
 # U-Boot objects....order is important (i.e. start must be first)
 
 OBJS  = cpu/$(CPU)/start.o
-ifeq ($(CPU),i386)
-OBJS += cpu/$(CPU)/start16.o
-OBJS += cpu/$(CPU)/resetvec.o
-endif
-ifeq ($(CPU),ppc4xx)
-OBJS += cpu/$(CPU)/resetvec.o
-endif
-ifeq ($(CPU),mpc85xx)
-OBJS += cpu/$(CPU)/resetvec.o
-endif
 
 OBJS := $(addprefix $(obj),$(OBJS))
 
@@ -220,9 +168,6 @@ LIBS += $(shell if [ -f board/$(VENDOR)/common/Makefile ]; then echo \
 LIBS += cpu/$(CPU)/lib$(CPU).a
 ifdef SOC
 LIBS += cpu/$(CPU)/$(SOC)/lib$(SOC).a
-endif
-ifeq ($(CPU),ixp)
-LIBS += cpu/ixp/npe/libnpe.a
 endif
 LIBS += lib_$(ARCH)/lib$(ARCH).a
 LIBS += fs/fat/libfat.a fs/ext2/libext2fs.a 
@@ -261,17 +206,6 @@ LDPPFLAGS += \
 	$(shell $(LD) --version | \
 	  sed -ne 's/GNU ld version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/-DLD_MAJOR=\1 -DLD_MINOR=\2/p')
 
-ifeq ($(CONFIG_NAND_U_BOOT),y)
-NAND_SPL = nand_spl
-U_BOOT_NAND = $(obj)u-boot-nand.bin
-endif
-
-ifeq ($(CONFIG_ONENAND_U_BOOT),y)
-ONENAND_IPL = onenand_ipl
-U_BOOT_ONENAND = $(obj)u-boot-onenand.bin
-ONENAND_BIN ?= $(obj)onenand_ipl/onenand-ipl-2k.bin
-endif
-
 __OBJS := $(subst $(obj),,$(OBJS))
 __LIBS := $(subst $(obj),,$(LIBS)) $(subst $(obj),,$(LIBBOARD))
 
@@ -279,7 +213,7 @@ __LIBS := $(subst $(obj),,$(LIBS)) $(subst $(obj),,$(LIBBOARD))
 #########################################################################
 
 # Always append ALL so that arch config.mk's can add custom ones
-ALL += $(obj)u-boot.srec $(obj)u-boot.bin $(obj)System.map $(U_BOOT_NAND) $(U_BOOT_ONENAND)
+ALL += $(obj)u-boot.srec $(obj)u-boot.bin $(obj)System.map  
 all:		$(ALL)
 
 $(obj)u-boot.hex:	$(obj)u-boot
@@ -368,18 +302,6 @@ $(LDSCRIPT):	depend
 $(obj)u-boot.lds: $(LDSCRIPT)
 		$(CPP) $(CPPFLAGS) $(LDPPFLAGS) -ansi -D__ASSEMBLY__ -P - <$^ >$@
 
-$(NAND_SPL):	$(TIMESTAMP_FILE) $(VERSION_FILE) $(obj)include/autoconf.mk
-		$(MAKE) -C nand_spl/board/$(BOARDDIR) all
-
-$(U_BOOT_NAND):	$(NAND_SPL) $(obj)u-boot.bin
-		cat $(obj)nand_spl/u-boot-spl-16k.bin $(obj)u-boot.bin > $(obj)u-boot-nand.bin
-
-$(ONENAND_IPL):	$(TIMESTAMP_FILE) $(VERSION_FILE) $(obj)include/autoconf.mk
-		$(MAKE) -C onenand_ipl/board/$(BOARDDIR) all
-
-$(U_BOOT_ONENAND):	$(ONENAND_IPL) $(obj)u-boot.bin
-		cat $(ONENAND_BIN) $(obj)u-boot.bin > $(obj)u-boot-onenand.bin
-
 $(VERSION_FILE):
 		@( printf '#define U_BOOT_VERSION "U-Boot %s%s"\n' "$(U_BOOT_VERSION)" \
 		 '$(shell $(TOPDIR)/tools/setlocalversion $(TOPDIR))' ) > $@.tmp
@@ -462,13 +384,6 @@ tools-all:
 	$(MAKE) -C tools HOST_TOOLS_ALL=y
 endif	# config.mk
 
-.PHONY : CHANGELOG
-CHANGELOG:
-	git log --no-merges U-Boot-1_1_5.. | \
-	unexpand -a | sed -e 's/\s\s*$$//' > $@
-
-include/license.h: tools/bin2header COPYING
-	 cat COPYING | gzip -9 -c | ./tools/bin2header license_gzip > include/license.h
 #########################################################################
 
 unconfig:

@@ -52,9 +52,6 @@ SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 export	HOSTARCH HOSTOS SHELL
 
-# Deal with colliding definitions from tcsh etc.
-VENDOR=
-
 #########################################################################
 # Allow for silent builds
 ifeq (,$(findstring s,$(MAKEFLAGS)))
@@ -143,7 +140,7 @@ sinclude $(obj)include/autoconf.mk
 
 # load ARCH, BOARD, and CPU configuration
 include $(obj)include/config.mk
-export	ARCH CPU BOARD VENDOR SOC
+export	ARCH CPU BOARD SOC
 
 ifndef CROSS_COMPILE
 ifeq ($(ARCH),arm)
@@ -163,8 +160,6 @@ OBJS  = cpu/$(CPU)/start.o
 OBJS := $(addprefix $(obj),$(OBJS))
 
 LIBS  = lib_generic/libgeneric.a
-LIBS += $(shell if [ -f board/$(VENDOR)/common/Makefile ]; then echo \
-	"board/$(VENDOR)/common/lib$(VENDOR).a"; fi)
 LIBS += cpu/$(CPU)/lib$(CPU).a
 ifdef SOC
 LIBS += cpu/$(CPU)/$(SOC)/lib$(SOC).a
@@ -186,15 +181,7 @@ LIBBOARD = board/$(BOARDDIR)/lib$(BOARD).a
 LIBBOARD := $(addprefix $(obj),$(LIBBOARD))
 
 # Add GCC lib
-ifdef USE_PRIVATE_LIBGCC
-ifeq ("$(USE_PRIVATE_LIBGCC)", "yes")
-PLATFORM_LIBGCC = -L $(OBJTREE)/lib_$(ARCH) -lgcc
-else
-PLATFORM_LIBGCC = -L $(USE_PRIVATE_LIBGCC) -lgcc
-endif
-else
 PLATFORM_LIBGCC = -L $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -lgcc
-endif
 PLATFORM_LIBS += $(PLATFORM_LIBGCC)
 export PLATFORM_LIBS
 
@@ -236,37 +223,6 @@ $(obj)u-boot.bin:	$(obj)u-boot
 		@rm bl2a*
 		
 		@echo
-
-$(obj)u-boot.ldr:	$(obj)u-boot
-		$(CREATE_LDR_ENV)
-		$(LDR) -T $(CONFIG_BFIN_CPU) -c $@ $< $(LDR_FLAGS)
-
-$(obj)u-boot.ldr.hex:	$(obj)u-boot.ldr
-		$(OBJCOPY) ${OBJCFLAGS} -O ihex $< $@ -I binary
-
-$(obj)u-boot.ldr.srec:	$(obj)u-boot.ldr
-		$(OBJCOPY) ${OBJCFLAGS} -O srec $< $@ -I binary
-
-$(obj)u-boot.img:	$(obj)u-boot.bin
-		./tools/mkimage -A $(ARCH) -T firmware -C none \
-		-a $(TEXT_BASE) -e 0 \
-		-n $(shell sed -n -e 's/.*U_BOOT_VERSION//p' $(VERSION_FILE) | \
-			sed -e 's/"[	 ]*$$/ for $(BOARD) board"/') \
-		-d $< $@
-
-$(obj)u-boot.imx:       $(obj)u-boot.bin
-		$(obj)tools/mkimage -n $(IMX_CONFIG) -T imximage \
-		-e $(TEXT_BASE) -d $< $@
-
-$(obj)u-boot.kwb:       $(obj)u-boot.bin
-		$(obj)tools/mkimage -n $(KWD_CONFIG) -T kwbimage \
-		-a $(TEXT_BASE) -e $(TEXT_BASE) -d $< $@
-
-$(obj)u-boot.sha1:	$(obj)u-boot.bin
-		$(obj)tools/ubsha1 $(obj)u-boot.bin
-
-$(obj)u-boot.dis:	$(obj)u-boot
-		$(OBJDUMP) -d $< > $@
 
 GEN_UBOOT = \
 		UNDEF_SYM=`$(OBJDUMP) -x $(LIBBOARD) $(LIBS) | \
@@ -311,35 +267,11 @@ $(TIMESTAMP_FILE):
 		@date +'#define U_BOOT_DATE "%b %d %C%y"' > $@
 		@date +'#define U_BOOT_TIME "%T"' >> $@
 
-gdbtools:
-		$(MAKE) -C tools/gdb all || exit 1
-
-updater:
-		$(MAKE) -C tools/updater all || exit 1
-
-env:
-		$(MAKE) -C tools/env all MTD_VERSION=${MTD_VERSION} || exit 1
-
 # Explicitly make _depend in subdirs containing multiple targets to prevent
 # parallel sub-makes creating .depend files simultaneously.
 depend dep:	$(TIMESTAMP_FILE) $(VERSION_FILE) $(obj)include/autoconf.mk
 		for dir in $(SUBDIRS) cpu/$(CPU) $(dir $(LDSCRIPT)) ; do \
 			$(MAKE) -C $$dir _depend ; done
-
-TAG_SUBDIRS = $(SUBDIRS)
-TAG_SUBDIRS += $(dir $(__LIBS))
-TAG_SUBDIRS += include
-
-tags ctags:
-		ctags -w -o $(obj)$@ `find $(TAG_SUBDIRS) \
-						-name '*.[chS]' -print`
-
-etags:
-		etags -a -o $(obj)etags `find $(TAG_SUBDIRS) \
-						-name '*.[chS]' -print`
-cscope:
-		find $(TAG_SUBDIRS) -name '*.[chS]' -print > cscope.files
-		cscope -b -q -k
 
 SYSTEM_MAP = \
 		$(NM) $1 | \

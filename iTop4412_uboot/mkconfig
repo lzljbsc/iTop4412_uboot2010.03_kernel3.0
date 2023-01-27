@@ -8,8 +8,21 @@
 # (C) 2002-2006 DENX Software Engineering, Wolfgang Denk <wd@denx.de>
 #
 
+# 根据 Makefile 中分析，参数为:
+# $1 itop_4412_android_config_scp_1GDDR Target
+# $2 arm                                Architecture
+# $3 arm_cortexa9                       CPU 
+# $4 smdkc210                           Board 
+# $5 samsung                            VENDOR 
+# $6 s5pc210                            SOC
+# $7 SCP_1GDDR                          itop 自己添加的，官方uboot无该参数
+
+# $7 参数用于区分 itop 不同的核心板
 echo "CoreBoard  is $7...... "
 
+# BOARD_NAME 在官方 uboot 中，是根据 $1 生成的，这里 itop 根据 $7 设置的，
+# 只要最后生成的 config.h 中，包含的 configs 下的文件是正确的即可，
+# 见本文件最后生成 config.h 时如何使用 BOARD_NAME 变量
 BOARD_NAME="itop_4412_android"
 echo "CoreBoard OS is android or linux...... "
 
@@ -18,19 +31,28 @@ echo "Configuring for ${BOARD_NAME} board..."
 #
 # Create link to architecture specific headers
 #
+# 后面操作都是在 include 目录下了
+# 根据传入的参数，链接特定的 asm 目录到固定的目录名，
+# 这样在顶层的 Makefile 中就不需要根据 arch，cpu 处理了，
+# 包含头文件时，只需要包含特定目录即可
 cd ./include
 rm -f asm
 ln -s asm-$2 asm
 
+# arch-$6 是针对特定 SOC 的目录，不是所有芯片都有
+# 根据是否传入 $6 参数确认
 rm -f asm-$2/arch
 ln -s arch-$6 asm-$2/arch
 
+# proc-armv 是 arm 所特有的，只有 $2 为 arm 时才有
 rm -f asm-$2/proc
 ln -s proc-armv asm-$2/proc
 
 #
 # Create include file for Make
 #
+# 创建一个 config.mk 文件
+# 文件中包含如下变量，用于其他的 Makefile 文件
 echo "ARCH   = $2" >  config.mk
 echo "CPU    = $3" >> config.mk
 echo "BOARD  = $4" >> config.mk
@@ -38,9 +60,16 @@ echo "VENDOR = $5" >> config.mk
 echo "SOC    = $6" >> config.mk
 
 # Assign board directory to BOARDIR variable
+# 设置 BOARDDIR 
+# 不同单板的目录不同，根据是否指定 $5 参数确认
+# 一些厂家是将不同单板的目录直接放在 board 目录下 
+# 而 samsung 是统一放在了 samsung 目录，再根据不同
+# 单板进行分类   是 VENDOR/Board 模式
 BOARDDIR=$5/$4
 
 #add by dg for kinds of coreboard
+# 根据传入的 $7 ，链接特定的板级文件
+# 这样在编译时只要编译 lowlevel_init.S 即可
 echo "CORE   =  SCP" >> config.mk
 cd ${SRCTREE}/board/samsung/smdkc210/
 ln -sf lowlevel_init_SCP.S lowlevel_init.S	
@@ -54,6 +83,8 @@ cd -
 # Create board specific header file
 #
 # Create new config file
+# 生成板级配置文件，这个文件会被其他的源码文件包含
+# 该文件中包含了板级特定的配置
 echo "/* Automatically generated - do not edit */" > config.h
 
 #add by dg for all itop4412 type boards

@@ -335,6 +335,7 @@ unconfig:
 #########################################################################
 #add by dg 2015-08-04 for android ,linux 
 itop_4412_android_config_scp_1GDDR:		unconfig
+	@#$(MKCONFIG) itop_4412_android_config_scp_1GDDR arm arm_cortexa9 smdkc210 samsung s5pc210 SCP_1GDDR
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa9 smdkc210 samsung s5pc210 SCP_1GDDR
 
 

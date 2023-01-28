@@ -82,6 +82,7 @@ endif
 # the object files are placed in the source directory.
 #
 
+# 编译时可以通过 O参数指定编译路径，这里并未使用
 ifdef O
 ifeq ("$(origin O)", "command line")
 BUILD_DIR := $(O)
@@ -99,15 +100,22 @@ BUILD_DIR := $(shell cd $(BUILD_DIR) && /bin/pwd)
 $(if $(BUILD_DIR),,$(error output directory "$(saved-output)" does not exist))
 endif # ifneq ($(BUILD_DIR),)
 
+# BUILD_DIR 为空，所以设置为 CURDIR , CURDIR 是内置变量
+# OBJTREE = ./
+# SRCTREE = ./ 
+# TOPDIR = ./ 
+# LNDIR = ./
 OBJTREE		:= $(if $(BUILD_DIR),$(BUILD_DIR),$(CURDIR))
 SRCTREE		:= $(CURDIR)
 TOPDIR		:= $(SRCTREE)
 LNDIR		:= $(OBJTREE)
 export	TOPDIR SRCTREE OBJTREE
 
+# 指向根目录下的 mkconfig 
 MKCONFIG	:= $(SRCTREE)/mkconfig
 export MKCONFIG
 
+# OBJTREE 与 SRCTREE 相同，本地编译
 ifneq ($(OBJTREE),$(SRCTREE))
 REMOTE_BUILD	:= 1
 export REMOTE_BUILD
@@ -123,25 +131,40 @@ else
 obj :=
 src :=
 endif
+# obj src 在 config.mk 中也定义了，会自动扩展为包含 config.mk 的目录
 export obj src
 
 # Make sure CDPATH settings don't interfere
 unexport CDPATH
 
 #########################################################################
+# make 时会进入这个分支
 ifeq ($(obj)include/config.mk,$(wildcard $(obj)include/config.mk))
 
 # Include autoconf.mk before config.mk so that the config options are available
 # to all top level build files.  We need the dummy all: target to prevent the
 # dependency target in autoconf.mk.dep from being the default.
+# include/autoconf.dep  include/autoconf.mk 是两个目标，需要构建
+# autoconf.mk 是生成的配置项，make 命令使用，用于配置编译的文件
+# 这些配置的来源是板级配置文件(itop_4412_android.h)中定义的，
+# .h 文件中是宏定义，再通过脚本转换为 .mk 形式
+# autoconf.mk.dep 是 include/common.h 的依赖关系
+# 这两个的生成方式，网上搜索资料
 all:
 sinclude $(obj)include/autoconf.mk.dep
 sinclude $(obj)include/autoconf.mk
 
 # load ARCH, BOARD, and CPU configuration
+# ARCH   = arm             
+# CPU    = arm_cortexa9    
+# BOARD  = smdkc210        
+# VENDOR = samsung         
+# SOC    = s5pc210         
+# CORE   =  SCP            
 include $(obj)include/config.mk
-export	ARCH CPU BOARD SOC
+export	ARCH CPU BOARD VENDOR SOC
 
+# 配置编译器
 ifndef CROSS_COMPILE
 ifeq ($(ARCH),arm)
 CROSS_COMPILE = /opt/toolchain/arm-2009q3/bin/arm-none-linux-gnueabi-
@@ -151,10 +174,16 @@ endif	# CROSS_COMPILE
 export	CROSS_COMPILE
 
 # load other configuration
+# 加载顶层config.mk 这里导出了一些变量，后面会使用
+# 在该 config.mk 中包含了其他的 config.mk 文件
+# 如 board/*/*/config.mk cpu/*/config.mk lib_arm/config.mk
+# 也将 autoconf.mk 包含进来，这样在其他的目录中，只要包含
+# 顶层的 config.mk 就可以获得所有的配置参数
 include $(TOPDIR)/config.mk
 #########################################################################
 # U-Boot objects....order is important (i.e. start must be first)
-
+# 指明需要编译的源码文件，库文件
+# 库文件是在各个子目录中编译得到的
 OBJS  = cpu/$(CPU)/start.o
 
 OBJS := $(addprefix $(obj),$(OBJS))
@@ -200,8 +229,60 @@ __LIBS := $(subst $(obj),,$(LIBS)) $(subst $(obj),,$(LIBBOARD))
 #########################################################################
 
 # Always append ALL so that arch config.mk's can add custom ones
+# 依赖的目标文件，都依赖于 u-boot
 ALL += $(obj)u-boot.srec $(obj)u-boot.bin $(obj)System.map  
 all:		$(ALL)
+
+debug:
+		@echo "HOSTARCH          : "${HOSTARCH}
+		@echo "HOSTOS            : "${HOSTOS}
+		@echo "HOSTCFLAGS        : "${HOSTCFLAGS}
+		@echo "HOSTLDFLAGS       : "${HOSTLDFLAGS}
+		@echo "HOSTSTRIP         : "${HOSTSTRIP}
+		@echo "HOSTCC            : "${HOSTCC}
+		@echo "PEDCFLAGS         : "${PEDCFLAGS}
+		@echo "SHELL             : "${SHELL}
+		@echo "  "
+		@echo "TOPDIR            : "${TOPDIR}
+		@echo "SRCTREE           : "${SRCTREE}
+		@echo "OBJTREE           : "${OBJTREE}
+		@echo "MKCONFIG          : "${MKCONFIG}
+		@echo "  "
+		@echo "ARCH              : "${ARCH}
+		@echo "CPU               : "${CPU}
+		@echo "BOARD             : "${BOARD}
+		@echo "VENDOR            : "${VENDOR}
+		@echo "SOC               : "${SOC}
+		@echo "  "
+		@echo "MAKE              : "${MAKE}
+		@echo "CROSS_COMPILE     : "${CROSS_COMPILE}
+		@echo "AS                : "${AS}
+		@echo "LD                : "${LD}
+		@echo "CC                : "${CC}
+		@echo "CPP               : "${CPP}
+		@echo "AR                : "${AR}
+		@echo "NM                : "${NM}
+		@echo "STRIP             : "${STRIP}
+		@echo "OBJCOPY           : "${OBJCOPY}
+		@echo "OBJDUMP           : "${OBJDUMP}
+		@echo "PLATFORM_RELFLAGS : "${PLATFORM_RELFLAGS}
+		@echo "PLATFORM_CPPFLAGS : "${PLATFORM_CPPFLAGS}
+		@echo "PLATFORM_LDFLAGS  : "${PLATFORM_LDFLAGS}
+		@echo "PLATFORM_LIBGCC   : "${PLATFORM_LIBGCC}
+		@echo "PLATFORM_LIBS     : "${PLATFORM_LIBS}
+		@echo "TEXT_BASE         : "${TEXT_BASE}
+		@echo "LDPPFLAGS         : "${LDPPFLAGS}
+		@echo "  "
+		@echo "CPPFLAGS          : "${CPPFLAGS}
+		@echo "CFLAGS            : "${CFLAGS}
+		@echo "AFLAGS            : "${AFLAGS}
+		@echo "  "
+		@echo "OBJS              : "${OBJS}
+		@echo "LIBS              : "${LIBS}
+		@echo "LIBBOARD          : "${LIBBOARD}
+		@echo "  "
+		@echo "__OBJS            : "${__OBJS}
+		@echo "__LIBS            : "${__LIBS}
 
 $(obj)u-boot.hex:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O ihex $< $@
@@ -209,6 +290,8 @@ $(obj)u-boot.hex:	$(obj)u-boot
 $(obj)u-boot.srec:	$(obj)u-boot
 		$(OBJCOPY) -O srec $< $@
 
+# 通过 u-boot 文件，生成 u-boot.bin 
+# u-boot 文件为 ELF文件， 即将 ELF文件转换为 bin文件
 $(obj)u-boot.bin:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
 		@#./mkuboot
@@ -224,51 +307,57 @@ $(obj)u-boot.bin:	$(obj)u-boot
 		
 		@echo
 
+# 编译命令生成 u-boot 文件
 GEN_UBOOT = \
 		UNDEF_SYM=`$(OBJDUMP) -x $(LIBBOARD) $(LIBS) | \
 		sed  -n -e 's/.*\($(SYM_PREFIX)__u_boot_cmd_.*\)/-u\1/p'|sort|uniq`;\
 		cd $(LNDIR) && $(LD) $(LDFLAGS) $$UNDEF_SYM $(__OBJS) \
 			--start-group $(__LIBS) --end-group $(PLATFORM_LIBS) \
 			-Map u-boot.map -o u-boot
+# u-boot 依赖较多内容，需要根据各目标规则生成
 $(obj)u-boot:	depend $(SUBDIRS) $(OBJS) $(LIBBOARD) $(LIBS) $(LDSCRIPT) $(obj)u-boot.lds
 		$(GEN_UBOOT)
-ifeq ($(CONFIG_KALLSYMS),y)
-		smap=`$(call SYSTEM_MAP,u-boot) | \
-			awk '$$2 ~ /[tTwW]/ {printf $$1 $$3 "\\\\000"}'` ; \
-		$(CC) $(CFLAGS) -DSYSTEM_MAP="\"$${smap}\"" \
-			-c common/system_map.c -o $(obj)common/system_map.o
-		$(GEN_UBOOT) $(obj)common/system_map.o
-endif
 
+# OBJS 就是 start.S 
 $(OBJS):	depend
 		$(MAKE) -C cpu/$(CPU) $(if $(REMOTE_BUILD),$@,$(notdir $@))
 
+# 到各个子目录下编译 lib 文件
 $(LIBS):	depend $(SUBDIRS)
 		$(MAKE) -C $(dir $(subst $(obj),,$@))
 
+# board/samsung/smdkc210/ 下的库文件
 $(LIBBOARD):	depend $(LIBS)
 		$(MAKE) -C $(dir $(subst $(obj),,$@))
 
+# 这个目标原本是指向 tools 目录的，这里删除了
 $(SUBDIRS):	depend
 		$(MAKE) -C $@ all
 
+# 进入到 cpu/arm_cortexa9/ 目录下执行 u-boot.lds 目标
+# 其实没有这个目标，无实质作用
 $(LDSCRIPT):	depend
 		$(MAKE) -C $(dir $@) $(notdir $@)
 
+# 使用 LDSCRIPT 生成 u-boot.lds 文件，用于最终链接时使用
 $(obj)u-boot.lds: $(LDSCRIPT)
 		$(CPP) $(CPPFLAGS) $(LDPPFLAGS) -ansi -D__ASSEMBLY__ -P - <$^ >$@
 
+# 自动生成 version_autogenerated.h 文件
 $(VERSION_FILE):
 		@( printf '#define U_BOOT_VERSION "U-Boot %s%s"\n' "$(U_BOOT_VERSION)" \
 		 '$(shell $(TOPDIR)/tools/setlocalversion $(TOPDIR))' ) > $@.tmp
 		@cmp -s $@ $@.tmp && rm -f $@.tmp || mv -f $@.tmp $@
 
+# 自动生成 timestamp_autogenerated.h 文件
 $(TIMESTAMP_FILE):
 		@date +'#define U_BOOT_DATE "%b %d %C%y"' > $@
 		@date +'#define U_BOOT_TIME "%T"' >> $@
 
 # Explicitly make _depend in subdirs containing multiple targets to prevent
 # parallel sub-makes creating .depend files simultaneously.
+# depend 目标用于生成各个子目录中源文件的依赖关系，
+# 也依赖了版本文件和时间戳文件，同样是规则生成的
 depend dep:	$(TIMESTAMP_FILE) $(VERSION_FILE) $(obj)include/autoconf.mk
 		for dir in $(SUBDIRS) cpu/$(CPU) $(dir $(LDSCRIPT)) ; do \
 			$(MAKE) -C $$dir _depend ; done

@@ -21,8 +21,10 @@
 # MA 02111-1307 USA
 #
 
+# 前面已经设置过了，这里无作用
 CROSS_COMPILE ?= arm-linux-
 
+# 这个变量没有使用
 ifeq ($(BOARD),omap2420h4)
 STANDALONE_LOAD_ADDR = 0x80300000
 else
@@ -63,4 +65,5 @@ ifeq (,$(findstring lib_arm/eabi_compat.o,$(PLATFORM_LIBS)))
 PLATFORM_LIBS += $(OBJTREE)/lib_arm/eabi_compat.o
 endif
 endif
+# 设置链接脚本，CPU特定的脚本
 LDSCRIPT := $(SRCTREE)/cpu/$(CPU)/u-boot.lds

@@ -23,6 +23,7 @@
 
 #########################################################################
 
+# OBJTREE 与 SRCTREE 相同
 ifneq ($(OBJTREE),$(SRCTREE))
 ifeq ($(CURDIR),$(SRCTREE))
 dir :=
@@ -63,6 +64,7 @@ HOSTSTRIP	= strip
 # -multiply_defined suppress option to turn off this error.
 #
 
+# 主机为 linux， 所以为 gcc
 ifeq ($(HOSTOS),darwin)
 HOSTCC		= cc
 HOSTCFLAGS	+= -traditional-cpp
@@ -108,28 +110,41 @@ RANLIB	= $(CROSS_COMPILE)RANLIB
 #########################################################################
 
 # Load generated board configuration
+# 这里将 autoconf.mk 包含进来，也就把各配置项包含了，后面 make 就可以使用了
 sinclude $(OBJTREE)/include/autoconf.mk
 
 ifdef	ARCH
+# 包含架构相关的 config.mk 
+# 设置了编译参数，链接文件
 sinclude $(TOPDIR)/lib_$(ARCH)/config.mk	# include architecture dependend rules
 endif
 ifdef	CPU
+# 包含 CPU相关的 config.mk
+# 设置了编译参数
 sinclude $(TOPDIR)/cpu/$(CPU)/config.mk		# include  CPU	specific rules
 endif
 ifdef	SOC
+# 包含 SOC 相关的 config.mk
+# 这里没有这个文件，但使用的是 sinclude ，不报错，不报警告
 sinclude $(TOPDIR)/cpu/$(CPU)/$(SOC)/config.mk	# include  SoC	specific rules
 endif
+# 处理 VENDOR , BOARDDIR 
+# 在顶层 makfile 中，把 VENDOR 删了，所以这里是不对的，
+# 但在下面 LDSCRIPT 使用时，因为 LDSCRIPT 在 ARCH 中的 config.mk 中定义了，
+# 所以 这里的 BOARDDIR 无作用了
 ifdef	VENDOR
 BOARDDIR = $(VENDOR)/$(BOARD)
 else
 BOARDDIR = $(BOARD)
 endif
 ifdef	BOARD
+# 定义了 TEXT_BASE = 0xc3e00000
+# 链接地址，在下面会使用，作为 LDFLAGS
 sinclude $(TOPDIR)/board/$(BOARDDIR)/config.mk	# include board specific rules
 endif
 
 #########################################################################
-
+# 下面这些配置了编译参数，链接参数，最后将所有变量导出
 ifneq (,$(findstring s,$(MAKEFLAGS)))
 ARFLAGS = cr
 else

@@ -27,21 +27,8 @@
 
 #include <config.h>
 #include <version.h>
-#if defined(CONFIG_ENABLE_MMU)
 #include <asm/proc/domain.h>
-#endif
-#if defined(CONFIG_S5PV310)
-#include <s5pv310.h>
-#endif
-#if defined(CONFIG_S5PC210)
 #include <s5pc210.h>
-#endif
-
-#ifndef CONFIG_ENABLE_MMU
-#ifndef CFG_PHY_UBOOT_BASE
-#define CFG_PHY_UBOOT_BASE	CFG_UBOOT_BASE
-#endif
-#endif
 
 /*
  *************************************************************************
@@ -165,39 +152,16 @@ skip_inval:
 finished_inval:
     .endm
 
-#if defined(CONFIG_USE_IRQ)
-/* IRQ stack memory (calculated at run-time) */
-.globl IRQ_STACK_START
-IRQ_STACK_START:
-	.word	0x0badc0de
-
-/* IRQ stack memory (calculated at run-time) */
-.globl FIQ_STACK_START
-FIQ_STACK_START:
-	.word 0x0badc0de
-#endif
-
 /*
  * the actual reset code
  */
 
 reset:
-#if 0
-	/*
-	 * set the cpu to SVC32 mode and IRQ & FIQ disable
-	 */
-	mrs	r0, cpsr
-	bic	r0, r0, #0x3f
-	orr	r0, r0, #0xd3
-	msr	cpsr, r0
-#else//*****ly
 	mrs	r0, cpsr
 	bic	r0, r0, #0x1f
 	orr	r0, r0, #0xd3
 	msr	cpsr,r0
-#endif
 //	cache_invalidate_dcache_v7			@ call cache macro
-#if 1 //*****ly
 cache_init:
 	mrc	p15, 0, r0, c0, c0, 0	@ read main ID register
 	and	r1, r0, #0x00f00000	@ variant
@@ -224,7 +188,6 @@ cache_init:
 	orr	r0, r0, #0x00000002	@ set bit 1  (--A-) Align
 	orr	r0, r0, #0x00000800	@ set bit 11 (Z---) BTB
 	mcr	p15, 0, r0, c1, c0, 0
-#endif
 	
 
         /* LED Test Code */
@@ -303,13 +266,6 @@ cache_init:
 	sub	sp, sp, #12
 	mov	fp, #0			/* no previous frame, so fp=0 */
 
-
-	/* I-Cache & D-Cache Enabled    */  
-//	mrc p15, 0, r0, c1, c0, 0
-//	orr r0, r0, #(0x1 << 2)
-//	orr r0, r0, #(0x1 << 12)
-//	mcr p15, 0, r0, c1, c0, 0
-
 	/* when we already run in ram, we don't need to relocate U-Boot.
 	 * and actually, memory controller must be configured before U-Boot
 	 * is running in ram.
@@ -336,24 +292,6 @@ cache_init:
 	mov	r1, #0x10000
 9:	subs	r1, r1, #1
 	bne	9b
-
-//	ldr	r0, =0x11000C44 /* GPX2(0)  */
-//	ldr	r1, [r0]
-//	bic	r2, r1, #0xfe
-//	ldr	r1, =0x1
-
-
-
-//	ldr	r0, =INF_REG_BASE
-//	ldr	r3, [r0, #INF_REG3_OFFSET]  
-	
-//	cmp	r1, r2
-//	moveq   r3, #BOOT_MMCSD	
-//	ldr	r0, =INF_REG_BASE
-//	str	r3, [r0, #INF_REG3_OFFSET]
-//	cmp	r1, r2
-//	beq     mmcsd_boot
-
 
 
 	ldr	r0, =INF_REG_BASE
@@ -387,44 +325,37 @@ nand_boot:
 onenand_boot:
 	bl	onenand_bl2_copy  /*goto 0x1010*/
 	b	after_copy
-//ly
+
 second_mmcsd_boot:
 	ldr   r3, =BOOT_MMCSD	
 	ldr	r0, =INF_REG_BASE
 	str	r3, [r0, #INF_REG3_OFFSET]
 	
 mmcsd_boot:
-#ifdef CONFIG_CLK_1000_400_200
 	ldr	r0, =CMU_BASE
 	ldr	r2, =CLK_DIV_FSYS2_OFFSET
 	ldr	r1, [r0, r2]
 	orr r1, r1, #0xf
 	str r1, [r0, r2]
-#endif
 	bl      movi_uboot_copy
 	b       after_copy
 
 emmc_boot:
-#if defined(CONFIG_CLK_1000_400_200) || defined(CONFIG_CLK_1000_200_200) || defined(CONFIG_CLK_800_400_200)
 	ldr	r0, =CMU_BASE
 	ldr	r2, =CLK_DIV_FSYS1_OFFSET
 	ldr	r1, [r0, r2]
 	orr r1, r1, #0x3
 	str r1, [r0, r2]
-#endif
 	bl		emmc_uboot_copy
 	b	after_copy
 
 emmc441_boot:
-#if defined(CONFIG_CLK_1000_400_200) || defined(CONFIG_CLK_1000_200_200) || defined(CONFIG_CLK_800_400_200)
 	ldr	r0, =CMU_BASE
 	ldr	r2, =CLK_DIV_FSYS3_OFFSET
 	ldr	r1, [r0, r2]
 	orr r1, r1, #0x3
 	str r1, [r0, r2]
-#endif
 	bl		emmc441_uboot_copy
-//ly 20110824
 	ldr   r0, =0x43e00000
 	ldr   r1, [r0]
 	ldr   r2, =0x2000
@@ -441,7 +372,6 @@ nor_boot:
 after_copy:
 
 
-#if defined(CONFIG_ENABLE_MMU)
 enable_mmu:
 	/* enable domain access */
 	ldr	r5, =0x0000ffff
@@ -464,33 +394,18 @@ mmu_on:
 	nop
 	nop
 	nop
-#endif
 
-
-#ifdef CONFIG_EVT1
 	/* store DMC density information in u-boot C level variable */
 	ldr	r0, = CFG_UBOOT_BASE
 	sub	r0, r0, #4
 	ldr	r1, [r0]
 	ldr	r0, _dmc_density
 	str	r1, [r0]
-#endif
 
 skip_hw_init:
 	/* Set up the stack						    */
 stack_setup:
-#if defined(CONFIG_MEMORY_UPPER_CODE)
 	ldr	sp, =(CFG_UBOOT_BASE + CFG_UBOOT_SIZE - 0x1000)
-#else
-	ldr	r0, _TEXT_BASE		/* upper 128 KiB: relocated uboot   */
-	sub	r0, r0, #CONFIG_SYS_MALLOC_LEN	/* malloc area                      */
-	sub	r0, r0, #CFG_GBL_DATA_SIZE /* bdinfo                        */
-#if defined(CONFIG_USE_IRQ)
-	sub	r0, r0, #(CONFIG_STACKSIZE_IRQ+CONFIG_STACKSIZE_FIQ)
-#endif
-	sub	sp, r0, #12		/* leave 3 words for abort-stack    */
-
-#endif
 
 clear_bss:
 	ldr	r0, _bss_start		/* find start of bss segment        */
@@ -508,15 +423,11 @@ clbss_l:
 _start_armboot:
 	.word start_armboot
 
-#ifdef CONFIG_EVT1
 _dmc_density:
 	.word dmc_density
-#endif
 
-#if defined(CONFIG_ENABLE_MMU)
 _mmu_table_base:
 	.word mmu_table
-#endif
 
 
 /*
@@ -563,7 +474,6 @@ compare_failed:
  *
  * void	theLastJump(void *kernel, int arch_num, uint boot_params);
  */
-#if defined(CONFIG_ENABLE_MMU)
 	.globl theLastJump
 theLastJump:
 	mov	r9, r0
@@ -588,7 +498,6 @@ phy_last_jump:
 
 	mov	r0, #0
 	mov	pc, r9
-#endif
 /*
  *************************************************************************
  *
@@ -735,25 +644,6 @@ not_used:
 	bad_save_user_regs
 	bl	do_not_used
 
-#if defined(CONFIG_USE_IRQ)
-
-	.align	5
-irq:
-	get_irq_stack
-	irq_save_user_regs
-	bl	do_irq
-	irq_restore_user_regs
-
-	.align	5
-fiq:
-	get_fiq_stack
-	/* someone ought to write a more effiction fiq_save_user_regs */
-	irq_save_user_regs
-	bl	do_fiq
-	irq_restore_user_regs
-
-#else
-
 	.align	5
 irq:
 	get_bad_stack
@@ -766,7 +656,6 @@ fiq:
 	bad_save_user_regs
 	bl	do_fiq
 
-#endif
 	.align 5
 .global arm_cache_flush
 arm_cache_flush:
@@ -867,22 +756,3 @@ CoInvalidateDCacheIndex:
 	mcr     p15, 0, r0, c7, c6, 2
 	mov     pc,lr
 
-
-#if defined(CONFIG_INTEGRATOR) && defined(CONFIG_ARCH_CINTEGRATOR)
-/* Use the IntegratorCP function from board/integratorcp/platform.S */
-#elif defined(CONFIG_S5PC11X) || defined(CONFIG_S5PC210)|| defined(CONFIG_S5PV310)
-/* For future usage of S3C64XX*/
-#else
-	.align	5
-.globl reset_cpu
-reset_cpu:
-	ldr	r1, rstctl	/* get addr for global reset reg */
-	mov	r3, #0x2	/* full reset pll+mpu */
-	str	r3, [r1]	/* force reset */
-	mov	r0, r0
-_loop_forever:
-	b	_loop_forever
-rstctl:
-	.word	PM_RSTCTRL_WKUP
-
-#endif

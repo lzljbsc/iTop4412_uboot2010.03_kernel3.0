@@ -37,20 +37,27 @@
  *
  *************************************************************************
  */
+/* globl 声明一个符号，可被其他文件引用，相当于声明了一个全局变量，
+   .globl 和 .global 相同。
+   该部分为处理器的异常处理向量表。
+   地址范围： 0x0000 0000 ~ 0x0000 001c ， 刚好 8条 指令
+   */
 	.word 0x2000
 	.word 0x0
 	.word 0x0
 	.word 0x0
 .globl _start
-_start: b	reset
-	ldr	pc, _undefined_instruction
+_start: b	reset        // 复位向量，复位后跳转到 reset
+	ldr	pc, _undefined_instruction   // ARM异常向量表，7种异常 0x00000000
 	ldr	pc, _software_interrupt
 	ldr	pc, _prefetch_abort
 	ldr	pc, _data_abort
 	ldr	pc, _not_used
 	ldr	pc, _irq
-	ldr	pc, _fiq
+	ldr	pc, _fiq   // 地址 0x0000 001c
 
+// .word 伪操作用于分配一段字内存单元（分配的单元都是字对齐的），
+// 并用伪操作中的 expr 初始化。 .long 和 .int 作用与之相同
 _undefined_instruction:
 	.word undefined_instruction
 _software_interrupt:
@@ -83,7 +90,8 @@ _end_vect:
  *
  *************************************************************************
  */
-
+// 定义在 board/samsung/smdkc210/config.mk 
+// uboot 镜像在 SDRAM 中的重定位地址
 _TEXT_BASE:
 	.word	TEXT_BASE
 
@@ -95,10 +103,13 @@ _TEXT_BASE:
 _TEXT_PHY_BASE:
 	.word	CFG_PHY_UBOOT_BASE
 
+// 声明 _armboot_start 并用 _start 来进行初始化，
+// _start 在 cpu/arm_cortexa9/u-boot.lds 中定义  entry
 .globl _armboot_start
 _armboot_start: 
-	.word _start
+	.word _start   // 这是程序的入口
 
+// __bss_start _end 是在 u-boot.lds 中定义
 /*
  * These are defined in the board-specific linker script.
  */
@@ -110,48 +121,6 @@ _bss_start:
 _bss_end:
 	.word _end
 
-    .macro  cache_invalidate_dcache_v7
-    MRC     p15, 1, r0, c0, c0, 1      @ read Cache Level ID register (clidr)
-    ANDS    r3, r0, #0x7000000         @ extract level of coherency from clidr
-    MOV     r3, r3, lsr #23            @ left align level of coherency bit field
-    BEQ     finished_inval             @ if loc is 0, then no need to clean
-
-    MOV     r10, #0                    @ start clean at cache level 0 (in r10)
-loop_1:
-    ADD     r2, r10, r10, lsr #1       @ work out 3x current cache level
-    MOV     r1, r0, lsr r2             @ extract cache type bits from clidr
-    AND     r1, r1, #7                 @ mask of the bits for current cache only
-    CMP     r1, #2                     @ see what cache we have at this level
-    BLT     skip_inval                 @ skip if no cache, or just i-cache
-    MCR     p15, 2, r10, c0, c0, 0     @ select current cache level in cssr
-    MOV     r1, #0
-    MCR     p15, 0, r1, c7, c5, 4      @ prefetchflush to synch the new cssr&csidr
-    MRC     p15, 1, r1, c0, c0, 0      @ read the new csidr
-    AND     r2, r1, #7                 @ extract the length of the cache lines
-    ADD     r2, r2, #4                 @ add 4 (line length offset)
-    LDR     r6, =0x3ff
-    ANDS    r6, r6, r1, lsr #3         @ find maximum number on the way size
-    CLZ     r5,r6                       @ DCI 0xE16F5F16 , find bit position of way size increment
-    LDR     r7, =0x7fff
-    ANDS    r7, r7, r1, lsr #13        @ extract max number of the index size
-loop_2:
-    MOV     r8, r6                     @ create working copy of max way size
-	loop_3:
-    ORR     r11, r10, r8, lsl r5       @ factor way and cache number into r11
-    ORR     r11, r11, r7, lsl r2       @ factor index number into r11
-    MCR     p15, 0, r11, c7, c6, 2     @ invalidate by set/way
-    SUBS    r8, r8, #1                 @ decrement the way
-    BGE     loop_3
-
-    SUBS    r7, r7, #1                 @ decrement the index
-    BGE     loop_2
-skip_inval:
-    ADD     r10, r10, #2               @ increment cache number
-    CMP     r3, r10
-    BGT     loop_1
-finished_inval:
-    .endm
-
 /*
  * the actual reset code
  */
@@ -161,7 +130,6 @@ reset:
 	bic	r0, r0, #0x1f
 	orr	r0, r0, #0xd3
 	msr	cpsr,r0
-//	cache_invalidate_dcache_v7			@ call cache macro
 cache_init:
 	mrc	p15, 0, r0, c0, c0, 0	@ read main ID register
 	and	r1, r0, #0x00f00000	@ variant

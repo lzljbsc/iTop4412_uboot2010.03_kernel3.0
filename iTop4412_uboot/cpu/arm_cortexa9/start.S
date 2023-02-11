@@ -37,17 +37,21 @@
  *
  *************************************************************************
  */
-/* globl 声明一个符号，可被其他文件引用，相当于声明了一个全局变量，
-   .globl 和 .global 相同。
-   该部分为处理器的异常处理向量表。
-   地址范围： 0x0000 0000 ~ 0x0000 001c ， 刚好 8条 指令
-   */
+/* 填充了16个字节，在编译好的镜像中可以看到 */
+/* 不太清除为什么要预留这16个字节
+   itop 提供的 bl2.bin 是已经做好的，并未使用 uboot 生成，
+   三星原厂提供的源码中，是使用 uboot 生成的
+TODO: 需要测试下生成 bl2.bin */
 	.word 0x2000
 	.word 0x0
 	.word 0x0
 	.word 0x0
-.globl _start
-_start: b	reset        // 复位向量，复位后跳转到 reset
+/* globl 声明一个符号，可被其他文件引用，相当于声明了一个全局变量，
+   .globl 和 .global 相同。
+   该部分为处理器的异常处理向量表。
+   地址范围： 0x0000 0000 ~ 0x0000 001c ， 刚好 8条 指令,包含 reset */
+.globl _start          // 程序入口  u-boot.lds 中定义的 ENTRY(_start)
+_start: b	reset      // 复位向量，复位后跳转到 reset
 	ldr	pc, _undefined_instruction   // ARM异常向量表，7种异常 0x00000000
 	ldr	pc, _software_interrupt
 	ldr	pc, _prefetch_abort
@@ -56,8 +60,8 @@ _start: b	reset        // 复位向量，复位后跳转到 reset
 	ldr	pc, _irq
 	ldr	pc, _fiq   // 地址 0x0000 001c
 
-// .word 伪操作用于分配一段字内存单元（分配的单元都是字对齐的），
-// 并用伪操作中的 expr 初始化。 .long 和 .int 作用与之相同
+/* .word 伪操作用于分配一段字内存单元（分配的单元都是字对齐的），
+    并用伪操作中的 expr 初始化。 .long 和 .int 作用与之相同 */
 _undefined_instruction:
 	.word undefined_instruction
 _software_interrupt:
@@ -76,7 +80,8 @@ _pad:
 	.word 0x12345678 /* now 16*4=64 */
 .global _end_vect
 _end_vect:
-
+/* 使内存16字节对齐，如果不对齐，使用 0xdeadbeef 填充
+   上面的 _pad 已经填充为 16字节了，这里没啥用 */
 	.balignl 16,0xdeadbeef
 /*
  *************************************************************************
@@ -90,8 +95,8 @@ _end_vect:
  *
  *************************************************************************
  */
-// 定义在 board/samsung/smdkc210/config.mk 
-// uboot 镜像在 SDRAM 中的重定位地址
+/* 定义在 board/samsung/smdkc210/config.mk 
+   uboot 镜像在 SDRAM 中的重定位地址 0xc3e00000 */
 _TEXT_BASE:
 	.word	TEXT_BASE
 
@@ -100,16 +105,19 @@ _TEXT_BASE:
  * Without it, we cannot run code correctly before MMU is ON.
  * by scsuh.
  */
+/* uboot 在物理内存中的物理地址
+   4412 有两个 DMC, 这是 DMC-0 中的地址
+   include/configs/itop_4412_android.h  0x43e00000  */
 _TEXT_PHY_BASE:
 	.word	CFG_PHY_UBOOT_BASE
 
-// 声明 _armboot_start 并用 _start 来进行初始化，
-// _start 在 cpu/arm_cortexa9/u-boot.lds 中定义  entry
+/* 声明 _armboot_start 并用 _start 来进行初始化，
+   _start 在 cpu/arm_cortexa9/u-boot.lds 中定义  entry */
 .globl _armboot_start
 _armboot_start: 
-	.word _start   // 这是程序的入口
+	.word _start   
 
-// __bss_start _end 是在 u-boot.lds 中定义
+/* __bss_start _end 是在 u-boot.lds 中定义 */
 /*
  * These are defined in the board-specific linker script.
  */
@@ -124,12 +132,15 @@ _bss_end:
 /*
  * the actual reset code
  */
-
 reset:
+    /* set the cpu to SVC32 mode and IRQ & FIQ disable */
+    /* 整个 uboot 工作是，CPU一直处于 SVC模式(特权模式) */
 	mrs	r0, cpsr
 	bic	r0, r0, #0x1f
 	orr	r0, r0, #0xd3
 	msr	cpsr,r0
+
+    /* 处理 cache MMU ，这里不分析了 */
 cache_init:
 	mrc	p15, 0, r0, c0, c0, 0	@ read main ID register
 	and	r1, r0, #0x00f00000	@ variant
@@ -157,21 +168,19 @@ cache_init:
 	orr	r0, r0, #0x00000800	@ set bit 11 (Z---) BTB
 	mcr	p15, 0, r0, c1, c0, 0
 	
-
-        /* LED Test Code */
-		#if 0
-        ldr r0, =0x11000080
-        ldr r1, [r0]
-        bic r1, r1, #0xf00
-        orr r1, r1, #0x100
-        str r1, [r0]
-        #endif
-
+    /* LED Test Code */
+#if 0
+    ldr r0, =0x11000080
+    ldr r1, [r0]
+    bic r1, r1, #0xf00
+    orr r1, r1, #0x100
+    str r1, [r0]
+#endif
 
 	/* Read booting information */
-        ldr	r0, =POWER_BASE
-        ldr	r1, [r0,#OMR_OFFSET]
-        bic	r2, r1, #0xffffffc1
+    ldr	r0, =POWER_BASE
+    ldr	r1, [r0,#OMR_OFFSET]
+    bic	r2, r1, #0xffffffc1
 
 	/* NAND BOOT */
 @	cmp	r2, #0x0		@ 512B 4-cycle

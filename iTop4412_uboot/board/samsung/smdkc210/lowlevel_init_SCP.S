@@ -113,6 +113,8 @@ lowlevel_init:
     str r1, [r0]
         
 #ifdef check_mem /*liyang 20110822*/
+    /* 当已经运行在 RAM中，则不需要重新定位 u-boot.
+       实际上，在 u-boot 运行在ram之前，必须配置内存控制器 */
 	/* when we already run in ram, we don't need to relocate U-Boot.
 	 * and actually, memory controller must be configured before U-Boot
 	 * is running in ram.
@@ -125,15 +127,15 @@ lowlevel_init:
 	beq     1f			/* r0 == r1 then skip sdram init   */
 #endif
 
+    /* 这里读 PRO_ID 寄存器，判断芯片类型
+    屏蔽了该代码，认为就是 E4412 */
 /*	liyang 20110822
-	
 	ldr	r0, =CHIP_ID_BASE
 	ldr	r1, [r0]
 	lsr	r1, r1, #8
 	and	r1, r1, #3
 	cmp	r1, #2
 	bne v310_1
-
 */
 	/* add by cym 20130218 */
 	/* init system clock */
@@ -141,14 +143,13 @@ lowlevel_init:
 	
 	/* Memory initialize */
 	bl mem_ctrl_asm_init_ddr3
-
 	/* end add */
 	
-
 	bl tzpc_init
 	
 	b	1f
 
+/* v310 初始化用，这里无作用 */
 v310_1:
 	/* add by cym 20130218 */
 	/* init system clock */

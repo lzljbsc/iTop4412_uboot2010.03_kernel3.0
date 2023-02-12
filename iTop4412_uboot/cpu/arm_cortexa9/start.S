@@ -39,7 +39,7 @@
  */
 /* 填充了16个字节，在编译好的镜像中可以看到 */
 /* 不太清除为什么要预留这16个字节
-   itop 提供的 bl2.bin 是已经做好的，并未使用 uboot 生成，
+   itop 提供的 bl2.bin 是已经做好的，没有这16字节，并未使用 uboot 生成，
    三星原厂提供的源码中，是使用 uboot 生成的
 TODO: 需要测试下生成 bl2.bin */
 	.word 0x2000
@@ -180,49 +180,32 @@ cache_init:
 	/* Read booting information */
     ldr	r0, =POWER_BASE
     ldr	r1, [r0,#OMR_OFFSET]
-    bic	r2, r1, #0xffffffc1
+    bic	r2, r1, #0xffffffc1    /* 取 OM_STAT 寄存器的 [5:1] 位
 
 	/* NAND BOOT */
-@	cmp	r2, #0x0		@ 512B 4-cycle
-@	moveq	r3, #BOOT_NAND
-
-@	cmp	r2, #0x2		@ 2KB 5-cycle
-@	moveq	r3, #BOOT_NAND
-
-@	cmp	r2, #0x4		@ 4KB 5-cycle	8-bit ECC
-@	moveq	r3, #BOOT_NAND
-
 	cmp     r2, #0xA
-        moveq   r3, #BOOT_ONENAND
+    moveq   r3, #BOOT_ONENAND
 
-@	cmp	r2, #0x6		@ 4KB 5-cycle	16-bit ECC
-@	moveq	r3, #BOOT_NAND
-
-	/* SD/MMC BOOT */
+	/* SD/MMC BOOT */  /* itop 板子 SD启动走这个分支 */
 	cmp     r2, #0x4
-        moveq   r3, #BOOT_MMCSD	
+    moveq   r3, #BOOT_MMCSD	  /* 0x03 */
 
 	/* eMMC4.3 BOOT */
 	cmp		r2, #0x6
 	moveq	r3, #BOOT_EMMC43
 
-	/* eMMC441 BOOT */
+	/* eMMC441 BOOT */  /* itop 板子 eMMC启动走这个分支 */
 	cmp		r2, #0x28
-	moveq	r3, #BOOT_EMMC441
+	moveq	r3, #BOOT_EMMC441   /* 0x07 */
 	
-        /* NOR BOOT */
-@	cmp     r2, #0x14
-@	moveq   r3, #BOOT_NOR	
-
 	/* For second device booting */
-	/* OneNAND BOOTONG failed */
-@	cmp     r2, #0x8
-@	moveq   r3, #BOOT_SEC_DEV
-
-	/* Uart BOOTONG failed */
-@	cmp     r2, #(0x1<<4)
-@	moveq   r3, #BOOT_SEC_DEV
+    /* 第二启动方式这里没有实现，所以设置 eMMC 启动时，
+       当没有可用镜像时，无法自动选择 SDMMC 启动 
+       而 三星是支持第二启动的。 详见启动模式 */
 	
+    /* 把上面得到的启动信息放在了 INF_REG3 寄存器了 */
+    /* INFORM3 : 0x1200080C 
+       是一个用户自定义的寄存器 */
 	ldr	r0, =INF_REG_BASE
 	str	r3, [r0, #INF_REG3_OFFSET]     
 

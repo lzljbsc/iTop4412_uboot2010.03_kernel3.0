@@ -63,15 +63,22 @@ _TEXT_BASE:
 	.globl lowlevel_init
 lowlevel_init:
 #if 1//*****ly
+    /* bl2 阶段，堆栈临时设置为 iRAM 顶部 */
+    /* iRAM  0x02020000 - 0x02060000 */
 	/* use iROM stack in bl2 */
 	ldr	sp, =0x02060000
 #endif
+    /* lr 存放的返回地址 */
 	push	{lr}
 
+    /* INFORM1 寄存器值，与内核相关
+       内核进入休眠等模式时会设置这个值 */
 	/* check reset status  */
 	ldr     r0, =(INF_REG_BASE + INF_REG1_OFFSET)
-        ldr     r1, [r0]
+    ldr     r1, [r0]
 
+    /* 这里先只分析上电过程，
+       TODO: 分析休眠、唤醒过程 */
 	/* AFTR wakeup reset */
 	ldr	r2, =S5P_CHECK_DIDLE
 	cmp	r1, r2
@@ -82,20 +89,28 @@ lowlevel_init:
 	cmp	r1, r2
 	beq	wakeup_reset
 
-        /* PS-Hold high */
-        ldr r0, =0x1002330c
-        ldr r1, [r0]
-        orr r1, r1, #0x300
-        str r1, [r0]
+    /* 将 PSHOLD 引脚输出高电平，见 PS_HOLD_CONTROL 寄存器 
+       PSHOLD 引脚在原理图中是与电源管理芯片连接，控制电源的
+       内核中执行 poweroff 时，最终会向该寄存器写入拉低命令
+       以控制电源断电，见 smdk4x12_power_off */
+    /* PS-Hold high */
+    ldr r0, =0x1002330c
+    ldr r1, [r0]
+    orr r1, r1, #0x300
+    str r1, [r0]
 
-        ldr     r0, =0x11000c08
-        ldr r1, =0x0
-        str r1, [r0]
+    /* 0x11000c08 寄存器为 GPX0PUD 是 GPX0 组寄存器
+       这里是将端口上下拉关闭，不太清楚为什么，不影响流程 */
+    ldr     r0, =0x11000c08
+    ldr r1, =0x0
+    str r1, [r0]
 
-        /* Clear  MASK_WDT_RESET_REQUEST  */
-        ldr r0, =0x1002040c
-        ldr r1, =0x00
-        str r1, [r0]
+    /* 0x1002040c 寄存器为 MASK_WDT_RESET_REQUEST 
+       根据描述，这里清0后，将响应看门狗的复位 */
+    /* Clear  MASK_WDT_RESET_REQUEST  */
+    ldr r0, =0x1002040c
+    ldr r1, =0x00
+    str r1, [r0]
         
 #ifdef check_mem /*liyang 20110822*/
 	/* when we already run in ram, we don't need to relocate U-Boot.

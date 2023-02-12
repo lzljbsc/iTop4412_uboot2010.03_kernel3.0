@@ -225,6 +225,8 @@ cache_init:
 	 * Go setup Memory and board specific bits prior to relocation.
 	 */
 	//b     .
+    /* lowlevel_init 在 board/samsung/smdkc210/lowlevel_init_SCP.S 实现
+       这是一个与芯片相关的， SCP POP 不同 */
 	bl	lowlevel_init	/* go setup pll,mux,memory */
 
 

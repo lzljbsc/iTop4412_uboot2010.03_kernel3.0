@@ -3,6 +3,7 @@
 *.depend
 *.map 
 *.srec
+.project
 
 u-boot
 u-boot.lds

@@ -170,11 +170,23 @@ cache_init:
 	
     /* LED Test Code */
 #if 0
-    ldr r0, =0x11000080
-    ldr r1, [r0]
-    bic r1, r1, #0xf00
-    orr r1, r1, #0x100
-    str r1, [r0]
+    /* LED3 */
+	ldr	r0, =0x11000064  /* GPK1(1)  */
+	ldr	r1, =0x00000002	 /* GPK1(1) output high	*/
+	str	r1, [r0]
+
+	ldr	r0, =0x11000060  /* GPK1(1)  */
+	ldr	r1, =0x00000010	 /* GPK1(1) output high	*/
+	str	r1, [r0]
+
+    /* LED2 */
+	ldr	r0, =0x11000104  /* GPL2(0)  */
+	ldr	r1, =0x00000001	 /* GPL2(0) output high	*/
+	str	r1, [r0]
+	
+	ldr	r0, =0x11000100  /* GPL2(0)  */
+	ldr	r1, =0x00000001	 /* GPL2(0) output high	*/
+	str	r1, [r0]
 #endif
 
 	/* Read booting information */

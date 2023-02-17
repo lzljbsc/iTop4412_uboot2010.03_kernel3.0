@@ -1,43 +1,12 @@
-/*
- * Memory Setup stuff - taken from blob memsetup.S
- *
- * Copyright (C) 1999 2000 2001 Erik Mouw (J.A.K.Mouw@its.tudelft.nl) and
- *                     Jan-Derk Bakker (J.D.Bakker@its.tudelft.nl)
- *
- * Modified for the Samsung SMDK2410 by
- * (C) Copyright 2002
- * David Mueller, ELSOFT AG, <d.mueller@elsoft.ch>
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-
-
 #include <config.h>
 #include <version.h>
 
 #include <s5pc210.h>
-#include "smdk4x12_val.h" //mj
+#include "smdk4x12_val.h" 
 
 #define check_mem
 #define MEM_DLLl_ON
 
-/* add by cym 20130218 */
 wait_mux_state:
 	ldr r1, [r0, r2]
 	cmp r1, r3
@@ -55,19 +24,17 @@ wait_phy_state:
 	tst r1, #(1<<2)
 	beq wait_phy_state
 	mov pc, lr
-/* end add */
 
 _TEXT_BASE:
 	.word	TEXT_BASE
 
 	.globl lowlevel_init
 lowlevel_init:
-#if 1//*****ly
     /* bl2 阶段，堆栈临时设置为 iRAM 顶部 */
     /* iRAM  0x02020000 - 0x02060000 */
 	/* use iROM stack in bl2 */
 	ldr	sp, =0x02060000
-#endif
+
     /* lr 存放的返回地址 */
 	push	{lr}
 
@@ -107,6 +74,7 @@ lowlevel_init:
 
     /* 0x1002040c 寄存器为 MASK_WDT_RESET_REQUEST 
        根据描述，这里清0后，将响应看门狗的复位 */
+    /* 这里清0，很多资料都是写关闭看门狗，但手册描述不是这样啊。。。 */
     /* Clear  MASK_WDT_RESET_REQUEST  */
     ldr r0, =0x1002040c
     ldr r1, =0x00
@@ -115,6 +83,8 @@ lowlevel_init:
 #ifdef check_mem /*liyang 20110822*/
     /* 当已经运行在 RAM中，则不需要重新定位 u-boot.
        实际上，在 u-boot 运行在ram之前，必须配置内存控制器 */
+    /* 这里判断是否在 RAM中运行，是为了确认是否需要下面的 clock
+     * mem_ctrl 的初始化，如果已经在 RAM中了，那就不能再初始化了 */
 	/* when we already run in ram, we don't need to relocate U-Boot.
 	 * and actually, memory controller must be configured before U-Boot
 	 * is running in ram.
@@ -139,14 +109,21 @@ lowlevel_init:
 */
 	/* add by cym 20130218 */
 	/* init system clock */
+    /* 初始化系统时钟，比较繁琐，不分析
+     * 就认为都能工作了就可以了 */
 	bl system_clock_init_scp
 	
 	/* Memory initialize */
+    /* 内存控制器初始化，这个需要根据不同的内存颗粒，布线调整
+     * 这里就不分析了，能用的 */
 	bl mem_ctrl_asm_init_ddr3
 	/* end add */
 	
+    /* TrustZone 相关，不分析 */
 	bl tzpc_init
 	
+    /* 向前跳转到标号1，
+     * 到这里，时钟，内存都已初始化完成 */
 	b	1f
 
 /* v310 初始化用，这里无作用 */
@@ -161,38 +138,11 @@ v310_1:
 
 1:
 
-#ifdef CONFIG_EVT1___
-	/* store DMC density information in DRAM */
-	/* mem_ctrl_asm_init returns dmc_density in r6 */
-	ldr	r0, =CFG_UBOOT_BASE
-	sub	r0, r0, #4
-	str	r6, [r0]
-#endif
-#if 0 //test for mt6620 turn off GPC1(0)
-	/*wenpin.cui: headphone and sw uart switch init*/
-	ldr	r0, =0x11000C44
-	ldr	r1, [r0]
-	and	r1, r1, #0x4 	
-	cmp	r1, #0x4	/*uart*/	
-	beq	out	
-
-	ldr     r0, =0x11400084  /* GPC1(0)  */
-	ldr     r1, [r0]	/* read GPC1DAT status*/
-	orr	r1, r1, #0x1	/* GPC1(0) output high  */
-	str     r1, [r0]
-
-	ldr     r0, =0x11400080  /* GPC1(0)  */
-	ldr	r1, [r0]
-	and	r1, r1, #0xfffffff0
-	orr     r1, r1, #0x1	/* GPC1(0) output  */
-	str     r1, [r0]
-#endif
 out:
-	/* for UART */
+	/* for UART 115200 初始化后发送了一个 'O' */
 	bl uart_asm_init
 
-       
-
+/* ONENAND NAND 无用 */
 #if defined(CONFIG_ONENAND)
 	bl onenandcon_init
 #endif
@@ -270,7 +220,7 @@ exit_wakeup:
  * system_clock_init: Initialize core clock and bus clock.
  * void system_clock_init(void)
  */
-
+/* 初始化系统时钟，这部分比较繁琐，主要是对手册 */
  /* add by cym 20130218 */
 system_clock_init_scp:
 	push	{lr}
@@ -542,6 +492,7 @@ skip_mpll:
 v310_2:
 	pop	{pc}
 
+/* 系统时钟初始化完成 */
 /* end add */
 
 /*

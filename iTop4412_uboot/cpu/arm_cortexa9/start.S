@@ -215,7 +215,9 @@ cache_init:
        当没有可用镜像时，无法自动选择 SDMMC 启动 
        而 三星是支持第二启动的。 详见启动模式 */
 	
-    /* 把上面得到的启动信息放在了 INF_REG3 寄存器了 */
+    /* 把上面得到的启动信息放在了 INF_REG3 寄存器了 
+     * 放在这个寄存器还不是每次都 OM_STAT寄存器，是因为有第二启动项
+     * 而OM_STAT 只是指示OM引脚状态，并非最终启动方式 */
     /* INFORM3 : 0x1200080C 
        是一个用户自定义的寄存器 */
 	ldr	r0, =INF_REG_BASE
@@ -227,19 +229,24 @@ cache_init:
 	//b     .
     /* lowlevel_init 在 board/samsung/smdkc210/lowlevel_init_SCP.S 实现
        这是一个与芯片相关的， SCP POP 不同 */
+    /* 将时钟，内存初始化好了，另外获得了启动类型，如果是wakeup相关的，
+     * 会直接跳转到内核了，跳转地址与 INF_REG0 有关 */
 	bl	lowlevel_init	/* go setup pll,mux,memory */
 
-
+    /* PS_HOLD 在 lowlevel_init 中设置过 */
 	ldr	r0, =0x1002330C  /* PS_HOLD_CONTROL register */
 	ldr	r1, =0x00005300	 /* PS_HOLD output high	*/
 	str	r1, [r0]
 
-
 	/* get ready to call C functions */
+    /* 将堆栈设置在 DDR 中了,前面已经初始化好 DDR 了 0x43e00000 */
+    /* 是将栈顶指向了uboot代码的前面，有大量空闲内存使用 */
+    /* fp 寄存器就是 old-sp 寄存器，前一栈帧 */
 	ldr	sp, _TEXT_PHY_BASE	/* setup temp stack pointer */
 	sub	sp, sp, #12
 	mov	fp, #0			/* no previous frame, so fp=0 */
 
+    /* 判断是否已经在RAM中运行了，如果是，则跳转至 after_copy */
 	/* when we already run in ram, we don't need to relocate U-Boot.
 	 * and actually, memory controller must be configured before U-Boot
 	 * is running in ram.

@@ -1,34 +1,6 @@
 #include <config.h>
 #include <s5pc210.h>
 
-//#define SET_MIU
-
-@ MIU (Memory Interleaving Unit)
-//#define MIU_LINEAR
-//#define MIU_1BIT_INTERLEAVED
-//#define MIU_2BIT_INTERLEAVED
-
-//#define MIU_1BIT_12_INTERLEAVED
-//#define MIU_1BIT_7_INTERLEAVED
-//#define MIU_2BIT_21_12_INTERLEAVED
-#define MIU_2BIT_21_7_INTERLEAVED
-
-#define MEM_DLL
-
-#ifdef CONFIG_CLK_800_330_165
-#define DRAM_CLK_330
-#endif
-#ifdef CONFIG_CLK_1000_200_200
-#define DRAM_CLK_200
-#endif
-#ifdef CONFIG_CLK_1000_330_165
-#define DRAM_CLK_330
-#endif
-#ifdef CONFIG_CLK_1000_400_200
-#define DRAM_CLK_400
-#endif
-
-/* add by cym 20130218 */
 #define DMC_IVCONTROL	0xF0
 wait_phy_state:
 	ldr r1, [r0, #DMC_PHYSTATUS]
@@ -42,6 +14,8 @@ dmc_delay:
 	bne 1b
 	pop {pc}
 	
+/* 进行内存控制器的初始化，整个文件就这个功能
+ * 如果分析的话，需要分析内存控制及内存芯片 */
 	.globl mem_ctrl_asm_init_ddr3
 mem_ctrl_asm_init_ddr3:
 	push {lr}
@@ -118,11 +92,7 @@ mem_ctrl_asm_init_ddr3:
 	ldr	r1, =0x000000BB
 	str	r1, [r0, #DMC_TIMINGAREF] @TimingAref
 
-#ifdef CONFIG_EVT0_RECOMMEND
-	ldr	r1, =0x34A98691
-#else	
 	ldr	r1, =0x34498691  
-#endif
 
 	ldr	r1, =0x7846654F/*0x4046654F*/
 	str	r1, [r0, #DMC_TIMINGROW] @TimingRow
@@ -250,11 +220,7 @@ mem_ctrl_asm_init_ddr3:
 	ldr	r1, =0x000000BB
 	str	r1, [r0, #DMC_TIMINGAREF] @TimingAref
 
-#ifdef CONFIG_EVT0_RECOMMEND
-	ldr	r1, =0x34A98691
-#else	
 	ldr	r1, =0x34498691  
-#endif
 
 	ldr	r1, =0x7846654F/*0x4046654F*/
 	str	r1, [r0, #DMC_TIMINGROW] @TimingRow

@@ -194,17 +194,9 @@ cache_init:
     ldr	r1, [r0,#OMR_OFFSET]
     bic	r2, r1, #0xffffffc1    /* 取 OM_STAT 寄存器的 [5:1] 位
 
-	/* NAND BOOT */
-	cmp     r2, #0xA
-    moveq   r3, #BOOT_ONENAND
-
 	/* SD/MMC BOOT */  /* itop 板子 SD启动走这个分支 */
 	cmp     r2, #0x4
     moveq   r3, #BOOT_MMCSD	  /* 0x03 */
-
-	/* eMMC4.3 BOOT */
-	cmp		r2, #0x6
-	moveq	r3, #BOOT_EMMC43
 
 	/* eMMC441 BOOT */  /* itop 板子 eMMC启动走这个分支 */
 	cmp		r2, #0x28
@@ -214,9 +206,10 @@ cache_init:
     /* 第二启动方式这里没有实现，所以设置 eMMC 启动时，
        当没有可用镜像时，无法自动选择 SDMMC 启动 
        而 三星是支持第二启动的。 详见启动模式 */
+    /* TODO: 实现第二启动方式 */
 	
     /* 把上面得到的启动信息放在了 INF_REG3 寄存器了 
-     * 放在这个寄存器还不是每次都 OM_STAT寄存器，是因为有第二启动项
+     * 放在这个寄存器而不是每次都 OM_STAT寄存器，是因为有第二启动项
      * 而OM_STAT 只是指示OM引脚状态，并非最终启动方式 */
     /* INFORM3 : 0x1200080C 
        是一个用户自定义的寄存器 */
@@ -276,37 +269,18 @@ cache_init:
      * 只有 BOOT_EMMC441 和 BOOT_MMCSD 两种值 */
 	ldr	r0, =INF_REG_BASE
 	ldr	r1, [r0, #INF_REG3_OFFSET]
-	cmp	r1, #BOOT_NAND		/* 0x0 => boot device is nand */
-	beq		nand_boot
-	
-	cmp	r1, #BOOT_ONENAND	/* 0x1 => boot device is onenand */
-	beq		onenand_boot
 	
     /* EMMC 启动 */
 	cmp     r1, #BOOT_EMMC441
 	beq     emmc441_boot
 	
-	cmp     r1, #BOOT_EMMC43
-	beq     emmc_boot
-	
     /* MMCSD 启动 */
 	cmp     r1, #BOOT_MMCSD
 	beq     mmcsd_boot
 	
-	cmp     r1, #BOOT_NOR
-	beq     nor_boot
-	
+    /* 第二启动方式不会走 */
 	cmp     r1, #BOOT_SEC_DEV
 	beq     mmcsd_boot
-
-nand_boot:
-	mov	r0, #0x1000
-	bl	copy_from_nand
-	b	after_copy
-
-onenand_boot:
-	bl	onenand_bl2_copy  /*goto 0x1010*/
-	b	after_copy
 
 second_mmcsd_boot:
 	ldr   r3, =BOOT_MMCSD	
@@ -324,15 +298,6 @@ mmcsd_boot:
 	bl      movi_uboot_copy
 	b       after_copy
 
-emmc_boot:
-	ldr	r0, =CMU_BASE
-	ldr	r2, =CLK_DIV_FSYS1_OFFSET
-	ldr	r1, [r0, r2]
-	orr r1, r1, #0x3
-	str r1, [r0, r2]
-	bl		emmc_uboot_copy
-	b	after_copy
-
 emmc441_boot:
     /* 时钟分频，根据手册，4分频 */
     /* 使用的 SD_4 接口，对应 MMC4 */
@@ -349,14 +314,7 @@ emmc441_boot:
 	bne  second_mmcsd_boot
 	b	after_copy
 
-
-nor_boot:
-@	bl	read_hword
-	b	after_copy
-
-
 after_copy:
-
 
 enable_mmu:
 	/* enable domain access */
@@ -414,44 +372,6 @@ _dmc_density:
 
 _mmu_table_base:
 	.word mmu_table
-
-
-/*
- * copy U-Boot to SDRAM and jump to ram (from NAND or OneNAND)
- * r0: size to be compared
- * Load 1'st 2blocks to RAM because U-boot's size is larger than 1block(128k) size
- */
-	.globl copy_from_nand
-copy_from_nand:
-	push	{lr}		/* save return address */
-
-	mov	r9, r0
-	
-	mov	r9, #0x100		/* Compare about 8KB */
-	bl	copy_uboot_to_ram
-
-	tst 	r0, #0x0
-	bne	copy_failed
-
-	ldr	r0, =0xd0020000
-
-	ldr	r1, _TEXT_PHY_BASE	/* 0x23e00000 */
-1:	ldr	r3, [r0], #4
-	ldr	r4, [r1], #4
-	teq	r3, r4
-	bne	compare_failed	/* not matched */
-	subs	r9, r9, #4
-	bne	1b
-
-	pop	{pc}		/* all is OK */
-
-copy_failed:
-	nop			/* copy from nand failed */
-	b	copy_failed
-
-compare_failed:
-	nop			/* compare failed */
-	b	compare_failed
 
 /*
  * we assume that cache operation is done before. (eg. cleanup_before_linux())

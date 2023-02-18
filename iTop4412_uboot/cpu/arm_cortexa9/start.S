@@ -258,23 +258,22 @@ cache_init:
 	cmp     r1, r2                  /* compare r0, r1                  */
 	beq     after_copy		/* r0 == r1 then skip flash copy   */
 
-
-
+    /* LED2 */
 	ldr	r0, =0x11000104  /* GPL2(0)  */
-	ldr	r1, =0x00000001	 /* GPL2(0 output high	*/
+	ldr	r1, =0x00000001	 /* GPL2(0) output high	*/
 	str	r1, [r0]
 	
 	ldr	r0, =0x11000100  /* GPL2(0)  */
-	ldr	r1, =0x00000001	 /* GPL2(0 output high	*/
+	ldr	r1, =0x00000001	 /* GPL2(0) output high	*/
 	str	r1, [r0]
-
 	
 	/* wait ?us */
 	mov	r1, #0x10000
 9:	subs	r1, r1, #1
 	bne	9b
 
-
+    /* 从 INFORM3 中读取出启动设备，跳转至相应的处理函数中
+     * 只有 BOOT_EMMC441 和 BOOT_MMCSD 两种值 */
 	ldr	r0, =INF_REG_BASE
 	ldr	r1, [r0, #INF_REG3_OFFSET]
 	cmp	r1, #BOOT_NAND		/* 0x0 => boot device is nand */
@@ -283,12 +282,14 @@ cache_init:
 	cmp	r1, #BOOT_ONENAND	/* 0x1 => boot device is onenand */
 	beq		onenand_boot
 	
+    /* EMMC 启动 */
 	cmp     r1, #BOOT_EMMC441
 	beq     emmc441_boot
 	
 	cmp     r1, #BOOT_EMMC43
 	beq     emmc_boot
 	
+    /* MMCSD 启动 */
 	cmp     r1, #BOOT_MMCSD
 	beq     mmcsd_boot
 	
@@ -313,6 +314,8 @@ second_mmcsd_boot:
 	str	r3, [r0, #INF_REG3_OFFSET]
 	
 mmcsd_boot:
+    /* 时钟分频，根据手册，16分频 */
+    /* 使用的 Xmmc2 接口，对应 MMC2 */
 	ldr	r0, =CMU_BASE
 	ldr	r2, =CLK_DIV_FSYS2_OFFSET
 	ldr	r1, [r0, r2]
@@ -331,6 +334,8 @@ emmc_boot:
 	b	after_copy
 
 emmc441_boot:
+    /* 时钟分频，根据手册，4分频 */
+    /* 使用的 SD_4 接口，对应 MMC4 */
 	ldr	r0, =CMU_BASE
 	ldr	r2, =CLK_DIV_FSYS3_OFFSET
 	ldr	r1, [r0, r2]

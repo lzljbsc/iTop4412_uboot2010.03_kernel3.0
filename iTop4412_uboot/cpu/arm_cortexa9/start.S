@@ -355,6 +355,19 @@ mmu_on:
 	ldr	r0, _dmc_density
 	str	r1, [r0]
 
+    /* 下面的设置堆栈和清bss段，需要留意空间是否重叠
+     * 在内存中，代码的后面就是bss段，段的末尾使用 _end 表示，
+     * uboot中使用 CFG_UBOOT_SIZE 表示整个uboot需要的RAM空间，
+     * 这个空间是所有的，包括代码、BSS、STACK，
+     * 在这个uboot中，预留了 2M 的空间，堆栈放在了最后，也就是
+     * bss段的后面，如果bss段太大（一般不会的），那就可能和堆栈
+     * 重叠了，导致数据错误 */
+    /* 这个uboot大概的值(随代码及变量的变化而变化)：
+     * _bss_start  ->  0xC3E3D084
+     * _end        ->  0xC3F6FC98
+     * sp          ->  0x43FFF000
+     * 根据映射关系，0xC开头的与0x4开头的物理地址一致 
+     */
 skip_hw_init:
 	/* Set up the stack						    */
     /* 这里重新设置了堆栈，上次设置堆栈将栈顶设置在了紧挨uboot镜像

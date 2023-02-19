@@ -42,7 +42,7 @@
    itop 提供的 bl2.bin 是已经做好的，没有这16字节，并未使用 uboot 生成，
    三星原厂提供的源码中，是使用 uboot 生成的
 TODO: 需要测试下生成 bl2.bin */
-	.word 0x2000
+	.word 0x2000  /* 这里的 0x2000 ，在后面的拷贝中，判断了下镜像有效性 */
 	.word 0x0
 	.word 0x0
 	.word 0x0

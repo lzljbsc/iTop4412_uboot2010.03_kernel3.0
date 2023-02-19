@@ -170,6 +170,7 @@ out:
 	ldr	r2, =0x1003C528
 	str	r1, [r2]
 
+    /* 跳出 lowlevel_init, 返回到 start.s 中了 */
 	pop	{pc}
 
 wakeup_reset:
@@ -208,10 +209,15 @@ wake_v310:
 	bl tzpc_init
 
 exit_wakeup:
+    /* 这里的唤醒后 跳转，使用了 INFORM0 寄存器 
+     * 在内核休眠函数中，休眠前先项 INFORM1 写入休眠方式 
+     * 再向 INFORM0 写入唤醒对应的恢复函数物理地址，
+     * 这样 uboot 就能直接跳转到内核的唤醒了 */
 	/*Load return address and jump to kernel*/
 	ldr	r0, =(INF_REG_BASE+INF_REG0_OFFSET)
 	ldr	r1, [r0]	/* r1 = physical address of s5pc110_cpu_resume function*/
 
+    /* 被唤醒的，直接跳转到内核了 */
 	mov	pc, r1		/*Jump to kernel */
 	nop
 	nop
@@ -707,6 +713,15 @@ tzpc_init:
 
 #ifdef CONFIG_ENABLE_MMU
 
+/* MMU 的地址映射表
+ * 4412 uboot 中启用了 MMU 
+ * 在 iTOP4412 开发板上，只有 1G内存，接到了 0x4000_0000 - 0x8000_0000
+ * 这里其实只映射了 512MB，对uboot够用了，而且对不同大小内存的板子通用
+ * 把 0xC000_0000 后面的 512MB 映射到了 0x4000_0000 地址 
+ * 这个与配置的 uboot的物理地址和虚拟地址有关
+ * uboot的拷贝存放的物理地址 CFG_PHY_UBOOT_BASE 0x43e00000
+ * 而uboot的运行地址 TEXT_BASE 0xc3e00000 
+ * 所以，uboot在 0xc3e00000 运行，最终会转换到 0x43e00000 的物理地址上 */
 /*
  * MMU Table for SMDKC210
  * 0x0000_0000 -- 0x1FFF_FFFF => A:0x0000_0000 -- 0x1FFF_FFFF

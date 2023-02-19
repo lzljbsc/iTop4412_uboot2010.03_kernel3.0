@@ -738,6 +738,7 @@ tzpc_init:
 	      (\d << 5) | (1<<4) | (\c << 3) | (\b << 2) | (1<<1)
 .endm
 
+/* align 14 , 按照 2^14 字节对齐 */
 .section .mmudata, "a"
 	.align 14
 	// the following alignment creates the mmu table at address 0x4000.

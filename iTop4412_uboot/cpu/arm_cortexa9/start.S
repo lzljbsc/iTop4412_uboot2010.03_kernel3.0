@@ -295,7 +295,7 @@ mmcsd_boot:
 	ldr	r1, [r0, r2]
 	orr r1, r1, #0xf
 	str r1, [r0, r2]
-	bl      movi_uboot_copy
+	bl      movi_uboot_copy  /* 这里是从 SD卡 中拷贝 */
 	b       after_copy
 
 emmc441_boot:
@@ -306,21 +306,26 @@ emmc441_boot:
 	ldr	r1, [r0, r2]
 	orr r1, r1, #0x3
 	str r1, [r0, r2]
-	bl		emmc441_uboot_copy
-	ldr   r0, =0x43e00000
+	bl		emmc441_uboot_copy  /* 拷贝uboot镜像到DDR中, eMMC4.4  */
+	ldr   r0, =0x43e00000  /* 判断镜像最前面是否为 0x2000，正确则跳转 */
 	ldr   r1, [r0]
 	ldr   r2, =0x2000
 	cmp r1, r2
-	bne  second_mmcsd_boot
+	bne  second_mmcsd_boot  /* 镜像不正确，则进行第二启动项 */
 	b	after_copy
 
+/* 到这里，uboot镜像已经在DDR中了 */
 after_copy:
-
+/* 开启MMU，uboot中使用了MMU，链接地址是 0xc3e00000
+ * 而实际拷贝的地址在 0x43e00000 , 
+ * 地址映射关系见 lowlevel_init_SCP.S 中的 mmu_table */
 enable_mmu:
 	/* enable domain access */
 	ldr	r5, =0x0000ffff
 	mcr	p15, 0, r5, c3, c0, 0		@load domain access register
 
+    /* 这里借助 _mmu_table_base CFG_PHY_UBOOT_BASE 计算
+     * mmu_table 在物理内存中的地址，因为mmu必须设置物理内存 */
 	/* Set the TTB register */
 	ldr	r0, _mmu_table_base
 	ldr	r1, =CFG_PHY_UBOOT_BASE
@@ -329,6 +334,7 @@ enable_mmu:
 	orr	r1, r0, r1
 	mcr	p15, 0, r1, c2, c0, 0
 
+    /* 这里开启了 MMU，之后就都是虚拟地址了 */
 	/* Enable the MMU */
 mmu_on:
 	mrc	p15, 0, r0, c1, c0, 0
@@ -339,6 +345,9 @@ mmu_on:
 	nop
 	nop
 
+    /* 将 DMC 密度信息存放在了 C变量中 
+     * 到这里并未看到 DMC信息如何设置到 CFG_UBOOT_BASE 前面地址的
+     * TODO: 分析C变量作用 */
 	/* store DMC density information in u-boot C level variable */
 	ldr	r0, = CFG_UBOOT_BASE
 	sub	r0, r0, #4
@@ -348,20 +357,29 @@ mmu_on:
 
 skip_hw_init:
 	/* Set up the stack						    */
+    /* 这里重新设置了堆栈，上次设置堆栈将栈顶设置在了紧挨uboot镜像
+     * 的地方（减了12），这次将栈设置在了 uboot镜像的后面 (2M) - 4K 处 */
+    /* CFG_UBOOT_BASE = 0x43e00000
+     * CFG_UBOOT_SIZE = 2 * 1024 * 1024 = 0x200000 = 2M
+     * 0x1000 = 4K */
 stack_setup:
 	ldr	sp, =(CFG_UBOOT_BASE + CFG_UBOOT_SIZE - 0x1000)
 
+    /* 清 bss 段 
+     * __bss_start _end 在lds链接脚本中定义 */
 clear_bss:
 	ldr	r0, _bss_start		/* find start of bss segment        */
 	ldr	r1, _bss_end		/* stop here                        */
 	mov 	r2, #0x00000000		/* clear                            */
 
+    /* 具体的循环清零动作 */
 clbss_l:
 	str	r2, [r0]		/* clear loop...                    */
 	add	r0, r0, #4
 	cmp	r0, r1
 	ble	clbss_l
 	
+    /* 一些都准备好了，跳转到C语言的 start_armboot 函数中 */
 	ldr	pc, _start_armboot
 
 _start_armboot:

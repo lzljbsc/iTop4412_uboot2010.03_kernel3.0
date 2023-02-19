@@ -21,20 +21,11 @@ typedef u32 (*copy_emmc441_to_mem) \
 typedef u32 (*emmc441_endboot_op)();
 
 
-//#define CopyMMC4_3toMem(a,b,c,d)        (((bool(*)(bool, unsigned int, unsigned int*, int))(*((unsigned int *)0xD0037F9C)))(a,b,c,d))
-
+/* 同 emmc441_uboot_copy 解释 */
 void movi_uboot_copy(void)
 {
-#ifdef CONFIG_EVT1
 	copy_sd_mmc_to_mem copy_bl2 = (copy_sd_mmc_to_mem)*(u32 *)(0x02020030);
-#else
-	copy_sd_mmc_to_mem copy_bl2 = (copy_sd_mmc_to_mem)(0x00002488);
-#endif
-#if defined(CONFIG_SECURE)
-	copy_bl2(MOVI_UBOOT_POS, MOVI_UBOOT_BLKCNT, CFG_PHY_UBOOT_BASE);
-#else
 	copy_bl2(MOVI_UBOOT_POS, MOVI_UBOOT_BLKCNT, CFG_PHY_UBOOT_BASE);//mj
-#endif
 }
 
 void emmc_uboot_copy(void)
@@ -59,24 +50,22 @@ void emmc_uboot_copy(void)
 }
 
 
+/* 从 eMMC441 中将uboot拷贝至 RAM 中， start.S 中使用 */
 void emmc441_uboot_copy(void)
 {
-	int i;
-	char *ptemp;
+    /* 拷贝函数 MSH_ReadFromFIFO_eMMC 是 BL1 提供的，
+     * BL1 将该函数的地址放在 0x02020044 位置处，这样uboot中就可以
+     * 使用了。关于这部分介绍，参考:
+     * Android_Exynos4412_iROM_Secure_Booting_Guide */
+	copy_emmc441_to_mem copy_bl2 = \
+    (copy_emmc441_to_mem)*(u32 *)(0x02020044);	//MSH_ReadFromFIFO_eMMC
+	emmc441_endboot_op end_bootop = \
+    (emmc441_endboot_op)*(u32 *)(0x02020048);	//MSH_EndBootOp_eMMC
 
-#ifdef CONFIG_EVT1
-	copy_emmc441_to_mem copy_bl2 = (copy_emmc441_to_mem)*(u32 *)(0x02020044);	//MSH_ReadFromFIFO_eMMC
-	emmc441_endboot_op end_bootop = (emmc441_endboot_op)*(u32 *)(0x02020048);	//MSH_EndBootOp_eMMC
-#else
-	copy_emmc441_to_mem copy_bl2 = (copy_emmc441_to_mem)*(u32 *)(0x00007974);	//MSH_ReadFromFIFO_eMMC
-	emmc441_endboot_op end_bootop = (emmc441_endboot_op)*(u32 *)(0x000082c8);	//MSH_EndBootOp_eMMC
-#endif
-
-#ifdef CONFIG_SECURE
-	copy_bl2(0x10, MOVI_UBOOT_BLKCNT-MOVI_BL1_BLKCNT-MOVI_BL1_BLKCNT, CFG_PHY_UBOOT_BASE);
-#else
+    /* 拷贝指定的块数，放到指定物理内存中 */
 	copy_bl2(/*0x8,*/ MOVI_UBOOT_BLKCNT, CFG_PHY_UBOOT_BASE); //mj
-#endif
+
+    /* 结束 eMMC4.4 启动模式 */
 	/* stop bootop */
 	end_bootop();
 }

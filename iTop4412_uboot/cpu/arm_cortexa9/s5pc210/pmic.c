@@ -102,9 +102,7 @@ void pmic8767_init(void)
 	I2C_S5M8767_VolSetting(7, CALC_S5M8767_VOLT1(1.55 * 1000), 1);
 #endif
 	/* end add */
-
 }
-
 
 
 int Is_TC4_Dvt = 0;
@@ -119,6 +117,7 @@ void GPIO_Reset_A(void)
 	GPIO_SetDataEach(eGPIO_X1, eGPIO_2, 1); // XEINT[5]
 
 }
+
 void GPIO_Reset_B(void)
 {
 	// RESET
@@ -129,191 +128,110 @@ void GPIO_Reset_B(void)
 	GPIO_SetDataEach(eGPIO_X1, eGPIO_0, 1); // XEINT[5]
 
 }
+
 void PMIC_InitIp(void)
 {
-	u8 id;
-	unsigned int val;
-	u8 addr;
-	u8 uSendData[2];
-	
-	GPIO_Init();
-	GPIO_SetFunctionEach(eGPIO_D1, eGPIO_0, 2);
-	GPIO_SetFunctionEach(eGPIO_D1, eGPIO_1, 2);
+    u8 id;
+    unsigned int val;
+    u8 addr;
+    u8 uSendData[2];
 
-	GPIO_SetDSEach(eGPIO_D1,eGPIO_0,3);
-	GPIO_SetDSEach(eGPIO_D1,eGPIO_1,3);
+    /* PMIC S5M8767 实际连接在 I2C0 上， I2C1 未连接 */
 
-	GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_0, 0);
-	GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_1, 0);
+    /* GPD1_0 GPD1_1 -> I2C0 */
+    GPIO_Init();
+    GPIO_SetFunctionEach(eGPIO_D1, eGPIO_0, 2);
+    GPIO_SetFunctionEach(eGPIO_D1, eGPIO_1, 2);
 
-	I2C_InitIp(I2C0, I2C_TX_CLOCK_125KHZ, I2C_TIMEOUT_INFINITY);
+    GPIO_SetDSEach(eGPIO_D1,eGPIO_0,3);
+    GPIO_SetDSEach(eGPIO_D1,eGPIO_1,3);
 
-	GPIO_SetFunctionEach(eGPIO_D1, eGPIO_2, 2);	// GPIO I2C1 setting
-	GPIO_SetFunctionEach(eGPIO_D1, eGPIO_3, 2);	// GPIO I2C1 setting
+    GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_0, 0);
+    GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_1, 0);
 
-	GPIO_SetDSEach(eGPIO_D1,eGPIO_2,3);
-	GPIO_SetDSEach(eGPIO_D1,eGPIO_3,3);
-	GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_2, 0);	// Pull-Up/Down Disable
-	GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_3, 0);	// Pull-Up/Down Disable
-	
-	if (I2C_InitIp(I2C1, I2C_TX_CLOCK_125KHZ, I2C_TIMEOUT_INFINITY) != 1) {
-		printf("PMIC init filed!\n");
-	}
+    I2C_InitIp(I2C0, I2C_TX_CLOCK_125KHZ, I2C_TIMEOUT_INFINITY);
 
-#if 0 //ndef CONFIG_TA4	
+    /* GPD1_2 GPD1_3 -> I2C1 */
+    GPIO_SetFunctionEach(eGPIO_D1, eGPIO_2, 2);	// GPIO I2C1 setting
+    GPIO_SetFunctionEach(eGPIO_D1, eGPIO_3, 2);	// GPIO I2C1 setting
 
-	GPIO_Reset_A();
-	GPIO_Reset_B();
+    GPIO_SetDSEach(eGPIO_D1,eGPIO_2,3);
+    GPIO_SetDSEach(eGPIO_D1,eGPIO_3,3);
+    GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_2, 0);	// Pull-Up/Down Disable
+    GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_3, 0);	// Pull-Up/Down Disable
 
-#if defined(CONFIG_PM_11V)
-	printf("ARM 1.1V");
-	PMIC_SetVoltage_Buck(eVDD_ARM,	eVID_MODE3,1.1);
-	printf(", ");
+    if (I2C_InitIp(I2C1, I2C_TX_CLOCK_125KHZ, I2C_TIMEOUT_INFINITY) != 1) {
+        printf("PMIC init filed!\n");
+    }
 
-	printf("INT 1.1V");
-	PMIC_SetVoltage_Buck(eVDD_INT,	eVID_MODE2,1.1);
+    Is_TC4_Dvt = 0;
 
-#elif defined(CONFIG_PM_12V)
-	printf("ARM 1.2V");
-	PMIC_SetVoltage_Buck(eVDD_ARM,	eVID_MODE3,1.2);
-	printf(", ");
-
-	printf("INT 1.2V");
-	PMIC_SetVoltage_Buck(eVDD_INT,	eVID_MODE2,1.2);
-#elif defined(CONFIG_PM_13V_12V)
-	printf("ARM 1.3V");
-	PMIC_SetVoltage_Buck(eVDD_ARM,  eVID_MODE3,1.3);
-	printf(", ");
-
-	printf("INT 1.2V");
-	PMIC_SetVoltage_Buck(eVDD_INT,  eVID_MODE2,1.2);
-#endif
-
-#else
-	Is_TC4_Dvt = 0;
-	
-	lowlevel_init_max8997(0,&id,0);
-	if(id == 0x77)
-	{
-		printf("Max8997 @ TC4 EVT\n");
-		Is_TC4_Dvt = 0;
-	}
-	else if(id == 0x67)//DVT board
-	{
-		printf("S5M8767(VER2.0)\n");
-		Is_TC4_Dvt = 1;
-	}
+    /* 读取 PMIC ID 寄存器，确认型号 */
+    lowlevel_init_max8997(0,&id,0);
+    if(id == 0x77)
+    {
+        printf("Max8997 @ TC4 EVT\n");
+        Is_TC4_Dvt = 0;
+    }
+    else if(id == 0x67)//DVT board
+    {
+        printf("S5M8767(VER2.0)\n");
+        Is_TC4_Dvt = 1;
+    }
     else if(id == 0x1)
     {
-            
-		printf("S5M8767(VER3.0) \n");
-        	Is_TC4_Dvt = 2;
+        printf("S5M8767(VER3.0) \n");
+        Is_TC4_Dvt = 2;
     }
     else if(id == 0x2)
     {
-            
-		printf("S5M8767(VER4.0) \n");
-       	 Is_TC4_Dvt = 2;
+        printf("S5M8767(VER4.0) \n");
+        Is_TC4_Dvt = 2;
     }  
-	    else if(id == 0x3
-				/*add by cym 20130316 */
-			|| (0x5 == id)
-			/* end add */
-			/* add by cym 20151111 */
-			|| (21 == id)
-			/* end add */
-			)
+    else if(id == 0x3 || (0x5 == id) || (21 == id))
     {
-            
-		printf("S5M8767(VER5.0)\n");
-       	 Is_TC4_Dvt = 2;
+        printf("S5M8767(VER5.0)\n");
+        Is_TC4_Dvt = 2;
     }  
+    else
+    {
+        printf("S5M8767(VER6.0)\n");
+        Is_TC4_Dvt = 2;
+    }
 
-	else
-	{
-/* modeify by cym 20151111 */
-#if 0
-	  printf("Pls check the i2c @ pmic, id = %d,error\n",id);
-#else
-	printf("S5M8767(VER6.0)\n");
-	Is_TC4_Dvt = 2;
-#endif
-/* end modify */
-	}
-	//PowerOn the LCD In Kernel.
-	//val = 0x7;
-	//lowlevel_init_max8997(0x37,&val,1);
+    if(Is_TC4_Dvt)
+    {
+        pmic8767_init();
+        if(Is_TC4_Dvt == 2)
+        {
+            val = 0x58;
+            lowlevel_init_max8997(0x5a,&val,1);
+        }
 
-	if(Is_TC4_Dvt)
-	{
-	
-	 pmic8767_init();
-     if(Is_TC4_Dvt == 2)
-     {
-        val = 0x58;
-	   lowlevel_init_max8997(0x5a,&val,1);
-     }
-
-/* add by cym 20141125 set LDO18 to 3.3v */
-/* dg change for kinds of coreboard*/
-
+        /* add by cym 20141125 set LDO18 to 3.3v */
+        /* dg change for kinds of coreboard*/
 #if  defined(CONFIG_SCP_1GDDR) ||  defined(CONFIG_POP_1GDDR) || defined(CONFIG_SCP_1GDDR_Ubuntu)  || defined(CONFIG_POP_1GDDR_Ubuntu)
         val = 0x32;
         lowlevel_init_max8997(0x70, &val, 1);
 #endif
-
-/* end add */
-	}
-	/*---mj configure for emmc ---*/
-	uSendData[0] =0x6f;
-	uSendData[1] =0x68;
-
-	I2C_SendEx(I2C1, 0xcc, NULL, 0, uSendData, 2);
-
-	#if 0
-	val = readl(GPE3DAT);
-	val &= ~(0x01<<2);
-	val |= (0x01<<2);
-	writel(val, GPE3DAT);
-
-	
-	val = readl(GPE3CON);
-	val &= ~(0x0f<<8);
-	val |= (0x01<<8);// GPE3[2] output, BUCK6EN
-	writel(val, GPE3CON);
-	#endif
-
-	/* add by cym 20141224 for TP_IOCTL GPX0_3 set low */
-	Outp32(GPX0CON,(Inp32(GPX0CON)&(~(0xf << 12)))|(0x1 << 12));
-        Outp32(GPX0DAT,(Inp32(GPX0DAT)&(~(0x1 << 3)))|(0x0 << 3));
-	/* end add */
-
-	/* add by cym 20150701 7 inch screen twinkle when syatem start */
-        Outp32(GPL1DRV,(Inp32(GPL1DRV)&(~(0x3)))|(0x2));
         /* end add */
-#endif
+    }
+
+    /*---mj configure for emmc ---*/
+    uSendData[0] =0x6f;
+    uSendData[1] =0x68;
+
+    I2C_SendEx(I2C1, 0xcc, NULL, 0, uSendData, 2);
+
+    /* add by cym 20141224 for TP_IOCTL GPX0_3 set low */
+    Outp32(GPX0CON,(Inp32(GPX0CON)&(~(0xf << 12)))|(0x1 << 12));
+    Outp32(GPX0DAT,(Inp32(GPX0DAT)&(~(0x1 << 3)))|(0x0 << 3));
+    /* end add */
+
+    /* add by cym 20150701 7 inch screen twinkle when syatem start */
+    Outp32(GPL1DRV,(Inp32(GPL1DRV)&(~(0x3)))|(0x2));
+    /* end add */
 }
-
-
-#ifndef CONFIG_TA4
-void PMIC_SetVoltage_Buck(PMIC_et ePMIC_TYPE ,PMIC_MODE_et uVID, float fVoltage_value )
-{
-
-	u8 uSendData[2];
-		
-	if((fVoltage_value<1.40)&&(fVoltage_value>0.75))
-	{
-		uSendData[0] = uVID; //mode 2 register
-		if(ePMIC_TYPE==eVDD_ARM)
-			uSendData[1] = 0x80|(((u8)(fVoltage_value*100))-77) ; //mode 3 register
-		else
-			uSendData[1] = 0x80|(((u8)(fVoltage_value*100))-75) ; //mode 2 register
-			
-		I2C_SendEx(gVoltage_Type[ePMIC_TYPE].ucI2C_Ch, gVoltage_Type[ePMIC_TYPE].ucDIV_Addr, NULL, 0, uSendData, 2);
-	}
-	
-}
-#else
 
 void PMIC_SetVoltage_Buck(PMIC_et ePMIC_TYPE ,u8 addr, u8 value )
 {
@@ -322,6 +240,7 @@ void PMIC_SetVoltage_Buck(PMIC_et ePMIC_TYPE ,u8 addr, u8 value )
 	uSendData[1] = value;
 	I2C_SendEx(gVoltage_Type[ePMIC_TYPE].ucI2C_Ch, gVoltage_Type[ePMIC_TYPE].ucDIV_Addr, NULL, 0, uSendData, 2);
 }
+
 void PMIC_GetVoltage_Buck(PMIC_et ePMIC_TYPE ,u8 addr, u8 *value )
 {
 	u8 uSendData[2];
@@ -332,6 +251,5 @@ void PMIC_GetVoltage_Buck(PMIC_et ePMIC_TYPE ,u8 addr, u8 *value )
 	I2C_RecvEx(gVoltage_Type[ePMIC_TYPE].ucI2C_Ch, gVoltage_Type[ePMIC_TYPE].ucDIV_Addr, uSendData, 1, uGetData, 1);
 	*value = uGetData[0];
 }		
-#endif
 
 

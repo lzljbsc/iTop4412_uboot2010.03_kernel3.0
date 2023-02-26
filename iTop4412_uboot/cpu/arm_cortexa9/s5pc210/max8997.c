@@ -294,8 +294,6 @@ void lowlevel_init_max8997(unsigned char Address,unsigned char *Val,int flag)
 	unsigned char data[4] = {0,0,0,0};
 	unsigned char write_data = 0;
 	int ret;
-	
-	
 
 	addr = Address;
 	max8997_init();

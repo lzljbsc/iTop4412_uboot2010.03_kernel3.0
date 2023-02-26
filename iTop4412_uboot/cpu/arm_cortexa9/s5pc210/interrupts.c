@@ -52,29 +52,6 @@ static inline ulong READ_TIMER(void)
 static ulong timestamp;
 static ulong lastdec;
 
-#ifdef CONFIG_USE_IRQ
-/* enable IRQ interrupts */
-void enable_interrupts(void)
-{
-	unsigned long temp;
-	__asm__ __volatile__("mrs %0, cpsr\n" "bic %0, %0, #0x80\n" "msr cpsr_c, %0":"=r"(temp)
-			     ::"memory");
-}
-
-
-/*
- * disable IRQ/FIQ interrupts
- * returns true if interrupts had been enabled before we disabled them
- */
-int disable_interrupts(void)
-{
-	unsigned long old, temp;
-	__asm__ __volatile__("mrs %0, cpsr\n"
-			     "orr %1, %0, #0xc0\n" "msr cpsr_c, %1":"=r"(old), "=r"(temp)
-			     ::"memory");
-	return (old & 0x80) == 0;
-}
-#else
 void enable_interrupts(void)
 {
 	return;
@@ -83,8 +60,6 @@ int disable_interrupts(void)
 {
 	return 0;
 }
-#endif
-
 
 void bad_mode(void)
 {
@@ -177,7 +152,7 @@ void do_irq(struct pt_regs *pt_regs)
 
 int interrupt_init(void)
 {
-
+    /* 使用的是 PWM定时器4，该定时器没有输出引脚，仅仅是个定时器 */
 	S5PC21X_TIMERS *const timers = S5PC21X_GetBase_TIMERS();
 
 	/* use PWM Timer 4 because it has no output */
@@ -192,6 +167,7 @@ int interrupt_init(void)
 		timer_load_val = 10000;//get_PCLK() / (16 * 100);
 	}
 
+    /* 初始化为 10ms 的溢出时间 */
 	/* load value for 10 ms timeout */
 	lastdec = timers->TCNTB4 = timer_load_val;
 	/* auto load, manual update of Timer 4 */

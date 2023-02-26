@@ -22,21 +22,7 @@
 
 #include <s5pc210.h>
 
-#ifdef CONFIG_SERIAL1
-#define UART_NR	S5PC21X_UART0
-
-#elif defined(CONFIG_SERIAL2)
-#define UART_NR	S5PC21X_UART1
-
-#elif defined(CONFIG_SERIAL3)
 #define UART_NR	S5PC21X_UART2
-
-#elif defined(CONFIG_SERIAL4)
-#define UART_NR S5PC21X_UART3
-
-#else
-#error "Bad: you didn't configure serial ..."
-#endif
 
 void serial_setbrg(void)
 {
@@ -53,6 +39,8 @@ void serial_setbrg(void)
  */
 int serial_init(void)
 {
+    /* 初始化串口，但这里什么也没做
+     * 是在前面的汇编启动过程中已初始化完成，这里直接用就可以了 */
 	serial_setbrg();
 
 	return (0);
@@ -73,38 +61,6 @@ int serial_getc(void)
 	return uart->URXH & 0xff;
 }
 
-#ifdef CONFIG_HWFLOW
-static int hwflow = 0;		/* turned off by default */
-int hwflow_onoff(int on)
-{
-	switch (on) {
-	case 0:
-	default:
-		break;		/* return current */
-	case 1:
-		hwflow = 1;	/* turn on */
-		break;
-	case -1:
-		hwflow = 0;	/* turn off */
-		break;
-	}
-	return hwflow;
-}
-#endif
-
-#ifdef CONFIG_MODEM_SUPPORT
-static int be_quiet = 0;
-void disable_putc(void)
-{
-	be_quiet = 1;
-}
-
-void enable_putc(void)
-{
-	be_quiet = 0;
-}
-#endif
-
 
 /*
  * Output a single byte to the serial port.
@@ -113,18 +69,8 @@ void serial_putc(const char c)
 {
 	S5PC21X_UART *const uart = S5PC21X_GetBase_UART(UART_NR);
 
-#ifdef CONFIG_MODEM_SUPPORT
-	if (be_quiet)
-		return;
-#endif
-
 	/* wait for room in the tx FIFO */
 	while (!(uart->UTRSTAT & 0x2));
-
-#ifdef CONFIG_HWFLOW
-	/* Wait for CTS up */
-	while (hwflow && !(uart->UMSTAT & 0x1));
-#endif
 
 	uart->UTXH = c;
 

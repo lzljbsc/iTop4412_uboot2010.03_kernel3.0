@@ -1,29 +1,3 @@
-/*
- * (C) Copyright 2002-2006
- * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
- *
- * (C) Copyright 2002
- * Sysgo Real-Time Solutions, GmbH <www.elinos.com>
- * Marius Groeger <mgroeger@sysgo.de>
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 
 /*
  * To match the U-Boot user interface on ARM platforms to the U-Boot
@@ -56,17 +30,6 @@
 #endif
 #undef DEBUG
 
-#ifdef CONFIG_BITBANGMII
-#include <miiphy.h>
-#endif
-
-#ifdef CONFIG_DRIVER_SMC91111
-#include "../drivers/net/smc91111.h"
-#endif
-#ifdef CONFIG_DRIVER_LAN91C96
-#include "../drivers/net/lan91c96.h"
-#endif
-
 #ifdef CONFIG_RECOVERY
 extern int recovery_preboot(void);
 #endif
@@ -74,27 +37,12 @@ DECLARE_GLOBAL_DATA_PTR;
 
 ulong monitor_flash_len;
 
-#ifdef CONFIG_HAS_DATAFLASH
-extern int  AT91F_DataflashInit(void);
-extern void dataflash_print_info(void);
-#endif
-
 #ifndef CONFIG_IDENT_STRING
 #define CONFIG_IDENT_STRING ""
 #endif
 
 const char version_string[] =
 	U_BOOT_VERSION" (" U_BOOT_DATE " - " U_BOOT_TIME ")"CONFIG_IDENT_STRING;
-
-#ifdef CONFIG_DRIVER_RTL8019
-extern void rtl8019_get_enetaddr (uchar * addr);
-#endif
-
-#if defined(CONFIG_HARD_I2C) || \
-    defined(CONFIG_SOFT_I2C)
-#include <i2c.h>
-#endif
-
 
 /************************************************************************
  * Coloured LED functionality
@@ -128,11 +76,9 @@ void blue_LED_off(void) __attribute__((weak, alias("__blue_LED_off")));
  * but let's get it working (again) first...
  */
 
-#if defined(CONFIG_ARM_DCC) && !defined(CONFIG_BAUDRATE)
-#define CONFIG_BAUDRATE 115200
-#endif
 static int init_baudrate (void)
 {
+    /* baudrate 在环境变量中， CONFIG_BAUDRATE 115200 */
 	char tmp[64];	/* long enough for environment variables */
 	int i = getenv_r ("baudrate", tmp, sizeof (tmp));
 	gd->bd->bi_baudrate = gd->baudrate = (i > 0)
@@ -194,9 +140,6 @@ static int display_banner (void)
 	printf ("\n\n%s\n\n", version_string);
 	debug ("U-Boot code: %08lX -> %08lX  BSS: -> %08lX\n",
 	       _armboot_start, _bss_start, _bss_end);
-#ifdef CONFIG_MODEM_SUPPORT
-	debug ("Modem Support enabled\n");
-#endif
 #ifdef CONFIG_USE_IRQ
 	debug ("IRQ Stack: %08lx\n", IRQ_STACK_START);
 	debug ("FIQ Stack: %08lx\n", FIQ_STACK_START);
@@ -255,25 +198,6 @@ static void display_flash_config (ulong size)
 }
 #endif /* CONFIG_SYS_NO_FLASH */
 
-#if defined(CONFIG_HARD_I2C) || defined(CONFIG_SOFT_I2C)
-static int init_func_i2c (void)
-{
-	puts ("I2C:   ");
-	i2c_init (CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
-	puts ("ready\n");
-	return (0);
-}
-#endif
-
-#if defined(CONFIG_CMD_PCI) || defined (CONFIG_PCI)
-#include <pci.h>
-static int arm_pci_init(void)
-{
-	pci_init();
-	return 0;
-}
-#endif /* CONFIG_CMD_PCI || CONFIG_PCI */
-
 /*
  * Breathe some life into the board...
  *
@@ -301,18 +225,10 @@ typedef int (init_fnc_t) (void);
 
 int print_cpuinfo (void);
 
+/* 初始化序列，返回值不为0，则认为失败，进行停机 */
 init_fnc_t *init_sequence[] = {
-#if defined(CONFIG_ARCH_CPU_INIT)
-	arch_cpu_init,		/* basic arch cpu dependent setup */
-#endif
 	board_init,		/* basic board dependent setup */
-//#if defined(CONFIG_USE_IRQ)
 	interrupt_init,		/* set up exceptions */
-//#endif
-	//timer_init,		/* initialize timer */
-#ifdef CONFIG_FSL_ESDHC
-	//get_clocks,
-#endif
 	env_init,		/* initialize environment */
 	init_baudrate,		/* initialze baudrate settings */
 	serial_init,		/* serial communications setup */
@@ -326,39 +242,37 @@ init_fnc_t *init_sequence[] = {
 #if defined(CONFIG_DISPLAY_BOARDINFO)
 	checkboard,		/* display board info */
 #endif
-#if defined(CONFIG_HARD_I2C) || defined(CONFIG_SOFT_I2C)
-	//init_func_i2c,
-#endif
 	dram_init,		/* configure available RAM banks */
-#if defined(CONFIG_CMD_PCI) || defined (CONFIG_PCI)
-	//arm_pci_init,
-#endif
 	display_dram_config,
 	NULL,
 };
 
+/* uboot C语言入口函数 */
 void start_armboot (void)
 {
 	init_fnc_t **init_fnc_ptr;
 	char *s;
 	int mmc_exist = 0;
-#if defined(CONFIG_VFD) || defined(CONFIG_LCD)
-	unsigned long addr;
-#endif
 
+    /* _armboot_start 为uboot代码起始地址，根据start.s 中代码，该值为
+     * 0x43e00010
+     * CONFIG_SYS_MALLOC_LEN 0x104000
+     * 这里是在 uboot镜像的下方内存处预留了一部分空间用于 gd_t 结构体 */
 	/* Pointer is writable since we allocated a register for it */
 	gd = (gd_t*)(_armboot_start - CONFIG_SYS_MALLOC_LEN - sizeof(gd_t));
 	/* compiler optimization barrier needed for GCC >= 3.4 */
 	__asm__ __volatile__("": : :"memory");
 
+    /* 从 gd 空间继续向下预留一段内存用于 bd_t 结构体
+     * 并将 gd->bd 指向 bd_t 结构体 */
 	memset ((void*)gd, 0, sizeof (gd_t));
 	gd->bd = (bd_t*)((char*)gd - sizeof(bd_t));
 	memset (gd->bd, 0, sizeof (bd_t));
 
-//	gd->flags |= GD_FLG_RELOC;
-
+    /* monitor_flash_len 是 uboot 代码段长度 */
 	monitor_flash_len = _bss_start - _armboot_start;
 
+    /* 按照初始化序列依次调用初始化函数，如失败则停止(hang) */
 	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
 		if ((*init_fnc_ptr)() != 0) {
 			hang ();
@@ -422,12 +336,6 @@ void start_armboot (void)
 
 #endif
 
-	
-#ifdef CONFIG_HAS_DATAFLASH
-	AT91F_DataflashInit();
-	dataflash_print_info();
-#endif
-
 	/* initialize environment */
 	env_relocate ();
 
@@ -477,15 +385,6 @@ extern void davinci_eth_set_mac_addr (const u_int8_t *addr);
 	}
 #endif
 
-#if defined(CONFIG_DRIVER_SMC91111) || defined (CONFIG_DRIVER_LAN91C96)
-	/* XXX: this needs to be moved to board init */
-	if (getenv ("ethaddr")) {
-		uchar enetaddr[6];
-		eth_getenv_enetaddr("ethaddr", enetaddr);
-		smc_set_mac_addr(enetaddr);
-	}
-#endif /* CONFIG_DRIVER_SMC91111 || CONFIG_DRIVER_LAN91C96 */
-
 	/* Initialize from environment */
 	if ((s = getenv ("loadaddr")) != NULL) {
 		load_addr = simple_strtoul (s, NULL, 16);
@@ -498,20 +397,6 @@ extern void davinci_eth_set_mac_addr (const u_int8_t *addr);
 
 #ifdef BOARD_LATE_INIT
 	board_late_init ();
-#endif
-
-#ifdef CONFIG_BITBANGMII
-	bb_miiphy_init();
-#endif
-#if defined(CONFIG_CMD_NET)
-#if defined(CONFIG_NET_MULTI)
-	puts ("Net:   ");
-#endif
-	eth_initialize(gd->bd);
-#if defined(CONFIG_RESET_PHY_R)
-	debug ("Reset Ethernet PHY\n");
-	reset_phy();
-#endif
 #endif
 
 /*

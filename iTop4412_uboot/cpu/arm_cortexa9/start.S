@@ -395,15 +395,19 @@ clbss_l:
     /* 一些都准备好了，跳转到C语言的 start_armboot 函数中 */
 	ldr	pc, _start_armboot
 
+/* start_armboot 为 C语言的入口函数 */
 _start_armboot:
 	.word start_armboot
 
+/* dmc_density 为 C语言变量 */
 _dmc_density:
 	.word dmc_density
 
+/* mmu_table 地址映射表 */
 _mmu_table_base:
 	.word mmu_table
 
+/* TODO: theLastJump 分析 */
 /*
  * we assume that cache operation is done before. (eg. cleanup_before_linux())
  * actually, we don't need to do anything about cache if not use d-cache in U-Boot

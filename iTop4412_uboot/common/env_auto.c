@@ -87,61 +87,11 @@ uchar env_get_char_spec (int index)
 	return ( *((uchar *)(gd->env_addr + index)) );
 }
 
-
-/* this is called before nand_init()
- * so we can't read Nand to validate env data.
- * Mark it OK for now. env_relocate() in env_common.c
- * will call our relocate function which will does
- * the real validation.
- *
- * When using a NAND boot image (like sequoia_nand), the environment
- * can be embedded or attached to the U-Boot image in NAND flash. This way
- * the SPL loads not only the U-Boot image from NAND but also the
- * environment.
- */
 int env_init(void)
 {
-#if defined(ENV_IS_EMBEDDED)
-	ulong total;
-	int crc1_ok = 0, crc2_ok = 0;
-	env_t *tmp_env1, *tmp_env2;
-
-	total = CONFIG_ENV_SIZE;
-
-	tmp_env1 = env_ptr;
-	tmp_env2 = (env_t *)((ulong)env_ptr + CONFIG_ENV_SIZE);
-
-	crc1_ok = (crc32(0, tmp_env1->data, ENV_SIZE) == tmp_env1->crc);
-	crc2_ok = (crc32(0, tmp_env2->data, ENV_SIZE) == tmp_env2->crc);
-
-	if (!crc1_ok && !crc2_ok)
-		gd->env_valid = 0;
-	else if(crc1_ok && !crc2_ok)
-		gd->env_valid = 1;
-	else if(!crc1_ok && crc2_ok)
-		gd->env_valid = 2;
-	else {
-		/* both ok - check serial */
-		if(tmp_env1->flags == 255 && tmp_env2->flags == 0)
-			gd->env_valid = 2;
-		else if(tmp_env2->flags == 255 && tmp_env1->flags == 0)
-			gd->env_valid = 1;
-		else if(tmp_env1->flags > tmp_env2->flags)
-			gd->env_valid = 1;
-		else if(tmp_env2->flags > tmp_env1->flags)
-			gd->env_valid = 2;
-		else /* flags are equal - almost impossible */
-			gd->env_valid = 1;
-	}
-
-	if (gd->env_valid == 1)
-		env_ptr = tmp_env1;
-	else if (gd->env_valid == 2)
-		env_ptr = tmp_env2;
-#else /* ENV_IS_EMBEDDED */
+    /* 固定使用了 默认环境变量 */
 	gd->env_addr  = (ulong)&default_environment[0];
 	gd->env_valid = 1;
-#endif /* ENV_IS_EMBEDDED */
 
 	return (0);
 }

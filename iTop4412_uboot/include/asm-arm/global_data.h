@@ -1,25 +1,3 @@
-/*
- * (C) Copyright 2002
- * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 
 #ifndef	__ASM_GBL_DATA_H
 #define __ASM_GBL_DATA_H
@@ -41,18 +19,6 @@ typedef	struct	global_data {
 	volatile unsigned long	env_addr;	/* Address  of Environment struct */
 	volatile unsigned long	env_valid;	/* Checksum of Environment valid? */
 	volatile unsigned long	fb_base;	/* base address of frame buffer */
-#ifdef CONFIG_VFD
-	volatile unsigned char	vfd_type;	/* display type */
-#endif
-#ifdef CONFIG_FSL_ESDHC
-	volatile unsigned long	sdhc_clk;
-#endif
-#if 0
-	unsigned long	cpu_clk;	/* CPU clock in Hz!		*/
-	unsigned long	bus_clk;
-	phys_size_t	ram_size;	/* RAM size */
-	unsigned long	reset_status;	/* reset status register at boot */
-#endif
 	volatile void		**jt;		/* jump table */
 } gd_t;
 
@@ -67,6 +33,7 @@ typedef	struct	global_data {
 #define	GD_FLG_LOGINIT	0x00020		/* Log Buffer has been initialized	*/
 #define GD_FLG_DISABLE_CONSOLE	0x00040		/* Disable console (in & out)	 */
 
+/* 定义了一个 gd_t 指针 gd, 放在了 r8 寄存器中 */
 #define DECLARE_GLOBAL_DATA_PTR     register volatile gd_t *gd asm ("r8")
 
 #endif /* __ASM_GBL_DATA_H */

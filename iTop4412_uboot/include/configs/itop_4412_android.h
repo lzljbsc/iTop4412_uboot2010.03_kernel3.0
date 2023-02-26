@@ -239,6 +239,7 @@
  * Architecture magic and machine type
  */
 
+/* 设置 MACH_TYPE, 内核中需要使用 */
 #define MACH_TYPE		2838//(S5PC210:2838, S5PV310:2925)
 #define UBOOT_MAGIC		(0x43090000 | MACH_TYPE)
 #define CHIP_ID_BASE            0x10000000
@@ -277,7 +278,7 @@
 /*
  * Size of malloc() pool
  */
-#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + 1024*1024)
+#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + 1024*1024)  /* 0x104000 */
 #define CFG_GBL_DATA_SIZE	128	/* size in bytes reserved for initial data */
 
 #define CFG_STACK_SIZE		512*1024
@@ -285,12 +286,7 @@
 /*
  * select serial console configuration
  */
-#ifndef CONFIG_TA4
-#define CONFIG_SERIAL2          1	/* we use UART1 on SMDKC210 */
-#else
 #define CONFIG_SERIAL3          1	/* we use UART2 on TA4 */
-#endif
-//#define CONFIG_SERIAL4		1
 
 #define CFG_HUSH_PARSER			/* use "hush" command parser	*/
 #ifdef CFG_HUSH_PARSER

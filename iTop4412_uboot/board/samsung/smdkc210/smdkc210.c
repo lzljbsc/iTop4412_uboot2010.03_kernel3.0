@@ -69,43 +69,13 @@ static inline void delay(unsigned long loops)
 	__asm__ volatile ("1:\n" "subs %0, %1, #1\n" "bne 1b":"=r" (loops):"0"(loops));
 }
 
-/*
- * Miscellaneous platform dependent initialisations
- */
-
-static void dm9000_pre_init(void)
-{
-	unsigned int tmp;
-
-#if defined(DM9000_16BIT_DATA)
-	SROM_BW_REG &= ~(0xf << 20);
-	SROM_BW_REG |= (0<<23) | (0<<22) | (0<<21) | (1<<20);
-
-#else	
-	SROM_BW_REG &= ~(0xf << 20);
-	SROM_BW_REG |= (0<<19) | (0<<18) | (0<<16);
-#endif
-	SROM_BC5_REG = ((0<<28)|(1<<24)|(5<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
-
-	tmp = MP01CON_REG;
-	tmp &=~(0xf<<20);
-	tmp |=(2<<20);
-	MP01CON_REG = tmp;
-}
-
-
 int board_init(void)
 {
 	DECLARE_GLOBAL_DATA_PTR;
-#ifdef CONFIG_DRIVER_SMC911X
-	smc9115_pre_init();
-#endif
 
-#ifdef CONFIG_DRIVER_DM9000
-//	dm9000_pre_init();
-#endif
-
+    /* 设置 MACH_TYPE, 该参数与内核中的匹配 */
 	gd->bd->bi_arch_number = MACH_TYPE;
+    /* 设置启动参数存放位置，位于物理内存起始地址偏移 0x100(256字节) 处 */
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1+0x100);
 
 	return 0;

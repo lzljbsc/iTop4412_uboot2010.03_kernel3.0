@@ -1,17 +1,4 @@
 
-/*
- * To match the U-Boot user interface on ARM platforms to the U-Boot
- * standard (as on PPC platforms), some messages with debug character
- * are removed from the default U-Boot build.
- *
- * Define DEBUG here if you want additional info as shown below
- * printed upon startup:
- *
- * U-Boot code: 00F00000 -> 00F3C774  BSS: -> 00FC3274
- * IRQ Stack: 00ebff7c
- * FIQ Stack: 00ebef7c
- */
-
 #include <common.h>
 #include <command.h>
 #include <malloc.h>
@@ -25,21 +12,15 @@
 #include <nand.h>
 #include <onenand_uboot.h>
 #include <s5pc210.h>
-#ifdef CONFIG_GENERIC_MMC
 #include <mmc.h>
-#endif
+
 #undef DEBUG
 
-#ifdef CONFIG_RECOVERY
 extern int recovery_preboot(void);
-#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 ulong monitor_flash_len;
-
-#ifndef CONFIG_IDENT_STRING
-#define CONFIG_IDENT_STRING ""
-#endif
 
 const char version_string[] =
 	U_BOOT_VERSION" (" U_BOOT_DATE " - " U_BOOT_TIME ")"CONFIG_IDENT_STRING;
@@ -68,13 +49,6 @@ void blue_LED_on(void) __attribute__((weak, alias("__blue_LED_on")));
 void inline __blue_LED_off(void) {}
 void blue_LED_off(void) __attribute__((weak, alias("__blue_LED_off")));
 
-/************************************************************************
- * Init Utilities							*
- ************************************************************************
- * Some of this code should be moved into the core functions,
- * or dropped completely,
- * but let's get it working (again) first...
- */
 
 static int init_baudrate (void)
 {
@@ -110,7 +84,6 @@ static int off_charge(void)
 	val |= (0x5);
 	writel(val,GPX2PUD);
 
-	
 	/*---gpx2.7 cok ---setting--*/
 	val = readl(GPX2CON);
 	val &= ~(0xf<<28);
@@ -120,12 +93,10 @@ static int off_charge(void)
 	val &= ~(0x3<<14); //cok gpx2.7,pullup/down disable
 	writel(val,GPX2PUD);
 
-
 	/*---this don't need ---*/
 	val = readl(GPX1PUD);
 	val &= ~(0x3<<10); //uok,pullup/down disable
 	writel(val,GPX1PUD);
-	
 
 	/*---on key setting gpx0.2--*/
 	val = readl(GPX0PUD);
@@ -144,66 +115,22 @@ static int display_banner (void)
 	return (0);
 }
 
-/*
- * WARNING: this code looks "cleaner" than the PowerPC version, but
- * has the disadvantage that you either get nothing, or everything.
- * On PowerPC, you might see "DRAM: " before the system hangs - which
- * gives a simple yet clear indication which part of the
- * initialization if failing.
- */
 static int display_dram_config (void)
 {
 	int i;
 
-#ifdef DEBUG
-	puts ("RAM Configuration:\n");
-
-	for(i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
-		printf ("Bank #%d: %08lx ", i, gd->bd->bi_dram[i].start);
-		print_size (gd->bd->bi_dram[i].size, "\n");
-	}
-#else
 	ulong size = 0;
 
 	for (i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
 		size += gd->bd->bi_dram[i].size;
 	}
-
-#if  defined(CONFIG_SCP_1GDDR) ||  defined(CONFIG_SCP_2GDDR) || defined(CONFIG_SCP_1GDDR_Ubuntu) || defined(CONFIG_SCP_2GDDR_Ubuntu)  //add by dg
-
 	size += 0x100000;
-#endif
 
-#if defined(CONFIG_POP_2GDDR) || defined(CONFIG_POP_2GDDR_Ubuntu) 
-	puts("DRAM: ");
-    puts("2G\n");
-#else
   	puts("DRAM:	");
 	print_size(size, "\n");
-#endif
-#endif
 
 	return (0);
 }
-
-#ifndef CONFIG_SYS_NO_FLASH
-static void display_flash_config (ulong size)
-{
-	puts ("Flash: ");
-	print_size (size, "\n");
-}
-#endif /* CONFIG_SYS_NO_FLASH */
-
-/*
- * Breathe some life into the board...
- *
- * Initialize a serial port as console, and carry out some hardware
- * tests.
- *
- * The first part of initialization is running from Flash memory;
- * its main purpose is to initialize the RAM so that we
- * can relocate the monitor code to RAM.
- */
 
 /*
  * All attempts to come up with a "common" initialization sequence
@@ -230,14 +157,9 @@ init_fnc_t *init_sequence[] = {
 	serial_init,		/* serial communications setup */
 	console_init_f,		/* stage 1 init of console */
 	off_charge,		// xiebin.wang @ 20110531,for charger&power off device.
-
 	display_banner,		/* say that we are here */
-#if defined(CONFIG_DISPLAY_CPUINFO)
 	print_cpuinfo,		/* display cpu info (and speed) */
-#endif
-#if defined(CONFIG_DISPLAY_BOARDINFO)
 	checkboard,		/* display board info */
-#endif
 	dram_init,		/* configure available RAM banks */
 	display_dram_config,
 	NULL,
@@ -279,50 +201,6 @@ void start_armboot (void)
 	mem_malloc_init (_armboot_start - CONFIG_SYS_MALLOC_LEN,
 			CONFIG_SYS_MALLOC_LEN);
 
-#ifndef CONFIG_SYS_NO_FLASH
-	/* configure available FLASH banks */
-	display_flash_config (flash_init ());
-#endif /* CONFIG_SYS_NO_FLASH */
-
-#ifdef CONFIG_VFD
-#	ifndef PAGE_SIZE
-#	  define PAGE_SIZE 4096
-#	endif
-	/*
-	 * reserve memory for VFD display (always full pages)
-	 */
-	/* bss_end is defined in the board-specific linker script */
-	addr = (_bss_end + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1);
-	vfd_setmem (addr);
-	gd->fb_base = addr;
-#endif /* CONFIG_VFD */
-
-#ifdef CONFIG_LCD
-	/* board init may have inited fb_base */
-	if (!gd->fb_base) {
-#		ifndef PAGE_SIZE
-#		  define PAGE_SIZE 4096
-#		endif
-		/*
-		 * reserve memory for LCD display (always full pages)
-		 */
-		/* bss_end is defined in the board-specific linker script */
-		addr = (_bss_end + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1);
-		lcd_setmem (addr);
-		gd->fb_base = addr;
-	}
-#endif /* CONFIG_LCD */
-
-#if defined(CONFIG_CMD_NAND)
-	puts ("NAND:	");
-	nand_init();		/* go init the NAND */
-#endif
-
-#if defined(CONFIG_CMD_ONENAND)
-	onenand_init();
-#endif
-
-#ifdef CONFIG_GENERIC_MMC
 	puts ("MMC:   ");
 	mmc_exist = mmc_initialize (gd->bd);
 	if (mmc_exist != 0)
@@ -330,19 +208,8 @@ void start_armboot (void)
 		puts ("0 MB\n");
 	}
 
-#endif
-
 	/* initialize environment */
 	env_relocate ();
-
-#ifdef CONFIG_VFD
-	/* must do this after the framebuffer is allocated */
-	drv_vfd_init();
-#endif /* CONFIG_VFD */
-
-#ifdef CONFIG_SERIAL_MULTI
-	serial_initialize();
-#endif
 
 	/* IP Address */
 	gd->bd->bi_ip_addr = getenv_IPaddr ("ipaddr");
@@ -351,59 +218,20 @@ void start_armboot (void)
 
 	jumptable_init ();
 
-#if defined(CONFIG_API)
-	/* Initialize API */
-	api_init ();
-#endif
-
 	console_init_r ();	/* fully init console as a device */
-
-#if defined(CONFIG_ARCH_MISC_INIT)
-	/* miscellaneous arch dependent initialisations */
-	arch_misc_init ();
-#endif
-#if defined(CONFIG_MISC_INIT_R)
-	/* miscellaneous platform dependent initialisations */
-	misc_init_r ();
-#endif
 
 	/* enable exceptions */
 	enable_interrupts ();
-
-	/* Perform network card initialisation if necessary */
-#ifdef CONFIG_DRIVER_TI_EMAC
-	/* XXX: this needs to be moved to board init */
-extern void davinci_eth_set_mac_addr (const u_int8_t *addr);
-	if (getenv ("ethaddr")) {
-		uchar enetaddr[6];
-		eth_getenv_enetaddr("ethaddr", enetaddr);
-		davinci_eth_set_mac_addr(enetaddr);
-	}
-#endif
 
 	/* Initialize from environment */
 	if ((s = getenv ("loadaddr")) != NULL) {
 		load_addr = simple_strtoul (s, NULL, 16);
 	}
-#if defined(CONFIG_CMD_NET)
-	if ((s = getenv ("bootfile")) != NULL) {
-		copy_filename (BootFile, s, sizeof (BootFile));
-	}
-#endif
 
-#ifdef BOARD_LATE_INIT
 	board_late_init ();
-#endif
 
-/*
-	char tmp_cmd[100];	
-	sprintf(tmp_cmd, "emmc open 0");
-	run_command(tmp_cmd, 0);
-*/				
 	/* main_loop() can return to retry autoboot, if so just run it again. */
-#ifdef CONFIG_RECOVERY //mj for factory reset
 	recovery_preboot();
-#endif
 
 	for (;;) {
 		main_loop ();

@@ -71,16 +71,13 @@ u32 get_device_type(void)
 	return s5pc210_cpu_id;
 }
 
-#ifdef CONFIG_DISPLAY_CPUINFO
 int print_cpuinfo(void)
 {
 	arch_cpu_init();
 
-#ifdef CONFIG_PM
 	printf("PMIC:	");
 	PMIC_InitIp();
-#endif
+
 	return 0;
 }
-#endif
 

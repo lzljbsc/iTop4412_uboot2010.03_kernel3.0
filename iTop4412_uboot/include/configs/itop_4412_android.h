@@ -1,25 +1,3 @@
-/*
- *
- * Configuation settings for the iTOP-4412 board.
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
@@ -34,7 +12,6 @@
 
 #define CONFIG_EVT1     1       /* EVT1 */
 
-#define TC4_PLUS		
 /*----CPU ID Defination----*/
 #define SMDK4212_ID 		0x43220000
 #define SMDK4212_AP11_ID 	0x43220210 //mj
@@ -45,50 +22,13 @@
 #define SMDK4412_AP10_ID 	0xE4412210 //mj
 
 
-/*
- * SECURE BOOT
- * */
-//#define CONFIG_SECURE
+#if  defined(CONFIG_SCP_1GDDR)
 
-#ifdef CONFIG_SECURE
-
-/* BL1 size */
-#ifdef CONFIG_EVT1
-#define CONFIG_SECURE_BL1_SIZE			0x2000
-#define CONFIG_SECURE_BL1_ONLY
-//#define CONFIG_SECURE_BOOT			/* Signed Kernel, RFS */
-#else
-#define CONFIG_SECURE_BL1_SIZE			0x4000
-#endif
-
-#ifdef CONFIG_SECURE_BOOT
-#define CONFIG_S5PC210S
-#define CONFIG_SECURE_ROOTFS
-#define CONFIG_SECURE_KERNEL_BASE       0xC0008000
-#define CONFIG_SECURE_KERNEL_SIZE       0x300000
-#define CONFIG_SECURE_ROOTFS_BASE       0xC0800000
-#define CONFIG_SECURE_ROOTFS_SIZE       0x100000
-#endif
-
-#endif
-
-
-#if  defined(CONFIG_SCP_1GDDR) ||  defined(CONFIG_SCP_2GDDR) || defined(CONFIG_SCP_1GDDR_Ubuntu) || defined(CONFIG_SCP_2GDDR_Ubuntu)  //add by dg
-
-/* add by cym 20130218 */
 /* IV_SIZE: 128 byte, 2 port(1 Gbyte), open page, trrd: 4 */
 #define CONFIG_EVT0_PERFORMANCE
-/* IV_SIZE: 512 Mbyte, 1 port(512 Mbyte), open page, trrd: 4 */
-//#define CONFIG_EVT0_STABLE
-/* IV_SIZE: 128 byte, 2 port(1 Gbyte), close page, trrd: 0xA */
-//#define CONFIG_EVT0_RECOMMEND
 
 /* (Memory Interleaving Size = 1 << IV_SIZE) */
-#ifdef CONFIG_EVT0_STABLE
-#define CONFIG_IV_SIZE 0x1D
-#else
 #define CONFIG_IV_SIZE 0x7
-#endif
 
 #define S5PV310_POWER_BASE	0x10020000
 
@@ -109,14 +49,8 @@
 #define VPLL_LOCK_OFFSET		0x0C020
 #define EPLL_CON0_OFFSET		0x0C110
 #define EPLL_CON1_OFFSET		0x0C114
-#ifdef CONFIG_SMDKC220
-#define EPLL_CON2_OFFSET		0x0C118
-#endif
 #define VPLL_CON0_OFFSET		0x0C120
 #define VPLL_CON1_OFFSET		0x0C124
-#ifdef CONFIG_SMDKC220
-#define VPLL_CON2_OFFSET		0x0C128
-#endif
 
 #define CLK_SRC_TOP0_OFFSET		0x0C210
 #define CLK_SRC_TOP1_OFFSET		0x0C214
@@ -137,25 +71,15 @@
 
 #define CLK_GATE_IP_DMC_OFFSET		0x10900
 
-#if defined(CONFIG_SMDKC220) || defined(CONFIG_EXYNOS4412)
-#define CLK_GATE_IP_PERIR_OFFSET	0x08960
-#elif defined(CONFIG_SMDKC210)
 #define CLK_GATE_IP_PERIR_OFFSET	0x0C960
-#endif
 
 #define APLL_LOCK_OFFSET		0x14000
 #define APLL_CON0_OFFSET		0x14100
 #define APLL_CON1_OFFSET		0x14104
 
-#if defined(CONFIG_SMDKC220) || defined(CONFIG_EXYNOS4412)
-#define MPLL_LOCK_OFFSET		0x10008
-#define MPLL_CON0_OFFSET		0x10108
-#define MPLL_CON1_OFFSET		0x1010C
-#elif defined(CONFIG_SMDKC210)
 #define MPLL_LOCK_OFFSET		0x14008
 #define MPLL_CON0_OFFSET		0x14108
 #define MPLL_CON1_OFFSET		0x1410C
-#endif
 
 #define CLK_SRC_CPU_OFFSET		0x14200
 #define CLK_MUX_STAT_CPU_OFFSET		0x14400
@@ -174,8 +98,6 @@
 #define USB_PHY_CONTROL_OFFSET		0x0704
 #define USB_PHY_CONTROL            (0x10020000+USB_PHY_CONTROL_OFFSET)//(ELFIN_CLOCK_POWER_BASE+USB_PHY_CONTROL_OFFSET)
 
-
-/* end add */
 #endif //end SCP Type Boards
 
 
@@ -240,10 +162,10 @@
  */
 
 /* 设置 MACH_TYPE, 内核中需要使用 */
-#define MACH_TYPE		2838//(S5PC210:2838, S5PV310:2925)
-#define UBOOT_MAGIC		(0x43090000 | MACH_TYPE)
-#define CHIP_ID_BASE            0x10000000
-#define PKG_ID_BASE		0x10000004
+#define MACH_TYPE		    2838//(S5PC210:2838, S5PV310:2925)
+#define UBOOT_MAGIC		    (0x43090000 | MACH_TYPE)
+#define CHIP_ID_BASE        0x10000000
+#define PKG_ID_BASE		    0x10000004
 
 /* Power Management is enabled */
 #define CONFIG_PM
@@ -257,31 +179,11 @@
 #define CONFIG_SD_UPDATE
 #endif
 
-//@@Robin
-#ifndef CONFIG_TA4
-
-#ifdef CONFIG_CLK_800_300_150
-#define CONFIG_PM_11V   /* ARM 1.1v, INT 1.1v */
-#else   /* default or CONFIG_CLK_1000_400_200 */
-//#define CONFIG_PM_12V   /* ARM 1.2v, INT 1.2v */
-#define CONFIG_PM_13V_12V	/* ARM 1.3v, INT 1.2v */
-#endif
-//@@Robin
-#endif
-
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
-
-#undef CONFIG_SKIP_RELOCATE_UBOOT
-#undef CONFIG_USE_NOR_BOOT
-
 /*
  * Size of malloc() pool
  */
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + 1024*1024)  /* 0x104000 */
-#define CFG_GBL_DATA_SIZE	128	/* size in bytes reserved for initial data */
-
-#define CFG_STACK_SIZE		512*1024
+#define CFG_GBL_DATA_SIZE	        128	/* size in bytes reserved for initial data */
 
 /*
  * select serial console configuration
@@ -294,13 +196,6 @@
 #endif
 
 #define CONFIG_CMDLINE_EDITING
-
-#undef CONFIG_S3C64XX_I2C		/* this board has H/W I2C */
-#ifdef CONFIG_S3C64XX_I2C
-#define CONFIG_HARD_I2C		1
-#define CFG_I2C_SPEED		50000
-#define CFG_I2C_SLAVE		0xFE
-#endif
 
 #define CONFIG_DOS_PARTITION
 #define CONFIG_SUPPORT_VFAT
@@ -322,37 +217,17 @@
 /***********************************************************
  * Command definition
  ***********************************************************/
-//#define CONFIG_CMD_CACHE
-//#define CONFIG_CMD_USB
-//#define CONFIG_CMD_REGINFO
-
-//#define	CONFIG_CMD_NAND
-//#define	CONFIG_CMD_FLASH
-
-//#define CONFIG_CMD_ONENAND
 #define CONFIG_CMD_MOVINAND
-
-//#define CONFIG_CMD_PING
-//#define CONFIG_CMD_DATE
 
 #include <config_cmd_default.h>
 
 #define CONFIG_CMD_ELF
-//#define CONFIG_CMD_I2C
 
 #define CONFIG_CMD_EXT2
 #define CONFIG_CMD_EXT4
 #define CONFIG_CMD_FAT
 
-#if defined(CONFIG_CMD_KGDB)
-#define CONFIG_KGDB_BAUDRATE	115200		/* speed to run kgdb serial port */
-/* what's this ? it's not used anywhere */
-#define CONFIG_KGDB_SER_INDEX	1		/* which serial port to use */
-#endif
-
-/*
- * Miscellaneous configurable options
- */
+/* * Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP                             /* undef to save memory         */
 #define CONFIG_SYS_PROMPT              "iTOP-4412 # "    /* Monitor Command Prompt       */
 
@@ -364,8 +239,6 @@
 #define CONFIG_SYS_MEMTEST_START	MEMORY_BASE_ADDRESS	/* memtest works on	*/
 
 #define CONFIG_SYS_MEMTEST_END		MEMORY_BASE_ADDRESS + 0x3E00000		/* 256 MB in DRAM	*/
-
-#undef CFG_CLKS_IN_HZ		/* everything, incl board info, in Hz */
 
 #define CONFIG_SYS_LOAD_ADDR		MEMORY_BASE_ADDRESS + 0x00100000	/* default load address	*/
 
@@ -386,27 +259,12 @@
 //#define CONFIG_MIU_1BIT_INTERLEAVED
 
 #define CONFIG_STACKSIZE	0x40000		/* regular stack 256KB */
-#ifdef CONFIG_USE_IRQ
-#define CONFIG_STACKSIZE_IRQ	(4*1024)	/* IRQ stack */
-#define CONFIG_STACKSIZE_FIQ	(4*1024)	/* FIQ stack */
-#endif
 
-// SMDKC210 POP-A(512MB)   : 2 banks
-// SMDKC210 POP-B(1024MB)  : 4 banks
 #define CONFIG_NR_DRAM_BANKS    8          	/* 8 banks of DRAM at maximum */
 
 //dg change for kinds of coreboard 2015-08-04
 #ifdef CONFIG_SCP_1GDDR
    #define SDRAM_BANK_SIZE            0x10000000/2	/* each bank has 128 MB */
-
-#elif defined(CONFIG_SCP_2GDDR)
-   #define SDRAM_BANK_SIZE            0x10000000	/* each bank has 256 MB */
-
-#elif defined(CONFIG_POP_1GDDR)
-   #define SDRAM_BANK_SIZE            0x10000000	/* each bank has 256 MB */
-
-#elif defined(CONFIG_POP_2GDDR)
-   #define SDRAM_BANK_SIZE            0x10000000	/* each bank has 256 MB */
 #endif
 
 
@@ -428,55 +286,18 @@
 #define PHYS_SDRAM_8_SIZE       (unsigned long)SDRAM_BANK_SIZE
 
 
-
-
-#define CFG_FLASH_BASE		0x80000000
-
-/*-----------------------------------------------------------------------
- * FLASH and environment organization
- */
-#define CONFIG_MX_LV640EB		/* MX29LV640EB */
-//#define CONFIG_AMD_LV800		/* AM29LV800BB */
-
-#define CFG_MAX_FLASH_BANKS	1	/* max number of memory banks */
-
-#if	defined(CONFIG_MX_LV640EB)
-#define CFG_MAX_FLASH_SECT	135
-#define PHYS_FLASH_SIZE		0x800000	/* 8MB */
-#elif	defined(CONFIG_AMD_LV800)
-#define CFG_MAX_FLASH_SECT	19
-#define PHYS_FLASH_SIZE		0x100000	/* 1MB */
-#else
-#define CFG_MAX_FLASH_SECT	512
-#define PHYS_FLASH_SIZE		0x100000	/* 1MB */
-#endif
-
-#define CFG_FLASH_LEGACY_512Kx16
-//#define CONFIG_FLASH_CFI_LEGACY
-#define CFG_FLASH_CFI
-
-/* timeout values are in ticks */
-#define CFG_FLASH_ERASE_TOUT	(5*CFG_HZ) /* Timeout for Flash Erase */
-#define CFG_FLASH_WRITE_TOUT	(5*CFG_HZ) /* Timeout for Flash Write */
-
-#define CFG_ENV_ADDR		0
 #define CONFIG_ENV_SIZE		0x4000	/* Total Size of Environment Sector */
 
 /*
  * SMDKC210 board specific data
  */
-
 #define CONFIG_IDENT_STRING	" for iTOP-4412 Android"
 
 /* total memory required by uboot */
 #define CFG_UBOOT_SIZE		(2*1024*1024)
 
  /* base address for uboot */
-//#ifdef CONFIG_ENABLE_MMU
-//#define CFG_UBOOT_BASE		0xc3e00000
-//#else
 #define CFG_UBOOT_BASE		0x43e00000
-//#endif
 
 #define CFG_PHY_UBOOT_BASE	MEMORY_BASE_ADDRESS + 0x3e00000
 #define CFG_PHY_KERNEL_BASE	MEMORY_BASE_ADDRESS + 0x8000
@@ -502,10 +323,6 @@
 #define CFG_NAND_HWECC
 #undef	CFG_NAND_FLASH_BBT
 
-/* IROM specific data */
-#define SDMMC_BLK_SIZE        (0xD003A500)
-#define COPY_SDMMC_TO_MEM     (0xD003E008)
-
 /*
  *  Fast Boot 
 */
@@ -518,16 +335,10 @@
 #define CFG_FASTBOOT_SDMMC_BLOCKSIZE            (512)   // Block size of sdmmc
 
 /* Just one BSP type should be defined. */
-#if defined(CONFIG_CMD_ONENAND) | defined(CONFIG_CMD_NAND) | defined(CONFIG_CMD_MOVINAND)
+#if defined(CONFIG_CMD_MOVINAND)
 #define CONFIG_FASTBOOT
 #endif
 
-#if defined(CONFIG_CMD_NAND)
-#define CFG_FASTBOOT_NANDBSP
-#endif
-#if defined(CONFIG_CMD_ONENAND)
-#define CFG_FASTBOOT_ONENANDBSP
-#endif
 #if defined(CONFIG_CMD_MOVINAND)
 #define CFG_FASTBOOT_SDMMCBSP
 #endif
@@ -576,11 +387,7 @@
 #define CONFIG_MTDPARTITION	"80000 400000 3000000"
 #define CONFIG_BOOTDELAY	2
 
-//#if defined (CONFIG_CMD_MOVINAND)
-//#define CONFIG_BOOTCOMMAND      "movi read kernel 40008000;movi read rootfs 40800000 100000;bootm 40008000 40800000"
-//#else
 #define CONFIG_BOOTCOMMAND	"onenand read 40008000 600000 300000;onenand read 40800000 b00000 100000;bootm 40008000 40800000"//"movi read kernel c0008000;bootm c0008000"
-//#endif
 
 /* OneNAND configuration */
 #define CFG_ONENAND_BASE 	(0x0C000000)
@@ -589,19 +396,11 @@
 #define CONFIG_SYS_ONENAND_BASE CFG_ONENAND_BASE
    
 #define CONFIG_BOOT_ONENAND_IROM
-//#define CONFIG_NAND
-//#define CONFIG_BOOT_NAND
 #define CONFIG_ONENAND
 #define ONENAND_REG_DBS_DFS_WIDTH 	(0x160)
 #define ONENAND_REG_FLASH_AUX_CNTRL     (0x300)
 
-#define GPNCON_OFFSET		0x830
-#define GPNDAT_OFFSET		0x834
-#define GPNPUD_OFFSET		0x838
-
 #define CONFIG_ENV_IS_IN_AUTO
-//#define CONFIG_ENV_IS_IN_NAND
-
 
 #define CONFIG_4212_AP10_BOOTLOADER "u-boot-exynos4212-evt0-nonfused.bin"
 #define CONFIG_4212_AP11_BOOTLOADER "u-boot-exynos4212-evt1-efused.bin"

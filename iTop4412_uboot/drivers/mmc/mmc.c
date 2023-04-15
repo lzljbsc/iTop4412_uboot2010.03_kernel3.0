@@ -1,28 +1,3 @@
-/*
- * Copyright 2008, Freescale Semiconductor, Inc
- * Andy Fleming
- *
- * Based vaguely on the Linux code
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-
 #include <config.h>
 #include <common.h>
 #include <command.h>
@@ -90,14 +65,6 @@ mmc_bread_primitive(int dev_num, ulong start, lbaint_t blkcnt, void *dst)
 
 	if (!host)
 		return 0;
-
-#if 0
-	/* We always do full block reads from the card */
-	err = mmc_set_blocklen(host, (1<<9));
-	if (err) {
-		return 0;
-	}
-#endif
 
 	if (blkcnt > 1)
 		cmd.cmdidx = MMC_CMD_READ_MULTIPLE_BLOCK;
@@ -188,9 +155,6 @@ mmc_bwrite(int dev_num, ulong start, lbaint_t blkcnt, const void*src)
 		return err;
 	}
 
-#if defined(CONFIG_VOGUES)
-	mmc_bread(dev_num, start, blkcnt, src);
-#endif
 	return blkcnt;
 }
 
@@ -375,11 +339,6 @@ int mmc_change_freq(struct mmc *mmc)
 	if (err)
 		return err;
 		
-	#if 0 //mj temp
-	if (ext_csd[212] || ext_csd[213] || ext_csd[214] || ext_csd[215])
-		mmc->high_capacity = 1;
-	#endif
-	
 	cardtype = ext_csd[196] & 0xf;
 	emmcdbg("cardtype: 0x%08x\n", cardtype);
 	/* Now check to see that it worked */
@@ -657,61 +616,6 @@ static int sd_decode_csd(struct mmc *host)
 	return 0;
 }
 
-#if 0
-/*
- * Given the decoded CSD structure, decode the raw CID to our CID structure.
- */
-static int mmc_decode_cid(struct mmc_card *card)
-{
-	u32 *resp = card->raw_cid;
-
-	/*
-	 * The selection of the format here is based upon published
-	 * specs from sandisk and from what people have reported.
-	 */
-	switch (card->csd.mmca_vsn) {
-	case 0: /* MMC v1.0 - v1.2 */
-	case 1: /* MMC v1.4 */
-		card->cid.manfid	= UNSTUFF_BITS(resp, 104, 24);
-		card->cid.prod_name[0]	= UNSTUFF_BITS(resp, 96, 8);
-		card->cid.prod_name[1]	= UNSTUFF_BITS(resp, 88, 8);
-		card->cid.prod_name[2]	= UNSTUFF_BITS(resp, 80, 8);
-		card->cid.prod_name[3]	= UNSTUFF_BITS(resp, 72, 8);
-		card->cid.prod_name[4]	= UNSTUFF_BITS(resp, 64, 8);
-		card->cid.prod_name[5]	= UNSTUFF_BITS(resp, 56, 8);
-		card->cid.prod_name[6]	= UNSTUFF_BITS(resp, 48, 8);
-		card->cid.hwrev		= UNSTUFF_BITS(resp, 44, 4);
-		card->cid.fwrev		= UNSTUFF_BITS(resp, 40, 4);
-		card->cid.serial	= UNSTUFF_BITS(resp, 16, 24);
-		card->cid.month		= UNSTUFF_BITS(resp, 12, 4);
-		card->cid.year		= UNSTUFF_BITS(resp, 8, 4) + 1997;
-		break;
-
-	case 2: /* MMC v2.0 - v2.2 */
-	case 3: /* MMC v3.1 - v3.3 */
-	case 4: /* MMC v4 */
-		card->cid.manfid	= UNSTUFF_BITS(resp, 120, 8);
-		card->cid.oemid		= UNSTUFF_BITS(resp, 104, 16);
-		card->cid.prod_name[0]	= UNSTUFF_BITS(resp, 96, 8);
-		card->cid.prod_name[1]	= UNSTUFF_BITS(resp, 88, 8);
-		card->cid.prod_name[2]	= UNSTUFF_BITS(resp, 80, 8);
-		card->cid.prod_name[3]	= UNSTUFF_BITS(resp, 72, 8);
-		card->cid.prod_name[4]	= UNSTUFF_BITS(resp, 64, 8);
-		card->cid.prod_name[5]	= UNSTUFF_BITS(resp, 56, 8);
-		card->cid.serial	= UNSTUFF_BITS(resp, 16, 32);
-		card->cid.month		= UNSTUFF_BITS(resp, 12, 4);
-		card->cid.year		= UNSTUFF_BITS(resp, 8, 4) + 1997;
-		break;
-
-	default:
-		printk(KERN_ERR "%s: card has unknown MMCA version %d\n",
-			mmc_hostname(card->host), card->csd.mmca_vsn);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif
 
 /*
  * Given a 128-bit response, decode to our card CSD structure.
@@ -784,17 +688,6 @@ static int mmc_decode_csd(struct mmc *host)
 	emmcdbg("host->read_bl_len:%d \n",host->read_bl_len);
 	emmcdbg("host->write_bl_len :%d \n",host->write_bl_len );
 	emmcdbg("host->capacity:%x \n",host->capacity);
-	/*---chang the readlen----*/
-	#if 0
-	if((host->read_bl_len>512)||(host->write_bl_len>512))
-	{
-		printf("Change the read/write length and capacity");
-		host->capacity = host->capacity*2;
-		host->read_bl_len = 512;
-		emmcdbg("host->capacity:%x \n",host->capacity);
-		emmcdbg("host->read_bl_len:%d \n",host->read_bl_len);
-	}
-	#endif
 	return 0;
 }
 
@@ -854,13 +747,7 @@ static int mmc_read_ext_csd(struct mmc *host)
 	ext_csd_struct = ext_csd[EXT_CSD_REV];
 	host->ext_csd.boot_size_multi = ext_csd[BOOT_SIZE_MULTI];//mj
 	
-	/* modify by cym 20140416 */
-#if 0
-	if (ext_csd_struct > 5) {
-#else
 	if ((ext_csd_struct > 5) && (7 != ext_csd_struct)) {
-#endif
-	/* end modify */
 		printf("unrecognised EXT_CSD structure "
 			"version %d\n", ext_csd_struct);
 		err = -1;
@@ -1250,9 +1137,6 @@ int mmc_initialize(bd_t *bis)
 	if (board_mmc_init(bis) < 0)
 		cpu_mmc_init(bis);
 
-#if defined(DEBUG_S3C_HSMMC)
-	print_mmc_devices(',');
-#endif
 	for (dev = 0; dev < cur_dev_num; dev++) 
 	{
 		mmc = find_mmc_device(dev);

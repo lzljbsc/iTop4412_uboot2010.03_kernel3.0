@@ -1,29 +1,3 @@
-/*
- * (C) Copyright 2000-2002
- * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
- *
- * (C) Copyright 2001 Sysgo Real-Time Solutions, GmbH <www.elinos.com>
- * Andreas Heppel <aheppel@sysgo.de>
-
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-
 /**************************************************************************
  *
  * Support for persistent environment data
@@ -42,32 +16,14 @@
 #include <common.h>
 #include <command.h>
 #include <environment.h>
-#if defined(CONFIG_CMD_EDITENV)
 #include <malloc.h>
-#endif
 #include <watchdog.h>
 #include <serial.h>
 #include <linux/stddef.h>
 #include <asm/byteorder.h>
-#if defined(CONFIG_CMD_NET)
 #include <net.h>
-#endif
 
 DECLARE_GLOBAL_DATA_PTR;
-
-#if !defined(CONFIG_ENV_IS_IN_EEPROM)	&& \
-    !defined(CONFIG_ENV_IS_IN_FLASH)	&& \
-    !defined(CONFIG_ENV_IS_IN_DATAFLASH)	&& \
-    !defined(CONFIG_ENV_IS_IN_MG_DISK)	&& \
-    !defined(CONFIG_ENV_IS_IN_NAND)	&& \
-    !defined(CONFIG_ENV_IS_IN_NVRAM)	&& \
-    !defined(CONFIG_ENV_IS_IN_ONENAND)	&& \
-    !defined(CONFIG_ENV_IS_IN_SPI_FLASH)	&& \
-    !defined(CONFIG_ENV_IS_IN_AUTO)	&& \
-    !defined(CONFIG_ENV_IS_NOWHERE)
-# error Define one of CONFIG_ENV_IS_IN_{EEPROM|FLASH|DATAFLASH|ONENAND|\
-SPI_FLASH|MG_DISK|NVRAM|AUTO|NOWHERE}
-#endif
 
 #define XMK_STR(x)	#x
 #define MK_STR(x)	XMK_STR(x)
@@ -221,49 +177,15 @@ int _do_setenv (int flag, int argc, char *argv[])
 			return 1;
 		}
 
-#ifdef CONFIG_CONSOLE_MUX
-		i = iomux_doenv(console, argv[2]);
-		if (i)
-			return i;
-#else
 		/* Try assigning specified device */
 		if (console_assign (console, argv[2]) < 0)
 			return 1;
-
-#ifdef CONFIG_SERIAL_MULTI
-		if (serial_assign (argv[2]) < 0)
-			return 1;
-#endif
-#endif /* CONFIG_CONSOLE_MUX */
 	}
 
 	/*
 	 * Delete any existing definition
 	 */
 	if (oldval >= 0) {
-#ifndef CONFIG_ENV_OVERWRITE
-
-		/*
-		 * Ethernet Address and serial# can be set only once,
-		 * ver is readonly.
-		 */
-		if (
-#ifdef CONFIG_HAS_UID
-		/* Allow serial# forced overwrite with 0xdeaf4add flag */
-		    ((strcmp (name, "serial#") == 0) && (flag != 0xdeaf4add)) ||
-#else
-		    (strcmp (name, "serial#") == 0) ||
-#endif
-		    ((strcmp (name, "ethaddr") == 0)
-#if defined(CONFIG_OVERWRITE_ETHADDR_ONCE) && defined(CONFIG_ETHADDR)
-		     && (strcmp ((char *)env_get_addr(oldval),MK_STR(CONFIG_ETHADDR)) != 0)
-#endif	/* CONFIG_OVERWRITE_ETHADDR_ONCE && CONFIG_ETHADDR */
-		    ) ) {
-			printf ("Can't overwrite \"%s\"\n", name);
-			return 1;
-		}
-#endif
-
 		/*
 		 * Switch to new baudrate if new baudrate is supported
 		 */
@@ -283,9 +205,6 @@ int _do_setenv (int flag, int argc, char *argv[])
 				baudrate);
 			udelay(50000);
 			gd->baudrate = baudrate;
-#if defined(CONFIG_PPC) || defined(CONFIG_MCF52x2)
-			gd->bd->bi_baudrate = baudrate;
-#endif
 
 			serial_setbrg ();
 			udelay(50000);
@@ -380,23 +299,6 @@ int _do_setenv (int flag, int argc, char *argv[])
 		load_addr = simple_strtoul(argv[2], NULL, 16);
 		return 0;
 	}
-#if defined(CONFIG_CMD_NET)
-	if (strcmp(argv[1],"bootfile") == 0) {
-		copy_filename (BootFile, argv[2], sizeof(BootFile));
-		return 0;
-	}
-#endif
-
-#ifdef CONFIG_AMIGAONEG3SE
-	if (strcmp(argv[1], "vga_fg_color") == 0 ||
-	    strcmp(argv[1], "vga_bg_color") == 0 ) {
-		extern void video_set_color(unsigned char attr);
-		extern unsigned char video_get_attr(void);
-
-		video_set_color(video_get_attr());
-		return 0;
-	}
-#endif	/* CONFIG_AMIGAONEG3SE */
 
 	return 0;
 }
@@ -410,14 +312,6 @@ int setenv (char *varname, char *varvalue)
 		return _do_setenv (0, 3, argv);
 }
 
-#ifdef CONFIG_HAS_UID
-void forceenv (char *varname, char *varvalue)
-{
-	char *argv[4] = { "forceenv", varname, varvalue, NULL };
-	_do_setenv (0xdeaf4add, 3, argv);
-}
-#endif
-
 int do_setenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	if (argc < 2) {
@@ -427,84 +321,6 @@ int do_setenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 	return _do_setenv (flag, argc, argv);
 }
-
-/************************************************************************
- * Prompt for environment variable
- */
-
-#if defined(CONFIG_CMD_ASKENV)
-int do_askenv ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
-{
-	extern char console_buffer[CONFIG_SYS_CBSIZE];
-	char message[CONFIG_SYS_CBSIZE];
-	int size = CONFIG_SYS_CBSIZE - 1;
-	int len;
-	char *local_args[4];
-
-	local_args[0] = argv[0];
-	local_args[1] = argv[1];
-	local_args[2] = NULL;
-	local_args[3] = NULL;
-
-	if (argc < 2) {
-		cmd_usage(cmdtp);
-		return 1;
-	}
-	/* Check the syntax */
-	switch (argc) {
-	case 1:
-		cmd_usage(cmdtp);
-		return 1;
-
-	case 2:		/* askenv envname */
-		sprintf (message, "Please enter '%s':", argv[1]);
-		break;
-
-	case 3:		/* askenv envname size */
-		sprintf (message, "Please enter '%s':", argv[1]);
-		size = simple_strtoul (argv[2], NULL, 10);
-		break;
-
-	default:	/* askenv envname message1 ... messagen size */
-	    {
-		int i;
-		int pos = 0;
-
-		for (i = 2; i < argc - 1; i++) {
-			if (pos) {
-				message[pos++] = ' ';
-			}
-			strcpy (message+pos, argv[i]);
-			pos += strlen(argv[i]);
-		}
-		message[pos] = '\0';
-		size = simple_strtoul (argv[argc - 1], NULL, 10);
-	    }
-		break;
-	}
-
-	if (size >= CONFIG_SYS_CBSIZE)
-		size = CONFIG_SYS_CBSIZE - 1;
-
-	if (size <= 0)
-		return 1;
-
-	/* prompt for input */
-	len = readline (message);
-
-	if (size < len)
-		console_buffer[size] = '\0';
-
-	len = 2;
-	if (console_buffer[0] != '\0') {
-		local_args[2] = console_buffer;
-		len = 3;
-	}
-
-	/* Continue calling setenv code */
-	return _do_setenv (flag, len, local_args);
-}
-#endif
 
 /************************************************************************
  * Interactively edit an environment variable
@@ -587,12 +403,6 @@ int getenv_r (char *name, char *buf, unsigned len)
 	return (-1);
 }
 
-#if ((defined(CFG_ENV_IS_IN_NVRAM) || defined(CFG_ENV_IS_IN_EEPROM) \
-	|| (defined(CONFIG_CMD_ENV) && defined(CONFIG_CMD_FLASH)) \
-	|| (defined(CONFIG_CMD_ENV) && defined(CONFIG_CMD_NAND)) \
-	|| (defined(CONFIG_CMD_ENV) && defined(CONFIG_CMD_ONENAND)) \
-	|| (defined(CONFIG_CMD_ENV) && defined(CONFIG_CMD_MOVINAND)) \
-	|| (defined(CONFIG_FASTBOOT) && !defined(CFG_ENV_IS_NOWHERE))))
 int do_saveenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	extern char * env_name_spec;
@@ -607,8 +417,6 @@ U_BOOT_CMD(
 	"save environment variables to persistent storage",
 	""
 );
-
-#endif
 
 
 /************************************************************************
@@ -658,23 +466,6 @@ U_BOOT_CMD(
 	"setenv name\n"
 	"    - delete environment variable 'name'"
 );
-
-#if defined(CONFIG_CMD_ASKENV)
-
-U_BOOT_CMD(
-	askenv,	CONFIG_SYS_MAXARGS,	1,	do_askenv,
-	"get environment variables from stdin",
-	"name [message] [size]\n"
-	"    - get environment variable 'name' from stdin (max 'size' chars)\n"
-	"askenv name\n"
-	"    - get environment variable 'name' from stdin\n"
-	"askenv name size\n"
-	"    - get environment variable 'name' from stdin (max 'size' chars)\n"
-	"askenv name [message] size\n"
-	"    - display 'message' string and get environment variable 'name'"
-	"from stdin (max 'size' chars)"
-);
-#endif
 
 #if defined(CONFIG_CMD_RUN)
 int do_run (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);

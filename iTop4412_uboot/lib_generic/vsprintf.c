@@ -15,11 +15,9 @@
 #include <linux/ctype.h>
 
 #include <common.h>
-#if !defined (CONFIG_PANIC_HANG)
 #include <command.h>
 /*cmd_boot.c*/
 extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
-#endif
 
 #include <div64.h>
 # define NUM_TYPE long long
@@ -351,64 +349,6 @@ static char *string(char *buf, char *s, int field_width, int precision, int flag
 	return buf;
 }
 
-#ifdef CONFIG_CMD_NET
-static char *mac_address_string(char *buf, u8 *addr, int field_width,
-				int precision, int flags)
-{
-	char mac_addr[6 * 3]; /* (6 * 2 hex digits), 5 colons and trailing zero */
-	char *p = mac_addr;
-	int i;
-
-	for (i = 0; i < 6; i++) {
-		p = pack_hex_byte(p, addr[i]);
-		if (!(flags & SPECIAL) && i != 5)
-			*p++ = ':';
-	}
-	*p = '\0';
-
-	return string(buf, mac_addr, field_width, precision, flags & ~SPECIAL);
-}
-
-static char *ip6_addr_string(char *buf, u8 *addr, int field_width,
-			 int precision, int flags)
-{
-	char ip6_addr[8 * 5]; /* (8 * 4 hex digits), 7 colons and trailing zero */
-	char *p = ip6_addr;
-	int i;
-
-	for (i = 0; i < 8; i++) {
-		p = pack_hex_byte(p, addr[2 * i]);
-		p = pack_hex_byte(p, addr[2 * i + 1]);
-		if (!(flags & SPECIAL) && i != 7)
-			*p++ = ':';
-	}
-	*p = '\0';
-
-	return string(buf, ip6_addr, field_width, precision, flags & ~SPECIAL);
-}
-
-static char *ip4_addr_string(char *buf, u8 *addr, int field_width,
-			 int precision, int flags)
-{
-	char ip4_addr[4 * 4]; /* (4 * 3 decimal digits), 3 dots and trailing zero */
-	char temp[3];	/* hold each IP quad in reverse order */
-	char *p = ip4_addr;
-	int i, digits;
-
-	for (i = 0; i < 4; i++) {
-		digits = put_dec_trunc(temp, addr[i]) - temp;
-		/* reverse the digits in the quad */
-		while (digits--)
-			*p++ = temp[digits];
-		if (i != 3)
-			*p++ = '.';
-	}
-	*p = '\0';
-
-	return string(buf, ip4_addr, field_width, precision, flags & ~SPECIAL);
-}
-#endif
-
 /*
  * Show a '%p' thing.  A kernel extension is that the '%p' is followed
  * by an extra set of alphanumeric characters that are extended format
@@ -432,25 +372,6 @@ static char *pointer(const char *fmt, char *buf, void *ptr, int field_width, int
 	if (!ptr)
 		return string(buf, "(null)", field_width, precision, flags);
 
-#ifdef CONFIG_CMD_NET
-	switch (*fmt) {
-	case 'm':
-		flags |= SPECIAL;
-		/* Fallthrough */
-	case 'M':
-		return mac_address_string(buf, ptr, field_width, precision, flags);
-	case 'i':
-		flags |= SPECIAL;
-		/* Fallthrough */
-	case 'I':
-		if (fmt[1] == '6')
-			return ip6_addr_string(buf, ptr, field_width, precision, flags);
-		if (fmt[1] == '4')
-			return ip4_addr_string(buf, ptr, field_width, precision, flags);
-		flags &= ~SPECIAL;
-		break;
-	}
-#endif
 	flags |= SMALL;
 	if (field_width == -1) {
 		field_width = 2*sizeof(void *);
@@ -672,10 +593,6 @@ void panic(const char *fmt, ...)
 	vprintf(fmt, args);
 	putc('\n');
 	va_end(args);
-#if defined (CONFIG_PANIC_HANG)
-	hang();
-#else
 	udelay (100000);	/* allow messages to go out */
 	do_reset (NULL, 0, 0, NULL);
-#endif
 }

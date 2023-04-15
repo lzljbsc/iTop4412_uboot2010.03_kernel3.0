@@ -11,13 +11,6 @@
 #define dbg(x...)	do { } while (0)
 #endif
 
-//#ifndef SMDK4212_ID
-//#define SMDK4212_ID 0x43220000
-//#endif
-//#ifndef SMDK4412_ID
-//#define SMDK4412_ID 0xE4412000
-//#endif
-
 extern unsigned int OmPin;
 extern unsigned int s5pc210_cpu_id;
 extern int dev_number_write;
@@ -281,35 +274,6 @@ int do_movi(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		return 1;
 	}
 
-#if defined(CONFIG_SECURE)
-	
-	/* u-boot r/w */
-	if (attribute == 0x2) {
-		/* on write case we should write BL2 1st. */
-		if (rw) {
-			start_blk = raw_area_control.image[1].start_blk;
-			blkcnt = raw_area_control.image[1].used_blk;
-			printf("Writing BL1 to sector %ld (%ld sectors).. ",
-					start_blk, blkcnt);
-			movi_calc_checksum_bl1(addr);
-		}
-		
-		for (i=0, image = raw_area_control.image; i<15; i++) {
-			if (image[i].attribute == attribute)
-				break;
-		}
-		start_blk = image[i].start_blk;
-		blkcnt = image[i].used_blk;
-		printf("%s bootloader.. %ld, %ld ", rw ? "writing":"reading",
-				start_blk, blkcnt);
-		sprintf(run_cmd,"mmc %s 0 0x%lx 0x%lx 0x%lx",
-				rw ? "write":"read",
-				addr, start_blk, blkcnt);
-		run_command(run_cmd, 0);
-		printf("completed\n");
-		return 1;		
-		
-#else	/* NOT CONFIG_SECURE */
 	/* u-boot r/w */
 	if (attribute == 0x2) {
 		#if 0//ly: we don't need it 
@@ -339,7 +303,7 @@ int do_movi(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		printf("completed\n");
 		return 1;
 	}
-#endif		
+
 	/* u-boot r/w for emmc*/
 	if (attribute == 0x20) {
 

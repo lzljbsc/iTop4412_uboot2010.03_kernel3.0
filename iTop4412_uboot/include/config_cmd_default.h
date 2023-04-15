@@ -1,11 +1,3 @@
-/*
- * Copyright 2007 Freescale Semiconductor, Inc.
- *
- * This file is licensed under the terms of the GNU General Public
- * License Version 2. This file is licensed "as is" without any
- * warranty of any kind, whether express or implied.
- */
-
 #ifndef _CONFIG_CMD_DEFAULT_H
 #define _CONFIG_CMD_DEFAULT_H
 
@@ -24,10 +16,6 @@
 #define CONFIG_CMD_FPGA		/* FPGA configuration Support	*/
 #define CONFIG_CMD_IMI		/* iminfo			*/
 #define CONFIG_CMD_ITEST	/* Integer (and string) test	*/
-#ifndef CONFIG_SYS_NO_FLASH
-#define CONFIG_CMD_FLASH	/* flinfo, erase, protect	*/
-#define CONFIG_CMD_IMLS		/* List all found images	*/
-#endif
 #define CONFIG_CMD_LOADB	/* loadb			*/
 #define CONFIG_CMD_LOADS	/* loads			*/
 #define CONFIG_CMD_MEMORY	/* md mm nm mw cp cmp crc base loop mtest */

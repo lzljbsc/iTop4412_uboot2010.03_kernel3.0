@@ -251,16 +251,6 @@
 extern "C" {
 #endif
 
-#if 0	/* not for U-Boot */
-#include <stdio.h>	/* needed for malloc_stats */
-#endif
-
-
-/*
-  Compile-time options
-*/
-
-
 /*
     Debugging:
 
@@ -285,12 +275,7 @@ extern "C" {
 
 */
 
-#ifdef DEBUG
-/* #include <assert.h> */
 #define assert(x) ((void)0)
-#else
-#define assert(x) ((void)0)
-#endif
 
 
 /*
@@ -302,9 +287,7 @@ extern "C" {
   to set this. However, the default version is the same as size_t.
 */
 
-#ifndef INTERNAL_SIZE_T
 #define INTERNAL_SIZE_T size_t
-#endif
 
 /*
   REALLOC_ZERO_BYTES_FREES should be set if a call to
@@ -315,33 +298,6 @@ extern "C" {
 
 
 /*   #define REALLOC_ZERO_BYTES_FREES */
-
-
-/*
-  WIN32 causes an emulation of sbrk to be compiled in
-  mmap-based options are not currently supported in WIN32.
-*/
-
-/* #define WIN32 */
-#ifdef WIN32
-#define MORECORE wsbrk
-#define HAVE_MMAP 0
-
-#define LACKS_UNISTD_H
-#define LACKS_SYS_PARAM_H
-
-/*
-  Include 'windows.h' to get the necessary declarations for the
-  Microsoft Visual C++ data structures and routines used in the 'sbrk'
-  emulation.
-
-  Define WIN32_LEAN_AND_MEAN so that only the essential Microsoft
-  Visual C++ header files are included.
-*/
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
 
 /*
   HAVE_MEMCPY should be defined if you are not otherwise using
@@ -358,13 +314,7 @@ extern "C" {
 
 #define HAVE_MEMCPY
 
-#ifndef USE_MEMCPY
-#ifdef HAVE_MEMCPY
 #define USE_MEMCPY 1
-#else
-#define USE_MEMCPY 0
-#endif
-#endif
 
 #if (__STD_C || defined(HAVE_MEMCPY))
 
@@ -372,17 +322,10 @@ extern "C" {
 void* memset(void*, int, size_t);
 void* memcpy(void*, const void*, size_t);
 #else
-#ifdef WIN32
-/* On Win32 platforms, 'memset()' and 'memcpy()' are already declared in */
-/* 'windows.h' */
-#else
 Void_t* memset();
 Void_t* memcpy();
 #endif
 #endif
-#endif
-
-#if USE_MEMCPY
 
 /* The following macros are only invoked with (2n+1)-multiples of
    INTERNAL_SIZE_T units, with a positive integer n. This is exploited
@@ -423,47 +366,6 @@ do {                                                                          \
   } else memcpy(dest, src, mcsz);                                             \
 } while(0)
 
-#else /* !USE_MEMCPY */
-
-/* Use Duff's device for good zeroing/copying performance. */
-
-#define MALLOC_ZERO(charp, nbytes)                                            \
-do {                                                                          \
-  INTERNAL_SIZE_T* mzp = (INTERNAL_SIZE_T*)(charp);                           \
-  long mctmp = (nbytes)/sizeof(INTERNAL_SIZE_T), mcn;                         \
-  if (mctmp < 8) mcn = 0; else { mcn = (mctmp-1)/8; mctmp %= 8; }             \
-  switch (mctmp) {                                                            \
-    case 0: for(;;) { *mzp++ = 0;                                             \
-    case 7:           *mzp++ = 0;                                             \
-    case 6:           *mzp++ = 0;                                             \
-    case 5:           *mzp++ = 0;                                             \
-    case 4:           *mzp++ = 0;                                             \
-    case 3:           *mzp++ = 0;                                             \
-    case 2:           *mzp++ = 0;                                             \
-    case 1:           *mzp++ = 0; if(mcn <= 0) break; mcn--; }                \
-  }                                                                           \
-} while(0)
-
-#define MALLOC_COPY(dest,src,nbytes)                                          \
-do {                                                                          \
-  INTERNAL_SIZE_T* mcsrc = (INTERNAL_SIZE_T*) src;                            \
-  INTERNAL_SIZE_T* mcdst = (INTERNAL_SIZE_T*) dest;                           \
-  long mctmp = (nbytes)/sizeof(INTERNAL_SIZE_T), mcn;                         \
-  if (mctmp < 8) mcn = 0; else { mcn = (mctmp-1)/8; mctmp %= 8; }             \
-  switch (mctmp) {                                                            \
-    case 0: for(;;) { *mcdst++ = *mcsrc++;                                    \
-    case 7:           *mcdst++ = *mcsrc++;                                    \
-    case 6:           *mcdst++ = *mcsrc++;                                    \
-    case 5:           *mcdst++ = *mcsrc++;                                    \
-    case 4:           *mcdst++ = *mcsrc++;                                    \
-    case 3:           *mcdst++ = *mcsrc++;                                    \
-    case 2:           *mcdst++ = *mcsrc++;                                    \
-    case 1:           *mcdst++ = *mcsrc++; if(mcn <= 0) break; mcn--; }       \
-  }                                                                           \
-} while(0)
-
-#endif
-
 
 /*
   Define HAVE_MMAP to optionally make malloc() use mmap() to
@@ -494,18 +396,6 @@ do {                                                                          \
 #endif
 ***/
 #undef	HAVE_MREMAP	/* Not available for U-Boot */
-
-#if HAVE_MMAP
-
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-
-#if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
-#define MAP_ANONYMOUS MAP_ANON
-#endif
-
-#endif /* HAVE_MMAP */
 
 /*
   Access to system page size. To the extent possible, this malloc

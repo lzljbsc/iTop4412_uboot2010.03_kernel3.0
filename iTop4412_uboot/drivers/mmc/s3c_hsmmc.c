@@ -1,30 +1,3 @@
-/*
- * Copyright 2007, Freescale Semiconductor, Inc
- * Andy Fleming
- *
- * Based vaguely on the pxa mmc code:
- * (C) Copyright 2003
- * Kyle Harris, Nexus Technologies, Inc. kharris@nexus-tech.net
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-
 #include <config.h>
 #include <common.h>
 #include <command.h>
@@ -39,20 +12,12 @@
 void set_hsmmc_pre_ratio (uint clock);
 
 DECLARE_GLOBAL_DATA_PTR;
-//#define DEBUG_S3C_HSMMC
-#ifdef DEBUG_S3C_HSMMC
-#define dbg(x...)       printf(x)
-#else
+
 #define dbg(x...)       do { } while (0)
-#endif
 
-#ifndef printk
 #define printk printf
-#endif
 
-#ifndef mdelay
 #define mdelay(x)	udelay(1000*x)
-#endif
 
 extern struct mmc mmc_channel[MMC_MAX_CHANNEL];
 
@@ -404,11 +369,6 @@ static int s3c_hsmmc_initialize(int channel)
 	case 2:
 		mmc_host[channel].ioaddr = (void *)ELFIN_HSMMC_2_BASE;
 		break;
-#ifdef USE_MMC3
-	case 3:
-		mmc_host[channel].ioaddr = (void *)ELFIN_HSMMC_3_BASE;
-		break;
-#endif
 	default:
 		printk("mmc err: not supported channel %d\n", channel);
 	}
@@ -418,45 +378,11 @@ static int s3c_hsmmc_initialize(int channel)
 
 int smdk_s3c_hsmmc_init(void)
 {
-#ifdef OM_PIN
-	if(OM_PIN == SDMMC_CHANNEL0) {
-		int err;
-		printk("SD/MMC channel0 is selected for booting device.\n");
-		err = s3c_hsmmc_initialize(0);
-		return err;
-	} else if (OM_PIN == SDMMC_CHANNEL1) {
-		int err;
-		printk("SD/MMC channel1 is selected for booting device.\n");
-		err = s3c_hsmmc_initialize(1);
-		return err;
-	} else
-		printk("SD/MMC isn't selected for booting device.\n");
-#endif
-
 	int err;
 
-#ifdef USE_MMC0
-	err = s3c_hsmmc_initialize(0);
-	if(err)
-		return err;
-#endif
-
-#ifdef USE_MMC1
-	err = s3c_hsmmc_initialize(1);
-	if(err)
-		return err;
-#endif	
-
-#ifdef USE_MMC2
 	err = s3c_hsmmc_initialize(2);
 	if(err)
 		return err;
-#endif	
 
-#ifdef USE_MMC3
-	err = s3c_hsmmc_initialize(3);
-	if(err)
-		return err;
-#endif
 	return -1;
 }

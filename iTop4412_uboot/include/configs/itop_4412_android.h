@@ -135,12 +135,7 @@
 
 /* MMU Setting  */
 #define CONFIG_ENABLE_MMU
-
-#ifdef CONFIG_ENABLE_MMU
 #define virt_to_phys(x)	virt_to_phy_smdkc210(x)
-#else
-#define virt_to_phys(x)	(x)
-#endif
 
 #define CONFIG_MEMORY_UPPER_CODE
 
@@ -172,12 +167,8 @@
 
 #define CONFIG_TA4
 
-//#define CONFIG_SD_UPDATE
 #define CONFIG_SD_AUTOUPDATE
-
-#ifdef CONFIG_SD_AUTOUPDATE
 #define CONFIG_SD_UPDATE
-#endif
 
 /*
  * Size of malloc() pool
@@ -191,9 +182,7 @@
 #define CONFIG_SERIAL3          1	/* we use UART2 on TA4 */
 
 #define CFG_HUSH_PARSER			/* use "hush" command parser	*/
-#ifdef CFG_HUSH_PARSER
 #define CFG_PROMPT_HUSH_PS2	"> "
-#endif
 
 #define CONFIG_CMDLINE_EDITING
 
@@ -366,7 +355,6 @@
 #define CONFIG_S5P_MSHC
 #define CONFIG_EMMC		1		
 #define USE_MMC4  
-//#define CONFIG_EMMC_8Bit
 #define CONFIG_EMMC_EMERGENCY
 #endif
 
@@ -414,14 +402,7 @@
 
 #define CONFIG_TRUSTZONE
 
-#define DEBUG_TC4
-#undef DEBUG_TC4
-#ifdef DEBUG_TC4
-
-#define emmcdbg(fmt,args...) printf(fmt ,##args) //for emmc dbg
-#define sddbg(fmt,args...) printf(fmt ,##args) //for emmc dbg
-#else
 #define emmcdbg(fmt,args...)
 #define sddbg(fmt,args...)
-#endif
+
 #endif	/* __CONFIG_H */

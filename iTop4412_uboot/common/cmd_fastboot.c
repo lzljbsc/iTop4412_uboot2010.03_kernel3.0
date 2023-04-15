@@ -78,14 +78,6 @@
 #endif
 #include <decompress_ext4.h>
 
-//#ifndef SMDK4212_ID
-//#define SMDK4212_ID 0x43220000
-//#endif
-//#ifndef SMDK4412_ID
-//#define SMDK4412_ID 0xE4412000
-//#endif
-
-
 extern unsigned int OmPin;
 extern unsigned int s5pc210_cpu_id;
 extern int Is_TC4_Dvt;
@@ -104,16 +96,6 @@ int do_setenv ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 /* Use do_bootm and do_go for fastboot's 'boot' command */
 int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
-
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-#define CFG_FASTBOOT_FLASHCMD			do_onenand
-/* Use do_onenand for fastboot's flash commands */
-extern int do_onenand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
-#elif defined(CFG_FASTBOOT_NANDBSP)
-#define CFG_FASTBOOT_FLASHCMD			do_nand
-/* Use do_nand for fastboot's flash commands */
-extern int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
-#endif
 
 #if defined(CFG_FASTBOOT_SDMMCBSP)
 int do_movi(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
@@ -410,76 +392,6 @@ static int saveenv_to_ptn(struct fastboot_ptentry *ptn, char *err_string)
 	return ret;
 }
 
-#if defined(CFG_FASTBOOT_ONENANDBSP) || defined(CFG_FASTBOOT_NANDBSP)
-static int write_to_ptn(struct fastboot_ptentry *ptn, unsigned int addr, unsigned int size)
-{
-	int ret = 1;
-	char start[32], length[32];
-	char wstart[32], wlength[32], wbuffer[32];
-	char write_type[32];
-
-	/* do_nand and do_onenand do not check argv[0] */
-	char *argv_erase[5]  = { NULL, "erase",  NULL, NULL, NULL, };
-	char *argv_write[6]  = { NULL, NULL,  NULL, NULL, NULL, NULL, };
-
-	argv_erase[2] = start;
-	argv_erase[3] = length;
-
-	argv_write[1] = write_type;
-	argv_write[2] = wbuffer;
-	argv_write[3] = wstart;
-	argv_write[4] = wlength;
-
-	printf("flashing '%s'\n", ptn->name);
-
-	sprintf(start, "0x%x", ptn->start);
-	if (ptn->length == 0)
-	{
-		CFG_FASTBOOT_FLASHCMD(NULL, 0, 3, argv_erase);
-	}
-	else
-	{
-		sprintf(length, "0x%x", ptn->length);
-		CFG_FASTBOOT_FLASHCMD(NULL, 0, 4, argv_erase);
-	}
-
-	/* Which flavor of write to use */
-	if (ptn->flags & FASTBOOT_PTENTRY_FLAGS_WRITE_YAFFS)
-	{
-		sprintf(write_type, "write.yaffs");
-		sprintf(wlength, "0x%x", size);
-	}
-	else
-	{
-		sprintf(write_type, "write");
-		if (interface.nand_block_size &&
-			(size % interface.nand_block_size))
-		{
-			size = (size + interface.nand_block_size - 1)
-					/ interface.nand_block_size * interface.nand_block_size;
-			size += 0x20000;
-		}
-		sprintf(wlength, "0x%x", size);
-	}
-	sprintf(wbuffer, "0x%x", addr);
-	sprintf(wstart, "0x%x", ptn->start);
-
-
-	ret = CFG_FASTBOOT_FLASHCMD(NULL, 0, 5, argv_write);
-
-#if 0
-	if (0 == repeat) {
-		if (ret) /* failed */
-			save_block_values(ptn, 0, 0);
-		else     /* success */
-			save_block_values(ptn, ptn->start, download_bytes);
-	}
-#endif
-
-	return ret;
-}
-#endif
-
 #if defined(CFG_FASTBOOT_SDMMCBSP)
 static int write_to_ptn_sdmmc(struct fastboot_ptentry *ptn, unsigned int addr, unsigned int size)
 {
@@ -509,13 +421,6 @@ static int write_to_ptn_sdmmc(struct fastboot_ptentry *ptn, unsigned int addr, u
 		sprintf(buffer, "0x%x", addr);
 		sprintf(start, "0x%x", (ptn->start / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
 		sprintf(length, "0x%x", (ptn->length / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
-#if 0
-#if defined(CONFIG_SECURE)
-		ret = do_mmcops_secure(NULL, 0, 6, argv);
-#else
-		ret = do_mmcops(NULL, 0, 6, argv);
-#endif
-#endif
 		if (check_compress_ext4((char*)addr,ptn->length) != 0) {
 			ret = do_mmcops(NULL, 0, 6, argv);
 		} else {
@@ -806,22 +711,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			}
 //#else
 			else if(OmPin == BOOT_ONENAND) {
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-				int argc_erase = 4;
-				/* do_nand and do_onenand do not check argv[0] */
-				char *argv_erase[5]  = { NULL, "erase",  NULL, NULL, NULL, };
-
-				argv_erase[2] = start;
-				argv_erase[3] = length;
-
-				sprintf(start, "0x%x", ptn->start);
-				sprintf(length, "0x%x", ptn->length);
-
-				if (ptn->length == 0)
-					argc_erase = 3;
-
-				status = CFG_FASTBOOT_FLASHCMD(NULL, 0, argc_erase, argv_erase);
-#endif
 			}
 
 			if (status)
@@ -1010,11 +899,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				}
 
 				if (OmPin == BOOT_ONENAND) {
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-					ret = write_to_ptn(ptn,
-						(unsigned int)interface.transfer_buffer + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE,
-						fb_hdr->kernel_size);
-#endif
 				} else if (OmPin == BOOT_MMCSD) {
 					ret = write_to_ptn_sdmmc(ptn,
 						(unsigned int)interface.transfer_buffer + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE,
@@ -1036,11 +920,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				}
 
 				if (OmPin == BOOT_ONENAND) {
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-					ret |= write_to_ptn(ptn,
-						(unsigned int)interface.transfer_buffer + (pageoffset_ramdisk * CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE),
-						fb_hdr->ramdisk_size);
-#endif
 				} else if (OmPin == BOOT_MMCSD) {
 					ret |= write_to_ptn_sdmmc(ptn,
 						(unsigned int)interface.transfer_buffer + (pageoffset_ramdisk * CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE),
@@ -1100,18 +979,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				{
 					/* Normal case */
 					if (OmPin == BOOT_ONENAND) {
-#if defined(CFG_FASTBOOT_ONENANDBSP)
-						if (write_to_ptn(ptn, (unsigned int)interface.transfer_buffer, download_bytes))
-						{
-							printf("flashing '%s' failed\n", ptn->name);
-							sprintf(response, "FAILfailed to flash partition");
-						}
-						else
-						{
-							printf("partition '%s' flashed\n", ptn->name);
-							sprintf(response, "OKAY");
-						}
-#endif
 					} else if (OmPin == BOOT_MMCSD) {
 						if (write_to_ptn_sdmmc(ptn, (unsigned int)interface.transfer_buffer, download_bytes))
 						{
@@ -1426,15 +1293,6 @@ static int set_partition_table_sdmmc()
 	unsigned char pid;
 
 	pcount = 0;
-
-#if defined(CONFIG_FUSED)
-	/* FW BL1 for fused chip */
-	strcpy(ptable[pcount].name, "fwbl1");
-	ptable[pcount].start = 0;
-	ptable[pcount].length = 0;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MOVI_CMD;
-	pcount++;
-#endif
 
 	/* Bootloader */
 	strcpy(ptable[pcount].name, "bootloader");

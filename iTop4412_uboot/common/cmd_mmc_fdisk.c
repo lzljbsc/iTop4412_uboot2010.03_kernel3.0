@@ -1,14 +1,3 @@
-/*
- * Copyright (c) 2010 Samsung Electronics Co., Ltd.
- *              http://www.samsung.com/
- *
- * fdisk command for U-boot
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- */
-
 #include <common.h>
 #include <command.h>
 #include <mmc.h>

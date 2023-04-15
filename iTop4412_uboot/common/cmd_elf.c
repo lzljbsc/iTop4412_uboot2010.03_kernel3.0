@@ -1,28 +1,9 @@
-/*
- * Copyright (c) 2001 William L. Pitts
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms are freely
- * permitted provided that the above copyright notice and this
- * paragraph and the following disclaimer are duplicated in all
- * such forms.
- *
- * This software is provided "AS IS" and without any express or
- * implied warranties, including, without limitation, the implied
- * warranties of merchantability and fitness for a particular
- * purpose.
- */
-
 #include <common.h>
 #include <command.h>
 #include <linux/ctype.h>
 #include <net.h>
 #include <elf.h>
 #include <vxworks.h>
-
-#if defined(CONFIG_WALNUT) || defined(CONFIG_SYS_VXWORKS_MAC_PTR)
-DECLARE_GLOBAL_DATA_PTR;
-#endif
 
 int valid_elf_image (unsigned long addr);
 unsigned long load_elf_image (unsigned long addr);
@@ -112,34 +93,13 @@ int do_bootvx (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	else
 		addr = simple_strtoul (argv[1], NULL, 16);
 
-#if defined(CONFIG_CMD_NET)
-	/* Check to see if we need to tftp the image ourselves before starting */
-
-	if ((argc == 2) && (strcmp (argv[1], "tftp") == 0)) {
-		if (NetLoop (TFTP) <= 0)
-			return 1;
-		printf ("Automatic boot of VxWorks image at address 0x%08lx ... \n",
-		     addr);
-	}
-#endif
-
 	/* This should equate
 	 * to NV_RAM_ADRS + NV_BOOT_OFFSET + NV_ENET_OFFSET
 	 * from the VxWorks BSP header files.
 	 * This will vary from board to board
 	 */
 
-#if defined(CONFIG_WALNUT)
-	tmp = (char *) CONFIG_SYS_NVRAM_BASE_ADDR + 0x500;
-	eth_getenv_enetaddr("ethaddr", (uchar *)build_buf);
-	memcpy(tmp, &build_buf[3], 3);
-#elif defined(CONFIG_SYS_VXWORKS_MAC_PTR)
-	tmp = (char *) CONFIG_SYS_VXWORKS_MAC_PTR;
-	eth_getenv_enetaddr("ethaddr", (uchar *)build_buf);
-	memcpy(tmp, build_buf, 6);
-#else
 	puts ("## Ethernet MAC address not copied to NV RAM\n");
-#endif
 
 	/*
 	 * Use bootaddr to find the location in memory that VxWorks
@@ -186,10 +146,6 @@ int do_bootvx (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		if ((tmp = getenv ("hostname")) != NULL) {
 			sprintf (&build_buf[strlen (build_buf)], "tn=%s ", tmp);
 		}
-#ifdef CONFIG_SYS_VXWORKS_ADD_PARAMS
-		sprintf (&build_buf[strlen (build_buf)],
-			 CONFIG_SYS_VXWORKS_ADD_PARAMS);
-#endif
 
 		memcpy ((void *) bootaddr, build_buf,
 			max (strlen (build_buf), 255));
@@ -241,14 +197,6 @@ int valid_elf_image (unsigned long addr)
 		printf ("## Not a 32-bit elf image at address 0x%08lx\n", addr);
 		return 0;
 	}
-
-#if 0
-	if (ehdr->e_machine != EM_PPC) {
-		printf ("## Not a PowerPC elf image at address 0x%08lx\n",
-			addr);
-		return 0;
-	}
-#endif
 
 	return 1;
 }

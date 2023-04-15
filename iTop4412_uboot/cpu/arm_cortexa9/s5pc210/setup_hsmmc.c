@@ -5,20 +5,17 @@
 #include <s3c_hsmmc.h>
 
 
-#ifdef CONFIG_S5P_MSHC
 extern void mshci_fifo_deinit(struct mshci_host *host);
 extern struct mmc *find_mmc_device(int dev_num);
-#endif
 
 void clear_hsmmc_clock_div(void)
 {
 	/* set sdmmc clk src as mpll */
 	u32 tmp;
-#ifdef CONFIG_S5P_MSHC
+
 	struct mmc *mmc = find_mmc_device(0);
 
 	mshci_fifo_deinit(mmc);
-#endif
 
 	tmp = CLK_SRC_FSYS & ~(0x000fffff);
 	CLK_SRC_FSYS = tmp | 0x00066666;
@@ -27,8 +24,6 @@ void clear_hsmmc_clock_div(void)
 	CLK_DIV_FSYS1 = 0x00080008;
 	CLK_DIV_FSYS2 = 0x00080008;
 	CLK_DIV_FSYS3 = 0x4;
-
-
 }
 
 void set_hsmmc_pre_ratio(uint clock)
@@ -38,13 +33,6 @@ void set_hsmmc_pre_ratio(uint clock)
 	u32 clk,sclk_mmc,doutmmc;
 	u32 i;
 	
-	/* XXX: we assume that clock is between 40MHz and 50MHz */
-#ifdef USE_MMC0
-	tmp = CLK_DIV_FSYS1 & ~(0x0000ff00);
-	CLK_DIV_FSYS1 = tmp | (div << 8);
-#endif
-
-#ifdef USE_MMC2
 	/* MMC2 clock div */
 	div = CLK_DIV_FSYS2 & ~(0x0000ff00);
 	tmp = CLK_DIV_FSYS2 & (0x0000000f);
@@ -64,7 +52,6 @@ void set_hsmmc_pre_ratio(uint clock)
 	sddbg("SD DOUTMMC Clock %dM HZ\n",doutmmc/1000000);
 	sddbg("SD Host pre-ratio is %x\n",i);
 	printf("SD sclk_mmc is %dK HZ\n",sclk_mmc/1000);
-#endif
 	
 
 }
@@ -75,14 +62,6 @@ void setup_hsmmc_clock(void)
 	u32 clock;
 	u32 i;
 
-
-#ifdef USE_MMC0
-#endif	
-
-#ifdef USE_MMC1
-#endif	
-
-#ifdef USE_MMC2
 	/* MMC2 clock src = SCLKMPLL */
 	tmp = CLK_SRC_FSYS & ~(0x00000f00);
 	CLK_SRC_FSYS = tmp | 0x00000600;
@@ -100,12 +79,7 @@ void setup_hsmmc_clock(void)
 	
 	sddbg("[mjdbg] the sd clock ratio is %d,%d\n",i,clock);
 
-#endif
 
-#ifdef USE_MMC3
-#endif
-
-#ifdef USE_MMC4
 	/* MMC4 clock src = SCLKMPLL */
 	tmp = CLK_SRC_FSYS & ~(0x000f0000);
 	CLK_SRC_FSYS = tmp | 0x00060000;
@@ -124,8 +98,6 @@ void setup_hsmmc_clock(void)
 	}
 	emmcdbg("[mjdbg] sclk_mmc4:%d MHZ; mmc_ratio: %d\n",sclk_mmc4,i);
 	sclk_mmc4 *= 1000000;
-#endif
-
 }
 
 /*
@@ -136,39 +108,13 @@ void setup_hsmmc_cfg_gpio(void)
 {
 	ulong reg;
 
-#ifdef USE_MMC0
-	writel(0x02222222, 0x11000040);
-	writel(0x00003FFC, 0x11000048);
-	writel(0x00003FFF, 0x1100004c);
-	writel(0x03333000, 0x11000060);
-	writel(0x00003FC0, 0x11000068);
-	writel(0x00003FC0, 0x1100006c);	
-#endif
-
-#ifdef USE_MMC1
-#endif
-
-#ifdef USE_MMC2
+    /* MMC2 GPK2 IO初始化,配置为 SD_2_xxxx 模式, GPK2CON */
 	writel(0x02222222, 0x11000080);
 	writel(0x00003FF0, 0x11000088);
 	writel(0x00003FFF, 0x1100008C);
-#endif
-
-#ifdef USE_MMC3
-#endif
-
-#ifdef USE_MMC4
-
-
 	
-	#if 0
-//reset
-	writel(0x03333100, 0x11000040);
-	writel(0x0, 0x11000044);
-	writel(0x00003FF5, 0x11000048);
-	udelay(100*1000);
-	writel(0x03333333, 0x11000040);
-	#else//mj
+
+    /* MMC4 此处是控制 GPK0_2(SD_4_CDn), 用于给 emmc芯片复位 */
 	writel(readl(0x11000048)&~(0xf),0x11000048); //SD_4_CLK/SD_4_CMD pull-down enable
 	writel(readl(0x11000040)&~(0xff),0x11000040);//cdn set to be output
 
@@ -178,43 +124,17 @@ void setup_hsmmc_cfg_gpio(void)
 	udelay(100*1000);
 	writel(readl(0x11000044)|(1<<2),0x11000044); //cdn output 1
 
-	
+	/* MMC4 GPK0 IO初始化,配置为 SD_4_xxxx 模式, GPK0CON */
 	writel(0x03333133, 0x11000040);
-	#endif
 	writel(0x00003FF0, 0x11000048);
 	writel(0x00002AAA, 0x1100004C);
-	
-	#ifdef CONFIG_EMMC_8Bit
-	writel(0x04444000, 0x11000060);
-	writel(0x00003FC0, 0x11000068);
-	writel(0x00002AAA, 0x1100006C);
-	#endif
-	
-#endif
 
+    /* NOTO: 这里的MMC4 在硬件中使用了8bit数据模式，但这里仅初始化了4条数据线
+     * 其实这里原本有个编译宏的,用于选择是否使能 8bit 模式，如果使能了，就会
+     * 初始化剩下的8条数据线 */
 }
 
 void setup_sdhci0_cfg_card(struct sdhci_host *host)
 {
-#if 0 //mj del
-	u32 ctrl2;
-	u32 ctrl3;
-	/* don't need to alter anything acording to card-type */
-	writel(S3C_SDHCI_CONTROL4_DRIVE_9mA, host->ioaddr + S3C_SDHCI_CONTROL4);
-	ctrl2 = readl(host->ioaddr + S3C_SDHCI_CONTROL2);
-
-	ctrl2 |= (S3C_SDHCI_CTRL2_ENSTAASYNCCLR |
-		  S3C_SDHCI_CTRL2_ENCMDCNFMSK |
-#if defined(CONFIG_MCP_SINGLE)
-                  S3C_SDHCI_CTRL2_ENFBCLKRX |
-#endif
-		S3C_SDHCI_CTRL2_ENFBCLKTX |
-		S3C_SDHCI_CTRL2_DFCNT_NONE	|
-		S3C_SDHCI_CTRL2_ENCLKOUTHOLD);
-
-	ctrl3 = 0;
-
-	writel(ctrl2, host->ioaddr + S3C_SDHCI_CONTROL2);
-	writel(ctrl3, host->ioaddr + S3C_SDHCI_CONTROL3);
-#endif
 }
+

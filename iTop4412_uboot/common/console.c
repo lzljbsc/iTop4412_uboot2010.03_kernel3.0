@@ -321,7 +321,6 @@ int console_init_f(void)
 
 void stdio_print_current_devices(void)
 {
-#ifndef CONFIG_SYS_CONSOLE_INFO_QUIET
 	/* Print information */
 	puts("In:    ");
 	if (stdio_devices[stdin] == NULL) {
@@ -343,7 +342,6 @@ void stdio_print_current_devices(void)
 	} else {
 		printf ("%s\n", stdio_devices[stderr]->name);
 	}
-#endif /* CONFIG_SYS_CONSOLE_INFO_QUIET */
 }
 
 /* Called after the relocation - use desired console functions */

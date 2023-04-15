@@ -1,30 +1,3 @@
-/*
- * Copyright 2007, Freescale Semiconductor, Inc
- * Andy Fleming
- *
- * Based vaguely on the pxa mmc code:
- * (C) Copyright 2003
- * Kyle Harris, Nexus Technologies, Inc. kharris@nexus-tech.net
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-
 #include <config.h>
 #include <common.h>
 #include <command.h>
@@ -37,20 +10,10 @@
 #include <s5p_mshc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
-//#define DEBUG_S5P_MSHC
-#ifdef DEBUG_S5P_MSHC
-#define dbg(x...)       printf(x)
-#else
+
 #define dbg(x...)       do { } while (0)
-#endif
 
-#ifndef printk
-#define printk printf
-#endif
-
-#ifndef mdelay
 #define mdelay(x)	udelay(1000*x)
-#endif
 
 struct mmc mmc_channel[MMC_MAX_CHANNEL];
 
@@ -110,8 +73,7 @@ static void mshci_reset_dma(struct mshci_host *host)
 	writel(ier, host->ioaddr + MSHCI_CTRL);
 	while (readl(host->ioaddr + MSHCI_CTRL) & DMA_RESET) {
 		if (timeout == 0) {
-			printf("Reset DMA never completed.\n"
-);
+			printf("Reset DMA never completed.\n");
 			return;
 		}
 		timeout--;
@@ -148,8 +110,6 @@ static int mshci_reset_all(struct mshci_host *host)
 	return 0;
 }
 
-
-
 static void mshci_set_mdma_desc(u8 *desc_vir, u8 *desc_phy, 
 				u32 des0, u32 des1, u32 des2)
 {
@@ -159,7 +119,6 @@ static void mshci_set_mdma_desc(u8 *desc_vir, u8 *desc_phy,
 	((struct mshci_idmac *)(desc_vir))->des3 = (u32)desc_phy +
 					sizeof(struct mshci_idmac);
 }
-
 
 static void mshci_prepare_data(struct mshci_host *host, struct mmc_data *data)
 {
@@ -410,9 +369,6 @@ static void mshci_clock_onoff(struct mshci_host *host, int val)
 
 #define MAX_EMMC_CLOCK	(50000000) /* max clock 40Mhz */
 extern unsigned int s5pc210_cpu_id;
-
-//#define SMDK4212_ID 0x43220000
-//#define SMDK4412_ID 0xE4412000
 
 extern u32 sclk_mmc4;
 static int get_emmc_inner_ratio(void)
@@ -741,10 +697,6 @@ static int s5p_mshc_initialize(int channel)
 						MMC_MODE_HS_52MHz | MMC_MODE_HS |
 						MMC_MODE_HS_52MHz_DDR_18_3V;
 	
-	#ifdef CONFIG_EMMC_8Bit 
-	mmc->host_caps |= MMC_MODE_8BIT ;
-	#endif
-	
 	mmc->f_min = 400000;
 	mmc->f_max = 52000000;
 
@@ -777,52 +729,9 @@ int smdk_s5p_mshc_init(void)
 {
 	int err;
 
-#ifdef SHOULD_BE_MODIFED
-#ifdef OM_PIN
-	if(OM_PIN == SDMMC_CHANNEL0) {
-		printf("SD/MMC channel0 is selected for booting device.\n");
-		err = s5p_mshc_initialize(0);
-		return err;
-	} else if (OM_PIN == SDMMC_CHANNEL1) {
-		int err;
-		printf("SD/MMC channel1 is selected for booting device.\n");
-		err = s5p_mshc_initialize(1);
-		return err;
-	} else
-		printf("SD/MMC isn't selected for booting device.\n");
-#endif
-#endif
-
-#ifdef USE_MMC0
-	err = s5p_mshc_initialize(0);
-	if(err)
-		return err;
-#endif
-
-#ifdef USE_MMC1
-	err = s5p_mshc_initialize(1);
-	if(err)
-		return err;
-#endif		
-
-#ifdef USE_MMC2
-	//	err = s5p_mshc_initialize(2);
-	//	if(err)
-	//		return err;
-#endif
-
-
-#ifdef USE_MMC3
-	err = s5p_mshc_initialize(3);
-	if(err)
-		return err;
-#endif
-
-#ifdef USE_MMC4
 	err = s5p_mshc_initialize(4);
 	if(err)
 		return err;
-#endif
 
 	return -1;
 }

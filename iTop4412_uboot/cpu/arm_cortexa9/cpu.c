@@ -435,16 +435,15 @@ void security_check(void)
 int cpu_mmc_init(bd_t *bis)
 {
 	int ret;
-#if defined(CONFIG_S3C_HSMMC) || defined(CONFIG_S5P_MSHC)
 	setup_hsmmc_clock();
 	setup_hsmmc_cfg_gpio();
-#endif
-#ifdef USE_MMC4
+
+    // 板载 EMMC
 	ret = smdk_s5p_mshc_init();
-#endif
-#ifdef USE_MMC2
+    
+    // SD 卡
 	ret = smdk_s3c_hsmmc_init();
-#endif
+
 	return ret;
 }
 

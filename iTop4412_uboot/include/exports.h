@@ -1,8 +1,6 @@
 #ifndef __EXPORTS_H__
 #define __EXPORTS_H__
 
-#ifndef __ASSEMBLY__
-
 #include <common.h>
 
 /* These are declarations of exported functions available in C code */
@@ -26,18 +24,9 @@ int setenv (char *varname, char *varvalue);
 long simple_strtol(const char *cp,char **endp,unsigned int base);
 int strcmp(const char * cs,const char * ct);
 int ustrtoul(const char *cp, char **endp, unsigned int base);
-#ifdef CONFIG_HAS_UID
-void forceenv (char *varname, char *varvalue);
-#endif
-#if defined(CONFIG_CMD_I2C)
-int i2c_write (uchar, uint, int , uchar* , int);
-int i2c_read (uchar, uint, int , uchar* , int);
-#endif
 #include <spi.h>
 
 void app_startup(char **);
-
-#endif    /* ifndef __ASSEMBLY__ */
 
 enum {
 #define EXPORT_FUNC(x) XF_ ## x ,
@@ -48,9 +37,5 @@ enum {
 };
 
 #define XF_VERSION	6
-
-#if defined(CONFIG_I386)
-extern gd_t *global_data;
-#endif
 
 #endif	/* __EXPORTS_H__ */

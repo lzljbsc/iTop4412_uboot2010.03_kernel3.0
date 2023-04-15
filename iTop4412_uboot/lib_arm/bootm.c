@@ -1,26 +1,3 @@
-/*
- * (C) Copyright 2002
- * Sysgo Real-Time Solutions, GmbH <www.elinos.com>
- * Marius Groeger <mgroeger@sysgo.de>
- *
- * Copyright (C) 2001  Erik Mouw (J.A.K.Mouw@its.tudelft.nl)
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307	 USA
- *
- */
-
 #include <common.h>
 #include <command.h>
 #include <image.h>
@@ -48,10 +25,6 @@ static void setup_initrd_tag (bd_t *bd, ulong initrd_start,
 			      ulong initrd_end);
 # endif
 static void setup_end_tag (bd_t *bd);
-
-# if defined (CONFIG_VFD) || defined (CONFIG_LCD)
-static void setup_videolfb_tag (gd_t *gd);
-# endif
 
 static struct tag *params;
 #endif /* CONFIG_SETUP_MEMORY_TAGS || CONFIG_CMDLINE_TAG || CONFIG_INITRD_TAG */
@@ -97,12 +70,6 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
     defined (CONFIG_LCD) || \
     defined (CONFIG_VFD)
 	setup_start_tag (bd);
-#ifdef CONFIG_SERIAL_TAG
-	setup_serial_tag (&params);
-#endif
-#ifdef CONFIG_REVISION_TAG
-	setup_revision_tag (&params);
-#endif
 #ifdef CONFIG_SETUP_MEMORY_TAGS
 	setup_memory_tags (bd);
 #endif
@@ -113,21 +80,11 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 	if (images->rd_start && images->rd_end)
 		setup_initrd_tag (bd, images->rd_start, images->rd_end);
 #endif
-#if defined (CONFIG_VFD) || defined (CONFIG_LCD)
-	setup_videolfb_tag ((gd_t *) gd);
-#endif
 	setup_end_tag (bd);
 #endif
 
 	/* we assume that the kernel is in place */
 	printf ("\nStarting kernel ...\n\n");
-
-#ifdef CONFIG_USB_DEVICE
-	{
-		extern void udc_disconnect (void);
-		udc_disconnect ();
-	}
-#endif
 
 	cleanup_before_linux ();
 
@@ -221,62 +178,6 @@ static void setup_initrd_tag (bd_t *bd, ulong initrd_start, ulong initrd_end)
 }
 #endif /* CONFIG_INITRD_TAG */
 
-
-#if defined (CONFIG_VFD) || defined (CONFIG_LCD)
-extern ulong calc_fbsize (void);
-static void setup_videolfb_tag (gd_t *gd)
-{
-	/* An ATAG_VIDEOLFB node tells the kernel where and how large
-	 * the framebuffer for video was allocated (among other things).
-	 * Note that a _physical_ address is passed !
-	 *
-	 * We only use it to pass the address and size, the other entries
-	 * in the tag_videolfb are not of interest.
-	 */
-	params->hdr.tag = ATAG_VIDEOLFB;
-	params->hdr.size = tag_size (tag_videolfb);
-
-	params->u.videolfb.lfb_base = (u32) gd->fb_base;
-	/* Fb size is calculated according to parameters for our panel
-	 */
-	params->u.videolfb.lfb_size = calc_fbsize();
-
-	params = tag_next (params);
-}
-#endif /* CONFIG_VFD || CONFIG_LCD */
-
-#ifdef CONFIG_SERIAL_TAG
-void setup_serial_tag (struct tag **tmp)
-{
-	struct tag *params = *tmp;
-	struct tag_serialnr serialnr;
-	void get_board_serial(struct tag_serialnr *serialnr);
-
-	get_board_serial(&serialnr);
-	params->hdr.tag = ATAG_SERIAL;
-	params->hdr.size = tag_size (tag_serialnr);
-	params->u.serialnr.low = serialnr.low;
-	params->u.serialnr.high= serialnr.high;
-	params = tag_next (params);
-	*tmp = params;
-}
-#endif
-
-#ifdef CONFIG_REVISION_TAG
-void setup_revision_tag(struct tag **in_params)
-{
-	u32 rev = 0;
-	u32 get_board_rev(void);
-
-	rev = get_board_rev();
-	params->hdr.tag = ATAG_REVISION;
-	params->hdr.size = tag_size (tag_revision);
-	params->u.revision.rev = rev;
-	params = tag_next (params);
-}
-#endif  /* CONFIG_REVISION_TAG */
-
-
 static void setup_end_tag (bd_t *bd)
 {
 	params->hdr.tag = ATAG_NONE;
@@ -284,3 +185,4 @@ static void setup_end_tag (bd_t *bd)
 }
 
 #endif /* CONFIG_SETUP_MEMORY_TAGS || CONFIG_CMDLINE_TAG || CONFIG_INITRD_TAG */
+

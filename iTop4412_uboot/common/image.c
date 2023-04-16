@@ -100,32 +100,9 @@ static table_entry_t uimage_arch[] = {
 static table_entry_t uimage_os[] = {
 	{	IH_OS_INVALID,	NULL,		"Invalid OS",		},
 	{	IH_OS_LINUX,	"linux",	"Linux",		},
-#if defined(CONFIG_LYNXKDI) || defined(USE_HOSTCC)
-	{	IH_OS_LYNXOS,	"lynxos",	"LynxOS",		},
-#endif
 	{	IH_OS_NETBSD,	"netbsd",	"NetBSD",		},
 	{	IH_OS_RTEMS,	"rtems",	"RTEMS",		},
 	{	IH_OS_U_BOOT,	"u-boot",	"U-Boot",		},
-#if defined(CONFIG_CMD_ELF) || defined(USE_HOSTCC)
-	{	IH_OS_QNX,	"qnx",		"QNX",			},
-	{	IH_OS_VXWORKS,	"vxworks",	"VxWorks",		},
-#endif
-#if defined(CONFIG_INTEGRITY) || defined(USE_HOSTCC)
-	{	IH_OS_INTEGRITY,"integrity",	"INTEGRITY",		},
-#endif
-#ifdef USE_HOSTCC
-	{	IH_OS_4_4BSD,	"4_4bsd",	"4_4BSD",		},
-	{	IH_OS_DELL,	"dell",		"Dell",			},
-	{	IH_OS_ESIX,	"esix",		"Esix",			},
-	{	IH_OS_FREEBSD,	"freebsd",	"FreeBSD",		},
-	{	IH_OS_IRIX,	"irix",		"Irix",			},
-	{	IH_OS_NCR,	"ncr",		"NCR",			},
-	{	IH_OS_OPENBSD,	"openbsd",	"OpenBSD",		},
-	{	IH_OS_PSOS,	"psos",		"pSOS",			},
-	{	IH_OS_SCO,	"sco",		"SCO",			},
-	{	IH_OS_SOLARIS,	"solaris",	"Solaris",		},
-	{	IH_OS_SVR4,	"svr4",		"SVR4",			},
-#endif
 	{	-1,		"",		"",			},
 };
 

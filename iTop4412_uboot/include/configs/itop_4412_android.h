@@ -210,8 +210,6 @@
 
 #include <config_cmd_default.h>
 
-#define CONFIG_CMD_ELF
-
 #define CONFIG_CMD_EXT2
 #define CONFIG_CMD_EXT4
 #define CONFIG_CMD_FAT

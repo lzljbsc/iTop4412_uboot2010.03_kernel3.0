@@ -197,7 +197,6 @@ LIBS += lib_$(ARCH)/lib$(ARCH).a
 LIBS += fs/fat/libfat.a fs/ext2/libext2fs.a 
 LIBS += disk/libdisk.a
 LIBS += drivers/mmc/libmmc.a
-LIBS += drivers/rtc/librtc.a
 LIBS += common/libcommon.a
 
 LIBS := $(addprefix $(obj),$(LIBS))

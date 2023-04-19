@@ -6,10 +6,8 @@
 #include "gpio.h"
 #include "i2c.h"
 
-/* add by cym 20141224 */
 #define Inp32(_addr)            readl(_addr)
 #define Outp32(addr, data)      (*(volatile u32 *)(addr) = (data))
-/* end add */
 
 const PMIC_Type_st gVoltage_Type[3] = 
 {
@@ -28,7 +26,14 @@ extern void lowlevel_init_max8997(unsigned char Address,unsigned char *Val,int f
 #define CONFIG_PM_VDD_LDO14     1.8
 
 
-typedef enum{	PMIC_BUCK1=0,	PMIC_BUCK2,	PMIC_BUCK3,	PMIC_BUCK4,	PMIC_LDO14,	PMIC_LDO10,}PMIC_RegNum;
+typedef enum{	
+    PMIC_BUCK1=0,	
+    PMIC_BUCK2,	
+    PMIC_BUCK3,	
+    PMIC_BUCK4,	
+    PMIC_LDO14,	
+    PMIC_LDO10,
+} PMIC_RegNum;
 
 
 #define CALC_S5M8767_VOLT1(x)  ( (x<600) ? 0 : ((x-600)/6.25) )
@@ -61,15 +66,13 @@ void I2C_S5M8767_VolSetting(PMIC_RegNum eRegNum, u8 ucVolLevel, u8 ucEnable)
 	{
 		reg_addr = 0x48;
 	}
-	/* add by cym 20130315 */
-#if  defined(CONFIG_SCP_1GDDR) ||  defined(CONFIG_SCP_2GDDR) || defined(CONFIG_SCP_1GDDR_Ubuntu) || defined(CONFIG_SCP_2GDDR_Ubuntu)  //add by dg
+#if  defined(CONFIG_SCP_1GDDR)
 	else if(7 == eRegNum)
 	{
 		reg_addr = 0x59;
 		ucVolLevel = 0x40;	// 1.55v
 	}
 #endif
-	/* end add */
 	else
 		while(1);
 
@@ -94,14 +97,12 @@ void pmic8767_init(void)
 	I2C_S5M8767_VolSetting(PMIC_BUCK3, CALC_S5M8767_VOLT1(vdd_int * 1000), 1);
 	I2C_S5M8767_VolSetting(PMIC_BUCK4, CALC_S5M8767_VOLT1(vdd_g3d * 1000), 1);
 
-	/* add by cym 20130315 */
 	//I2C_S5M8767_VolSetting(6, CALC_S5M8767_VOLT1(1.5 * 1000), 1);
 
-#if  defined(CONFIG_SCP_1GDDR) ||  defined(CONFIG_SCP_2GDDR) || defined(CONFIG_SCP_1GDDR_Ubuntu) || defined(CONFIG_SCP_2GDDR_Ubuntu)  //add by dg
+#if  defined(CONFIG_SCP_1GDDR)
 	//set Buck8 to 1.5v, because LDO2's out  decide by Buck8
 	I2C_S5M8767_VolSetting(7, CALC_S5M8767_VOLT1(1.55 * 1000), 1);
 #endif
-	/* end add */
 }
 
 
@@ -208,13 +209,11 @@ void PMIC_InitIp(void)
             lowlevel_init_max8997(0x5a,&val,1);
         }
 
-        /* add by cym 20141125 set LDO18 to 3.3v */
         /* dg change for kinds of coreboard*/
-#if  defined(CONFIG_SCP_1GDDR) ||  defined(CONFIG_POP_1GDDR) || defined(CONFIG_SCP_1GDDR_Ubuntu)  || defined(CONFIG_POP_1GDDR_Ubuntu)
+#if  defined(CONFIG_SCP_1GDDR)
         val = 0x32;
         lowlevel_init_max8997(0x70, &val, 1);
 #endif
-        /* end add */
     }
 
     /*---mj configure for emmc ---*/

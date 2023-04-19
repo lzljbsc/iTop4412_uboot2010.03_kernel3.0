@@ -1,30 +1,3 @@
-/*
- *  armboot - Startup Code for S5PC110/ARM-Cortex CPU-core
- *
- *  Copyright (c) 2009	Samsung Electronics
- *
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- *
- * Base codes by scsuh (sc.suh)
- */
-
 #include <config.h>
 #include <version.h>
 #include <asm/proc/domain.h>
@@ -41,6 +14,9 @@
 /* 不太清除为什么要预留这16个字节
    itop 提供的 bl2.bin 是已经做好的，没有这16字节，并未使用 uboot 生成，
    三星原厂提供的源码中，是使用 uboot 生成的
+   这16个字节,应该与三星之前的芯片启动方式有关,如 s5pc110, bl1 的前16字节
+   是校验,如 bl1的文件大小，校验和
+   在E4412的芯片中好像并未使用，最终的bl2镜像里也没有
 TODO: 需要测试下生成 bl2.bin */
 	.word 0x2000  /* 这里的 0x2000 ，在后面的拷贝中，判断了下镜像有效性 */
 	.word 0x0
@@ -59,6 +35,8 @@ _start: b	reset      // 复位向量，复位后跳转到 reset
 	ldr	pc, _not_used
 	ldr	pc, _irq
 	ldr	pc, _fiq   // 地址 0x0000 001c
+
+    /* ldr 指令: 将后面标号处的内容加载到指定寄存器 */
 
 /* .word 伪操作用于分配一段字内存单元（分配的单元都是字对齐的），
     并用伪操作中的 expr 初始化。 .long 和 .int 作用与之相同 */
@@ -141,6 +119,7 @@ reset:
 	msr	cpsr,r0
 
     /* 处理 cache MMU ，这里不分析了 */
+    /* 关于协处理器 CP15 的访问，需要参考arm指南 */
 cache_init:
 	mrc	p15, 0, r0, c0, c0, 0	@ read main ID register
 	and	r1, r0, #0x00f00000	@ variant
@@ -234,12 +213,15 @@ cache_init:
 	/* get ready to call C functions */
     /* 将堆栈设置在 DDR 中了,前面已经初始化好 DDR 了 0x43e00000 */
     /* 是将栈顶指向了uboot代码的前面，有大量空闲内存使用 */
+    /* 使用的 DMC-0, 地址范围: 0x40000000 - 0xA0000000 , 共 1.5GB
+       当然, 板子上只有 1G DDR, */
     /* fp 寄存器就是 old-sp 寄存器，前一栈帧 */
 	ldr	sp, _TEXT_PHY_BASE	/* setup temp stack pointer */
 	sub	sp, sp, #12
 	mov	fp, #0			/* no previous frame, so fp=0 */
 
     /* 判断是否已经在RAM中运行了，如果是，则跳转至 after_copy */
+    /* 判断方式与 lowlevel_init 中一致 */
 	/* when we already run in ram, we don't need to relocate U-Boot.
 	 * and actually, memory controller must be configured before U-Boot
 	 * is running in ram.
@@ -335,6 +317,8 @@ enable_mmu:
 	mcr	p15, 0, r1, c2, c0, 0
 
     /* 这里开启了 MMU，之后就都是虚拟地址了 */
+    /* 注意: 虽然这里开启了 MMU, 但目前使用到的地址都是线性映射的(mmu_table)
+       所以与未开启 MMU 时的运行是一样的 */
 	/* Enable the MMU */
 mmu_on:
 	mrc	p15, 0, r0, c1, c0, 0
@@ -363,6 +347,7 @@ mmu_on:
      * bss段的后面，如果bss段太大（一般不会的），那就可能和堆栈
      * 重叠了，导致数据错误 */
     /* 这个uboot大概的值(随代码及变量的变化而变化)：
+     * 具体的大小, 可以反汇编 u-boot 文件, 查看 _bss_start
      * _bss_start  ->  0xC3E3D084
      * _end        ->  0xC3F6FC98
      * sp          ->  0x43FFF000
@@ -396,6 +381,8 @@ clbss_l:
 	ldr	pc, _start_armboot
 
 /* start_armboot 为 C语言的入口函数 */
+/* 这里的 _start_armboot 处存放的是 C语言函数 start_armboot 的地址 
+ * 通过上面的 ldr pc, _start_armboot , 就直接跳转到 C语言函数了 */
 _start_armboot:
 	.word start_armboot
 

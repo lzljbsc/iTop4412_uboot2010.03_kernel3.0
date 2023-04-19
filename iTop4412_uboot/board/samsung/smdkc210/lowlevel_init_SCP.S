@@ -85,6 +85,8 @@ lowlevel_init:
        实际上，在 u-boot 运行在ram之前，必须配置内存控制器 */
     /* 这里判断是否在 RAM中运行，是为了确认是否需要下面的 clock
      * mem_ctrl 的初始化，如果已经在 RAM中了，那就不能再初始化了 */
+    /* 判断方式: 检查当前的pc指针与期望的内存地址是否一致，如果一致则
+       是在内存中，不一致则是在内部ram中 */
 	/* when we already run in ram, we don't need to relocate U-Boot.
 	 * and actually, memory controller must be configured before U-Boot
 	 * is running in ram.
@@ -147,11 +149,6 @@ out:
 	bl onenandcon_init
 #endif
 
-#if defined(CONFIG_NAND)
-	/* simple init for NAND */
-	bl nand_asm_init
-#endif
-
 	/* Print 'K' */
 	ldr	r0, =ELFIN_UART_CONSOLE_BASE
 	ldr	r1, =0x4b4b4b4b
@@ -171,6 +168,7 @@ out:
 	str	r1, [r2]
 
     /* 跳出 lowlevel_init, 返回到 start.s 中了 */
+    /* lowlevel_init 函数最开始将 lr 寄存器入栈了 */
 	pop	{pc}
 
 wakeup_reset:

@@ -9,12 +9,6 @@
 #include <mmc.h>
 #include <s5pc210.h>
 
-/* info for NAND chips, defined in drivers/nand/nand.c */
-extern nand_info_t nand_info[];
-
-/* info for NOR flash chips, defined in board/samsung/common/flash_common.c */
-//extern flash_info_t flash_info[];
-
 /* references to names in env_common.c */
 extern uchar default_environment[];
 extern int default_environment_size;
@@ -42,6 +36,7 @@ int env_init(void)
 	return (0);
 }
 
+// TODO: 以下代码精简
 /*
  * The legacy NAND code saved the environment in the first NAND device i.e.,
  * nand_dev_desc + 0. This is also the behaviour using the new NAND code.

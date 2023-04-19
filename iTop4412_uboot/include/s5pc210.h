@@ -1,25 +1,3 @@
-/*
- * (C) Copyright 2008
- * Jongpill Lee, Samsung Erectronics, boyko.lee@samsung.com.
- *      - only support for S5PC210
- *  $Id: s5pc100.h,v 1.4 2008/11/25 06:15:10 boyko Exp $
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-
 /************************************************
  * NAME	    : s5pc210.h
  *
@@ -32,7 +10,6 @@
 #define CONFIG_S5PC210			1
 #endif
 
-#define S5PC21X_UART_CHANNELS		3
 #define S5PC21X_SPI_CHANNELS		2
 
 #include <asm/hardware.h>

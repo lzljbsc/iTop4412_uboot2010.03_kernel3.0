@@ -24,6 +24,7 @@ int board_init(void)
 
     /* 设置 MACH_TYPE, 该参数与内核中的匹配 */
 	gd->bd->bi_arch_number = MACH_TYPE;
+
     /* 设置启动参数存放位置，位于物理内存起始地址偏移 0x100(256字节) 处 */
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1+0x100);
 
@@ -34,6 +35,8 @@ int dram_init(void)
 {
 	DECLARE_GLOBAL_DATA_PTR;
 
+    /* CHIP_ID_BASE 寄存器中的 [9:8]位 表示封装信息 
+     * 0x0: SCP ; 0x2: POP */
 	if(((*((volatile unsigned long *)CHIP_ID_BASE) & 0x300) >> 8) == 2){
 	 	printf("POP type: ");
 		if(dmc_density == 6){
@@ -57,16 +60,16 @@ int dram_init(void)
 			gd->bd->bi_dram[1].size = PHYS_SDRAM_2_SIZE;
 		}
 		else{//ly
-                    printf("POP for C220\n");
-                    nr_dram_banks = 4;
-                    gd->bd->bi_dram[0].start = PHYS_SDRAM_1;
-                    gd->bd->bi_dram[0].size = PHYS_SDRAM_1_SIZE;
-                    gd->bd->bi_dram[1].start = PHYS_SDRAM_2;
-                    gd->bd->bi_dram[1].size = PHYS_SDRAM_2_SIZE;
-                    gd->bd->bi_dram[2].start = PHYS_SDRAM_3;
-                    gd->bd->bi_dram[2].size = PHYS_SDRAM_3_SIZE;
-                    gd->bd->bi_dram[3].start = PHYS_SDRAM_4;
-                    gd->bd->bi_dram[3].size = PHYS_SDRAM_4_SIZE;
+            printf("POP for C220\n");
+            nr_dram_banks = 4;
+            gd->bd->bi_dram[0].start = PHYS_SDRAM_1;
+            gd->bd->bi_dram[0].size = PHYS_SDRAM_1_SIZE;
+            gd->bd->bi_dram[1].start = PHYS_SDRAM_2;
+            gd->bd->bi_dram[1].size = PHYS_SDRAM_2_SIZE;
+            gd->bd->bi_dram[2].start = PHYS_SDRAM_3;
+            gd->bd->bi_dram[2].size = PHYS_SDRAM_3_SIZE;
+            gd->bd->bi_dram[3].start = PHYS_SDRAM_4;
+            gd->bd->bi_dram[3].size = PHYS_SDRAM_4_SIZE;
 		}
 	} else{
 		nr_dram_banks = 8;

@@ -1,30 +1,3 @@
-/**************************************************************************************
-* 
-*	Project Name : S5PC210 Validation
-*
-*	Copyright 2006 by Samsung Electronics, Inc.
-*	All rights reserved.
-*
-*	Project Description :
-*		This software is only for validating functions of the S5PC210.
-*		Anybody can use this software without our permission.
-*  
-*--------------------------------------------------------------------------------------
-* 
-*	File Name : i2c.c
-*  
-*	File Description : This file implements the API functon for UART.
-*
-*	Author : Jang TaeSu
-*	Dept. : AP Development Team
-*	Created Date : 2010/04/11
-*	Version : 0.1 
-* 
-*	History
-*	- Create 
-*	- Modified by Jang TaeSu for S5PC210 (2010/04/11)
-*  
-**************************************************************************************/
 #include <s5pc210.h>
 
 #include "gpio.h"

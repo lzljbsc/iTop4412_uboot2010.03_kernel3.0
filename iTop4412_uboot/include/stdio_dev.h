@@ -39,6 +39,7 @@ struct stdio_dev {
 	struct list_head list;
 };
 
+// TODO: 移除
 /*
  * VIDEO EXTENSIONS
  */

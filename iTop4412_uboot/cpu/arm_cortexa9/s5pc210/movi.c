@@ -1,9 +1,5 @@
 #include <common.h>
-#if defined(CONFIG_SECURE)
-#include "movi.h"
-#else
 #include <movi.h>
-#endif
 #include <asm/io.h>
 #include <mmc.h>
 
@@ -33,20 +29,10 @@ void emmc_uboot_copy(void)
 	int i;
 	char *ptemp;
 	
-#ifdef CONFIG_EVT1
     copy_emmc_to_mem copy_bl2 = (copy_emmc_to_mem)*(u32 *)(0x0202003c);
-#else
-//	copy_emmc_to_mem copy_bl2 = (copy_emmc_to_mem)(0x02020040);
-	copy_emmc_to_mem copy_bl2 = (copy_emmc_to_mem)(0x00003268);//LoadBL2FromEmmc43Ch0ByDMA
-//	copy_emmc_to_mem copy_bl2 = (copy_emmc_to_mem)(0x000032f4);//LoadBL1FromEmmc43Ch0ByCPU OK
-#endif
 
-#ifdef CONFIG_SECURE
-	copy_bl2(MOVI_UBOOT_BLKCNT-MOVI_BL1_BLKCNT-MOVI_BL1_BLKCNT, CFG_PHY_UBOOT_BASE);
-#else
 	/* for secure_bl1 (16KB) */
 	copy_bl2(MOVI_UBOOT_BLKCNT, CFG_PHY_UBOOT_BASE); //mj
-#endif
 }
 
 
@@ -111,11 +97,7 @@ void movi_calc_checksum_bl1(ulong addr)
 	int i;
 	ulong checksum;
 	ulong src;
-#ifdef CONFIG_SECURE
-	src = addr+(16*1024); /* from BL2 */
-#else
 	src = addr; /* from BL2 */
-#endif
 	
 	for(i = 0, checksum = 0;i < (14 * 1024) - 4;i++)
 	{

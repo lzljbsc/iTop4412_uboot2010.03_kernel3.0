@@ -7,10 +7,9 @@
 #include <stdio_dev.h>
 #include <timestamp.h>
 #include <version.h>
-#include <net.h>
 #include <serial.h>
-#include <nand.h>
-#include <onenand_uboot.h>
+#include <nand.h>  // TODO: 移除
+#include <onenand_uboot.h> // TODO: 移除
 #include <s5pc210.h>
 #include <mmc.h>
 
@@ -150,17 +149,17 @@ int print_cpuinfo (void);
 
 /* 初始化序列，返回值不为0，则认为失败，进行停机 */
 init_fnc_t *init_sequence[] = {
-	board_init,		/* basic board dependent setup */
+	board_init,		    /* basic board dependent setup */
 	interrupt_init,		/* set up exceptions */
-	env_init,		/* initialize environment */
+	env_init,		    /* initialize environment */
 	init_baudrate,		/* initialze baudrate settings */
 	serial_init,		/* serial communications setup */
 	console_init_f,		/* stage 1 init of console */
-	off_charge,		// xiebin.wang @ 20110531,for charger&power off device.
+	off_charge,		    // xiebin.wang @ 20110531,for charger&power off device.
 	display_banner,		/* say that we are here */
 	print_cpuinfo,		/* display cpu info (and speed) */
-	checkboard,		/* display board info */
-	dram_init,		/* configure available RAM banks */
+	checkboard,		    /* display board info */
+	dram_init,		    /* configure available RAM banks */
 	display_dram_config,
 	NULL,
 };
@@ -173,7 +172,7 @@ void start_armboot (void)
 	int mmc_exist = 0;
 
     /* _armboot_start 为uboot代码起始地址，根据start.s 中代码，该值为
-     * 0x43e00010
+     * 0x43e00010 (链接地址为 0xc3e00000, 所以实际为 0xc3e00010)
      * CONFIG_SYS_MALLOC_LEN 0x104000
      * 这里是在 uboot镜像的下方内存处预留了一部分空间用于 gd_t 结构体 */
 	/* Pointer is writable since we allocated a register for it */
@@ -188,6 +187,7 @@ void start_armboot (void)
 	memset (gd->bd, 0, sizeof (bd_t));
 
     /* monitor_flash_len 是 uboot 代码段长度 */
+    /* 这个长度比 u-boot.bin 文件小 16字节, 即 start.s 文件中最开始的16字节 */
 	monitor_flash_len = _bss_start - _armboot_start;
 
     /* 按照初始化序列依次调用初始化函数，如失败则停止(hang) */
@@ -198,7 +198,7 @@ void start_armboot (void)
 	}
 	
 	/* armboot_start is defined in the board-specific linker script */
-	mem_malloc_init (_armboot_start - CONFIG_SYS_MALLOC_LEN,
+	mem_malloc_init(_armboot_start - CONFIG_SYS_MALLOC_LEN,
 			CONFIG_SYS_MALLOC_LEN);
 
 	puts ("MMC:   ");

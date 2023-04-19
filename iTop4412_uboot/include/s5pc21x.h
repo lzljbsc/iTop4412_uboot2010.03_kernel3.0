@@ -1,26 +1,3 @@
-/*
- * (C) Copyright 2003
- * David M?ler ELSOFT AG Switzerland. d.mueller@elsoft.ch
- *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-
 /************************************************
  * NAME	    : S5PC21X.h
  *
@@ -153,17 +130,10 @@ typedef struct {
 	S5PC21X_REG32	UERSTAT;
 	S5PC21X_REG32	UFSTAT;
 	S5PC21X_REG32	UMSTAT;
-#ifdef __BIG_ENDIAN
-	S5PC21X_REG8	res1[3];
-	S5PC21X_REG8	UTXH;
-	S5PC21X_REG8	res2[3];
-	S5PC21X_REG8	URXH;
-#else /* Little Endian */
 	S5PC21X_REG8	UTXH;
 	S5PC21X_REG8	res1[3];
 	S5PC21X_REG8	URXH;
 	S5PC21X_REG8	res2[3];
-#endif
 	S5PC21X_REG32	UBRDIV;
 } /*__attribute__((__packed__))*/ S5PC21X_UART;
 
@@ -187,30 +157,11 @@ typedef struct {
 
 /* USB DEVICE (see manual chapter 13) */
 typedef struct {
-#ifdef __BIG_ENDIAN
-	S5PC21X_REG8	res[3];
-	S5PC21X_REG8	EP_FIFO_REG;
-#else /*  little endian */
 	S5PC21X_REG8	EP_FIFO_REG;
 	S5PC21X_REG8	res[3];
-#endif
 } /*__attribute__((__packed__))*/ S5PC21X_USB_DEV_FIFOS;
 
 typedef struct {
-#ifdef __BIG_ENDIAN
-	S5PC21X_REG8	res1[3];
-	S5PC21X_REG8	EP_DMA_CON;
-	S5PC21X_REG8	res2[3];
-	S5PC21X_REG8	EP_DMA_UNIT;
-	S5PC21X_REG8	res3[3];
-	S5PC21X_REG8	EP_DMA_FIFO;
-	S5PC21X_REG8	res4[3];
-	S5PC21X_REG8	EP_DMA_TTC_L;
-	S5PC21X_REG8	res5[3];
-	S5PC21X_REG8	EP_DMA_TTC_M;
-	S5PC21X_REG8	res6[3];
-	S5PC21X_REG8	EP_DMA_TTC_H;
-#else /*  little endian */
 	S5PC21X_REG8	EP_DMA_CON;
 	S5PC21X_REG8	res1[3];
 	S5PC21X_REG8	EP_DMA_UNIT;
@@ -223,44 +174,9 @@ typedef struct {
 	S5PC21X_REG8	res5[3];
 	S5PC21X_REG8	EP_DMA_TTC_H;
 	S5PC21X_REG8	res6[3];
-#endif
 } /*__attribute__((__packed__))*/ S5PC21X_USB_DEV_DMAS;
 
 typedef struct {
-#ifdef __BIG_ENDIAN
-	S5PC21X_REG8	res1[3];
-	S5PC21X_REG8	FUNC_ADDR_REG;
-	S5PC21X_REG8	res2[3];
-	S5PC21X_REG8	PWR_REG;
-	S5PC21X_REG8	res3[3];
-	S5PC21X_REG8	EP_INT_REG;
-	S5PC21X_REG8	res4[15];
-	S5PC21X_REG8	USB_INT_REG;
-	S5PC21X_REG8	res5[3];
-	S5PC21X_REG8	EP_INT_EN_REG;
-	S5PC21X_REG8	res6[15];
-	S5PC21X_REG8	USB_INT_EN_REG;
-	S5PC21X_REG8	res7[3];
-	S5PC21X_REG8	FRAME_NUM1_REG;
-	S5PC21X_REG8	res8[3];
-	S5PC21X_REG8	FRAME_NUM2_REG;
-	S5PC21X_REG8	res9[3];
-	S5PC21X_REG8	INDEX_REG;
-	S5PC21X_REG8	res10[7];
-	S5PC21X_REG8	MAXP_REG;
-	S5PC21X_REG8	res11[3];
-	S5PC21X_REG8	EP0_CSR_IN_CSR1_REG;
-	S5PC21X_REG8	res12[3];
-	S5PC21X_REG8	IN_CSR2_REG;
-	S5PC21X_REG8	res13[7];
-	S5PC21X_REG8	OUT_CSR1_REG;
-	S5PC21X_REG8	res14[3];
-	S5PC21X_REG8	OUT_CSR2_REG;
-	S5PC21X_REG8	res15[3];
-	S5PC21X_REG8	OUT_FIFO_CNT1_REG;
-	S5PC21X_REG8	res16[3];
-	S5PC21X_REG8	OUT_FIFO_CNT2_REG;
-#else /*  little endian */
 	S5PC21X_REG8	FUNC_ADDR_REG;
 	S5PC21X_REG8	res1[3];
 	S5PC21X_REG8	PWR_REG;
@@ -293,7 +209,6 @@ typedef struct {
 	S5PC21X_REG8	res15[3];
 	S5PC21X_REG8	OUT_FIFO_CNT2_REG;
 	S5PC21X_REG8	res16[3];
-#endif /*  __BIG_ENDIAN */
 	S5PC21X_USB_DEV_FIFOS	fifo[5];
 	S5PC21X_USB_DEV_DMAS	dma[5];
 } /*__attribute__((__packed__))*/ S5PC21X_USB_DEVICE;
@@ -318,18 +233,6 @@ typedef struct {
 
 /* IIS (see manual chapter 21) */
 typedef struct {
-#ifdef __BIG_ENDIAN
-	S5PC21X_REG16	res1;
-	S5PC21X_REG16	IISCON;
-	S5PC21X_REG16	res2;
-	S5PC21X_REG16	IISMOD;
-	S5PC21X_REG16	res3;
-	S5PC21X_REG16	IISPSR;
-	S5PC21X_REG16	res4;
-	S5PC21X_REG16	IISFCON;
-	S5PC21X_REG16	res5;
-	S5PC21X_REG16	IISFIFO;
-#else /*  little endian */
 	S5PC21X_REG16	IISCON;
 	S5PC21X_REG16	res1;
 	S5PC21X_REG16	IISMOD;
@@ -340,7 +243,6 @@ typedef struct {
 	S5PC21X_REG16	res4;
 	S5PC21X_REG16	IISFIFO;
 	S5PC21X_REG16	res5;
-#endif
 } /*__attribute__((__packed__))*/ S5PC21X_I2S;
 
 
@@ -352,42 +254,6 @@ typedef struct {
 
 /* RTC (see manual chapter 17) */
 typedef struct {
-#ifdef __BIG_ENDIAN
-	S5PC21X_REG8	res1[67];
-	S5PC21X_REG8	RTCCON;
-	S5PC21X_REG8	res2[3];
-	S5PC21X_REG8	TICNT;
-	S5PC21X_REG8	res3[11];
-	S5PC21X_REG8	RTCALM;
-	S5PC21X_REG8	res4[3];
-	S5PC21X_REG8	ALMSEC;
-	S5PC21X_REG8	res5[3];
-	S5PC21X_REG8	ALMMIN;
-	S5PC21X_REG8	res6[3];
-	S5PC21X_REG8	ALMHOUR;
-	S5PC21X_REG8	res7[3];
-	S5PC21X_REG8	ALMDATE;
-	S5PC21X_REG8	res8[3];
-	S5PC21X_REG8	ALMMON;
-	S5PC21X_REG8	res9[3];
-	S5PC21X_REG8	ALMYEAR;
-	S5PC21X_REG8	res10[3];
-	S5PC21X_REG8	RTCRST;
-	S5PC21X_REG8	res11[3];
-	S5PC21X_REG8	BCDSEC;
-	S5PC21X_REG8	res12[3];
-	S5PC21X_REG8	BCDMIN;
-	S5PC21X_REG8	res13[3];
-	S5PC21X_REG8	BCDHOUR;
-	S5PC21X_REG8	res14[3];
-	S5PC21X_REG8	BCDDATE;
-	S5PC21X_REG8	res15[3];
-	S5PC21X_REG8	BCDDAY;
-	S5PC21X_REG8	res16[3];
-	S5PC21X_REG8	BCDMON;
-	S5PC21X_REG8	res17[3];
-	S5PC21X_REG8	BCDYEAR;
-#else /*  little endian */
 	S5PC21X_REG8	res0[64];
 	S5PC21X_REG8	RTCCON;
 	S5PC21X_REG8	res1[3];
@@ -423,7 +289,6 @@ typedef struct {
 	S5PC21X_REG8	res16[3];
 	S5PC21X_REG8	BCDYEAR;
 	S5PC21X_REG8	res17[3];
-#endif
 } /*__attribute__((__packed__))*/ S5PC21X_RTC;
 
 
@@ -462,32 +327,6 @@ typedef struct {
 
 /* MMC INTERFACE (see S3C2400 manual chapter 19) */
 typedef struct {
-#ifdef __BIG_ENDIAN
-	S5PC21X_REG8	res1[3];
-	S5PC21X_REG8	MMCON;
-	S5PC21X_REG8	res2[3];
-	S5PC21X_REG8	MMCRR;
-	S5PC21X_REG8	res3[3];
-	S5PC21X_REG8	MMFCON;
-	S5PC21X_REG8	res4[3];
-	S5PC21X_REG8	MMSTA;
-	S5PC21X_REG16	res5;
-	S5PC21X_REG16	MMFSTA;
-	S5PC21X_REG8	res6[3];
-	S5PC21X_REG8	MMPRE;
-	S5PC21X_REG16	res7;
-	S5PC21X_REG16	MMLEN;
-	S5PC21X_REG8	res8[3];
-	S5PC21X_REG8	MMCR7;
-	S5PC21X_REG32	MMRSP[4];
-	S5PC21X_REG8	res9[3];
-	S5PC21X_REG8	MMCMD0;
-	S5PC21X_REG32	MMCMD1;
-	S5PC21X_REG16	res10;
-	S5PC21X_REG16	MMCR16;
-	S5PC21X_REG8	res11[3];
-	S5PC21X_REG8	MMDAT;
-#else
 	S5PC21X_REG8	MMCON;
 	S5PC21X_REG8	res1[3];
 	S5PC21X_REG8	MMCRR;
@@ -512,7 +351,6 @@ typedef struct {
 	S5PC21X_REG16	res10;
 	S5PC21X_REG8	MMDAT;
 	S5PC21X_REG8	res11[3];
-#endif
 } /*__attribute__((__packed__))*/ S3C2400_MMC;
 
 
@@ -533,13 +371,8 @@ typedef struct {
 	S5PC21X_REG32	SDIDCNT;
 	S5PC21X_REG32	SDIDSTA;
 	S5PC21X_REG32	SDIFSTA;
-#ifdef __BIG_ENDIAN
-	S5PC21X_REG8	res[3];
-	S5PC21X_REG8	SDIDAT;
-#else
 	S5PC21X_REG8	SDIDAT;
 	S5PC21X_REG8	res[3];
-#endif
 	S5PC21X_REG32	SDIIMSK;
 } /*__attribute__((__packed__))*/ S3C2410_SDI;
 

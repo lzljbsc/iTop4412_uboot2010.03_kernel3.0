@@ -4,14 +4,14 @@
 
 #define MAGIC_NUMBER_MOVI	(0x24564236)
 
-#define SS_SIZE			(16 * 1024)
+#define SS_SIZE			    (16 * 1024)
 
-#define eFUSE_SIZE		(1 * 512)	// 512 Byte eFuse, 512 Byte reserved
+#define eFUSE_SIZE		    (1 * 512)	// 512 Byte eFuse, 512 Byte reserved
 
-#define MOVI_BLKSIZE		(1<<9) /* 512 bytes */
+#define MOVI_BLKSIZE		(1 << 9) /* 512 bytes */
 //mj defined
-#define FWBL1_SIZE		(8* 1024) //IROM BL1 SIZE 8KB
-#define BL2_SIZE		(16 * 1024)//uboot BL1 16KB
+#define FWBL1_SIZE		    (8 * 1024) //IROM BL1 SIZE 8KB
+#define BL2_SIZE		    (16 * 1024)//uboot BL1 16KB
 
 /* partition information */
 #define PART_SIZE_UBOOT		(495 * 1024)
@@ -20,20 +20,19 @@
 #define PART_SIZE_ROOTFS	(2 * 1024 * 1024)//  2M
 #define RAW_AREA_SIZE		(16 * 1024 * 1024)// 16MB
 
-	#define MOVI_RAW_BLKCNT		(RAW_AREA_SIZE / MOVI_BLKSIZE)	/* 16MB */
-	#define MOVI_FWBL1_BLKCNT	(FWBL1_SIZE / MOVI_BLKSIZE)	/* FWBL1:8KB */
-	#define MOVI_BL2_BLKCNT		(BL2_SIZE / MOVI_BLKSIZE)	/* BL2:16KB */
-	#define MOVI_ENV_BLKCNT		(CONFIG_ENV_SIZE / MOVI_BLKSIZE)	/* ENV:16KB */
-	#define MOVI_UBOOT_BLKCNT	(PART_SIZE_UBOOT / MOVI_BLKSIZE)/* UBOOT:512KB */
-	#define MOVI_ZIMAGE_BLKCNT	(PART_SIZE_KERNEL / MOVI_BLKSIZE)/* 4MB */
-	#define ENV_START_BLOCK		(544*1024)/MOVI_BLKSIZE
+#define MOVI_RAW_BLKCNT		(RAW_AREA_SIZE / MOVI_BLKSIZE)	/* 16MB */
+#define MOVI_FWBL1_BLKCNT	(FWBL1_SIZE / MOVI_BLKSIZE)	/* FWBL1:8KB */
+#define MOVI_BL2_BLKCNT		(BL2_SIZE / MOVI_BLKSIZE)	/* BL2:16KB */
+#define MOVI_ENV_BLKCNT		(CONFIG_ENV_SIZE / MOVI_BLKSIZE)	/* ENV:16KB */
+#define MOVI_UBOOT_BLKCNT	(PART_SIZE_UBOOT / MOVI_BLKSIZE)/* UBOOT:512KB */
+#define MOVI_ZIMAGE_BLKCNT	(PART_SIZE_KERNEL / MOVI_BLKSIZE)/* 4MB */
+#define ENV_START_BLOCK		(544*1024)/MOVI_BLKSIZE
 
-	#define MOVI_UBOOT_POS		((eFUSE_SIZE / MOVI_BLKSIZE) + MOVI_FWBL1_BLKCNT + MOVI_BL2_BLKCNT)
+#define MOVI_UBOOT_POS		((eFUSE_SIZE / MOVI_BLKSIZE) + MOVI_FWBL1_BLKCNT + MOVI_BL2_BLKCNT)
 
 #define MOVI_ROOTFS_BLKCNT	(PART_SIZE_ROOTFS / MOVI_BLKSIZE)
 
 /*
- *
  * start_blk: start block number for image
  * used_blk: blocks occupied by image
  * size: image size in bytes

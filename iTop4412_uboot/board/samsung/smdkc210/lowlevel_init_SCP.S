@@ -79,7 +79,6 @@ lowlevel_init:
     ldr r0, =0x1002040c
     ldr r1, =0x00
     str r1, [r0]
-        
 #ifdef check_mem /*liyang 20110822*/
     /* 当已经运行在 RAM中，则不需要重新定位 u-boot.
        实际上，在 u-boot 运行在ram之前，必须配置内存控制器 */
@@ -143,11 +142,6 @@ v310_1:
 out:
 	/* for UART 115200 初始化后发送了一个 'O' */
 	bl uart_asm_init
-
-/* ONENAND NAND 无用 */
-#if defined(CONFIG_ONENAND)
-	bl onenandcon_init
-#endif
 
 	/* Print 'K' */
 	ldr	r0, =ELFIN_UART_CONSOLE_BASE
@@ -570,95 +564,6 @@ uart_asm_init:
 	ldr	r1, =0x4f4f4f4f
 	str	r1, [r0, #UTXH_OFFSET]		@'O'
 
-	mov	pc, lr
-
-/*
- * OneNAND Interface Init
- */
-onenandcon_init:
-wait_orwb:
-	@; Read ONENAND_IF_STATUS
-	ldr	r0, =CFG_ONENANDXL_BASE		@; 0x0C600000
-	ldr	r1, [r0, #0x100]		@; ONENAND_IF_STATUS_OFFSET(0x100)
-	bic	r1, r1, #0xFFFFFFFE
-	cmp	r1, #0x0
-
-	@; ORWB != 0x0
-	bne	wait_orwb
-
-	@; write new configuration to onenand system configuration1 register
-	ldr	r1, =0xF006			@; Sync.
-	ldr	r2, =(CFG_ONENAND_BASE+0x1E442)	@; 0x1E442(REG_SYS_CONF1)
-	strh	r1, [r2]
-
-	@; read one dummy halfword
-	ldrh	r1, [r2]
-	ldrh	r1, [r2]
-
-	@; write new configuration to ONENAND_IF_CTRL
-	ldr	r0, =CFG_ONENANDXL_BASE		@; 0x0C600000
-	@;ldr	r1, =0x2F006			@; ONENAND_IF_CTRL_REG_VAL (GCE off)
-	ldr	r1, =0x402F006			@; ONENAND_IF_CTRL_REG_VAL (GCE on)
-	str	r1, [r0, #0x100]		@; ONENAND_IF_STATUS_OFFSET(0x100)
-
-	mov	pc, lr
-
-/*
- * Nand Interface Init for SMDKC100
- */
-	.globl nand_asm_init
-nand_asm_init:
-
-	/* Setting GPIO for NAND */
-	/* This setting is NAND initialze code at booting time in iROM. */
-
-	ldr	r0, =0x11000000
-	
-	ldr     r1, [r0, #MP01CON_OFFSET]
-	bic     r1, r1, #(0xf<<8)
-	orr     r1, r1, #(0x3<<8)
-	str     r1, [r0, #MP01CON_OFFSET]
-
-@	ldr	r1, [r0, #MP01CON_OFFSET]
-@	bic	r1, r1, #(0xf<<8)
-@       orr     r1, r1, #((0x3<<8)|(0x2<<16)|(0x2<<20))
-@       orr     r1, r1, #0x220300
-@       ldr     r2, =0x220300
-@       bic     r1, r1, r2
-@	str	r1, [r0, #MP01CON_OFFSET]
-
-        ldr     r1, [r0, #MP01PUD_OFFSET]
-        bic     r1, r1, #(0x3<<4)
-        str     r1, [r0, #MP01PUD_OFFSET]
-
-	ldr     r1, [r0, #MP03CON_OFFSET]
-	bic     r1, r1, #0xFFFFFF
-
-	ldr     r2, =0x222
-	orr     r1, r1, r2
-	str     r1, [r0, #MP03CON_OFFSET]
-
-	ldr	r0, =ELFIN_NAND_BASE
-	ldr     r1, [r0, #NFCONF_OFFSET]
-
-	ldr     r2, =0x7772
-	bic	r1, r1, r2
-
-	ldr	r2, =NFCONF_VAL
-	orr	r1, r1, r2
-	str	r1, [r0, #NFCONF_OFFSET]
-	ldr	r1, [r0, #NFCONT_OFFSET]
-	ldr     r2, =0x6
-	bic	r1, r1, r2
-
-	ldr	r2, =NFCONT_VAL
-
-	orr	r1, r1, r2
-	str	r1, [r0, #NFCONT_OFFSET]
-	ldr     r1, [r0, #MP01CON_OFFSET]
-	bic     r1, r1, #(0xf<<8)
-	orr     r1, r1, #(0x3<<8)
-	str     r1, [r0, #MP01CON_OFFSET]
 	mov	pc, lr
 
 /*

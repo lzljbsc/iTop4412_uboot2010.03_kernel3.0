@@ -322,17 +322,6 @@
 
 #define CONFIG_BOOTCOMMAND	"onenand read 40008000 600000 300000;onenand read 40800000 b00000 100000;bootm 40008000 40800000"//"movi read kernel c0008000;bootm c0008000"
 
-/* OneNAND configuration */
-#define CFG_ONENAND_BASE 	            (0x0C000000)
-#define CFG_ONENANDXL_BASE              (0x0C600000)
-#define CFG_MAX_ONENAND_DEVICE	        1
-#define CONFIG_SYS_ONENAND_BASE         CFG_ONENAND_BASE
-   
-#define CONFIG_BOOT_ONENAND_IROM
-#define CONFIG_ONENAND
-#define ONENAND_REG_DBS_DFS_WIDTH 	    (0x160)
-#define ONENAND_REG_FLASH_AUX_CNTRL     (0x300)
-
 #define CONFIG_ENV_IS_IN_AUTO
 
 #define CONFIG_4212_AP10_BOOTLOADER     "u-boot-exynos4212-evt0-nonfused.bin"

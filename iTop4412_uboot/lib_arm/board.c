@@ -8,8 +8,6 @@
 #include <timestamp.h>
 #include <version.h>
 #include <serial.h>
-#include <nand.h>  // TODO: 移除
-#include <onenand_uboot.h> // TODO: 移除
 #include <s5pc210.h>
 #include <mmc.h>
 
@@ -23,31 +21,6 @@ ulong monitor_flash_len;
 
 const char version_string[] =
 	U_BOOT_VERSION" (" U_BOOT_DATE " - " U_BOOT_TIME ")"CONFIG_IDENT_STRING;
-
-/************************************************************************
- * Coloured LED functionality
- ************************************************************************
- * May be supplied by boards if desired
- */
-void inline __coloured_LED_init (void) {}
-void coloured_LED_init (void) __attribute__((weak, alias("__coloured_LED_init")));
-void inline __red_LED_on (void) {}
-void red_LED_on (void) __attribute__((weak, alias("__red_LED_on")));
-void inline __red_LED_off(void) {}
-void red_LED_off(void) __attribute__((weak, alias("__red_LED_off")));
-void inline __green_LED_on(void) {}
-void green_LED_on(void) __attribute__((weak, alias("__green_LED_on")));
-void inline __green_LED_off(void) {}
-void green_LED_off(void) __attribute__((weak, alias("__green_LED_off")));
-void inline __yellow_LED_on(void) {}
-void yellow_LED_on(void) __attribute__((weak, alias("__yellow_LED_on")));
-void inline __yellow_LED_off(void) {}
-void yellow_LED_off(void) __attribute__((weak, alias("__yellow_LED_off")));
-void inline __blue_LED_on(void) {}
-void blue_LED_on(void) __attribute__((weak, alias("__blue_LED_on")));
-void inline __blue_LED_off(void) {}
-void blue_LED_off(void) __attribute__((weak, alias("__blue_LED_off")));
-
 
 static int init_baudrate (void)
 {
@@ -210,9 +183,6 @@ void start_armboot (void)
 
 	/* initialize environment */
 	env_relocate ();
-
-	/* IP Address */
-	gd->bd->bi_ip_addr = getenv_IPaddr ("ipaddr");
 
 	stdio_init ();	/* get the devices list going. */
 

@@ -18,51 +18,51 @@
    是校验,如 bl1的文件大小，校验和
    在E4412的芯片中好像并未使用，最终的bl2镜像里也没有
 TODO: 需要测试下生成 bl2.bin */
-#if 0
-	.word 0x2000  /* 这里的 0x2000 ，在后面的拷贝中，判断了下镜像有效性 */
-	.word 0x0
-	.word 0x0
-	.word 0x0
+#if 1
+    .word 0x2000  /* 这里的 0x2000 ，在后面的拷贝中，判断了下镜像有效性 */
+    .word 0x0
+    .word 0x0
+    .word 0x0
 #endif
 /* globl 声明一个符号，可被其他文件引用，相当于声明了一个全局变量，
    .globl 和 .global 相同。
    该部分为处理器的异常处理向量表。
    地址范围： 0x0000 0000 ~ 0x0000 001c ， 刚好 8条 指令,包含 reset */
-.globl _start          // 程序入口  u-boot.lds 中定义的 ENTRY(_start)
-_start: b	reset      // 复位向量，复位后跳转到 reset
-	ldr	pc, _undefined_instruction   // ARM异常向量表，7种异常 0x00000000
-	ldr	pc, _software_interrupt
-	ldr	pc, _prefetch_abort
-	ldr	pc, _data_abort
-	ldr	pc, _not_used
-	ldr	pc, _irq
-	ldr	pc, _fiq   // 地址 0x0000 001c
+.globl _start           // 程序入口  u-boot.lds 中定义的 ENTRY(_start)
+_start: b    reset      // 复位向量，复位后跳转到 reset
+    ldr    pc, _undefined_instruction   // ARM异常向量表，7种异常 0x00000000
+    ldr    pc, _software_interrupt
+    ldr    pc, _prefetch_abort
+    ldr    pc, _data_abort
+    ldr    pc, _not_used
+    ldr    pc, _irq
+    ldr    pc, _fiq   // 地址 0x0000 001c
 
     /* ldr 指令: 将后面标号处的内容加载到指定寄存器 */
 
 /* .word 伪操作用于分配一段字内存单元（分配的单元都是字对齐的），
     并用伪操作中的 expr 初始化。 .long 和 .int 作用与之相同 */
 _undefined_instruction:
-	.word undefined_instruction
+    .word undefined_instruction
 _software_interrupt:
-	.word software_interrupt
+    .word software_interrupt
 _prefetch_abort:
-	.word prefetch_abort
+    .word prefetch_abort
 _data_abort:
-	.word data_abort
+    .word data_abort
 _not_used:
-	.word not_used
+    .word not_used
 _irq:
-	.word irq
+    .word irq
 _fiq:
-	.word fiq
+    .word fiq
 _pad:
-	.word 0x12345678 /* now 16*4=64 */
+    .word 0x12345678 /* now 16*4=64 */
 .global _end_vect
 _end_vect:
 /* 使内存16字节对齐，如果不对齐，使用 0xdeadbeef 填充
    上面的 _pad 已经填充为 16字节了，这里没啥用 */
-	.balignl 16,0xdeadbeef
+    .balignl 16,0xdeadbeef
 /*
  *************************************************************************
  *
@@ -78,7 +78,7 @@ _end_vect:
 /* 定义在 board/samsung/smdkc210/config.mk 
    uboot 镜像在 SDRAM 中的重定位地址 0xc3e00000 */
 _TEXT_BASE:
-	.word	TEXT_BASE
+    .word    TEXT_BASE
 
 /*
  * Below variable is very important because we use MMU in U-Boot.
@@ -89,13 +89,13 @@ _TEXT_BASE:
    4412 有两个 DMC, 这是 DMC-0 中的地址
    include/configs/itop_4412_android.h  0x43e00000  */
 _TEXT_PHY_BASE:
-	.word	CFG_PHY_UBOOT_BASE
+    .word    CFG_PHY_UBOOT_BASE
 
 /* 声明 _armboot_start 并用 _start 来进行初始化，
    _start 在 cpu/arm_cortexa9/u-boot.lds 中定义  entry */
 .globl _armboot_start
 _armboot_start: 
-	.word _start   
+    .word _start   
 
 /* __bss_start _end 是在 u-boot.lds 中定义 */
 /*
@@ -103,200 +103,203 @@ _armboot_start:
  */
 .globl _bss_start
 _bss_start:
-	.word __bss_start
+    .word __bss_start
 
 .globl _bss_end
 _bss_end:
-	.word _end
+    .word _end
 
 /*
  * the actual reset code
  */
 reset:
     /* set the cpu to SVC32 mode and IRQ & FIQ disable */
-    /* 整个 uboot 工作是，CPU一直处于 SVC模式(特权模式) */
-	mrs	r0, cpsr
-	bic	r0, r0, #0x1f
-	orr	r0, r0, #0xd3
-	msr	cpsr,r0
+    /* 整个 uboot 工作时，CPU一直处于 SVC模式(特权模式) */
+    mrs    r0, cpsr
+    bic    r0, r0, #0x1f
+    orr    r0, r0, #0xd3
+    msr    cpsr, r0
 
     /* 处理 cache MMU ，这里不分析了 */
     /* 关于协处理器 CP15 的访问，需要参考arm指南 */
 cache_init:
-	mrc	p15, 0, r0, c0, c0, 0	@ read main ID register
-	and	r1, r0, #0x00f00000	@ variant
-	and	r2, r0, #0x0000000f	@ revision
-	orr	r2, r2, r1, lsr #20-4	@ combine variant and revision
-	cmp	r2, #0x30
-	mrceq	p15, 0, r0, c1, c0, 1	@ read ACTLR
-	orreq	r0, r0, #0x6		@ Enable DP1(2), DP2(1)
-	mcreq	p15, 0, r0, c1, c0, 1	@ write ACTLR
-	/*
-	 * Invalidate L1 I/D
-	 */
-	mov	r0, #0			@ set up for MCR
-	mcr	p15, 0, r0, c8, c7, 0	@ invalidate TLBs
-	mcr	p15, 0, r0, c7, c5, 0	@ invalidate icache
+    mrc    p15, 0, r0, c0, c0, 0    @ read main ID register
+    and    r1, r0, #0x00f00000      @ variant
+    and    r2, r0, #0x0000000f      @ revision
+    orr    r2, r2, r1, lsr #20-4    @ combine variant and revision
+    cmp    r2, #0x30
+    mrceq    p15, 0, r0, c1, c0, 1  @ read ACTLR
+    orreq    r0, r0, #0x6           @ Enable DP1(2), DP2(1)
+    mcreq    p15, 0, r0, c1, c0, 1  @ write ACTLR
+    /*
+     * Invalidate L1 I/D
+     */
+    mov    r0, #0                   @ set up for MCR
+    mcr    p15, 0, r0, c8, c7, 0    @ invalidate TLBs
+    mcr    p15, 0, r0, c7, c5, 0    @ invalidate icache
 
-	/*
-	 * disable MMU stuff and caches
-	 */
-	mrc	p15, 0, r0, c1, c0, 0
-	bic	r0, r0, #0x00002000	@ clear bits 13 (--V-)
-	bic	r0, r0, #0x00000007	@ clear bits 2:0 (-CAM)
-	orr	r0, r0, #0x00001000	@ set bit 12 (---I) Icache
-	orr	r0, r0, #0x00000002	@ set bit 1  (--A-) Align
-	orr	r0, r0, #0x00000800	@ set bit 11 (Z---) BTB
-	mcr	p15, 0, r0, c1, c0, 0
-	
+    /*
+     * disable MMU stuff and caches
+     */
+    mrc    p15, 0, r0, c1, c0, 0
+    bic    r0, r0, #0x00002000      @ clear bits 13 (--V-)
+    bic    r0, r0, #0x00000007      @ clear bits 2:0 (-CAM)
+    orr    r0, r0, #0x00001000      @ set bit 12 (---I) Icache
+    orr    r0, r0, #0x00000002      @ set bit 1  (--A-) Align
+    orr    r0, r0, #0x00000800      @ set bit 11 (Z---) BTB
+    mcr    p15, 0, r0, c1, c0, 0
+    
     /* LED Test Code */
 #if 0
     /* LED3 */
-	ldr	r0, =0x11000064  /* GPK1(1)  */
-	ldr	r1, =0x00000002	 /* GPK1(1) output high	*/
-	str	r1, [r0]
+    ldr    r0, =0x11000064          /* GPK1(1)  */
+    ldr    r1, =0x00000002          /* GPK1(1) output high    */
+    str    r1, [r0]
 
-	ldr	r0, =0x11000060  /* GPK1(1)  */
-	ldr	r1, =0x00000010	 /* GPK1(1) output high	*/
-	str	r1, [r0]
+    ldr    r0, =0x11000060          /* GPK1(1)  */
+    ldr    r1, =0x00000010          /* GPK1(1) output high    */
+    str    r1, [r0]
 
     /* LED2 */
-	ldr	r0, =0x11000104  /* GPL2(0)  */
-	ldr	r1, =0x00000001	 /* GPL2(0) output high	*/
-	str	r1, [r0]
-	
-	ldr	r0, =0x11000100  /* GPL2(0)  */
-	ldr	r1, =0x00000001	 /* GPL2(0) output high	*/
-	str	r1, [r0]
+    ldr    r0, =0x11000104          /* GPL2(0)  */
+    ldr    r1, =0x00000001          /* GPL2(0) output high    */
+    str    r1, [r0]
+    
+    ldr    r0, =0x11000100          /* GPL2(0)  */
+    ldr    r1, =0x00000001          /* GPL2(0) output high    */
+    str    r1, [r0]
 #endif
 
-	/* Read booting information */
-    ldr	r0, =POWER_BASE
-    ldr	r1, [r0,#OMR_OFFSET]
-    bic	r2, r1, #0xffffffc1    /* 取 OM_STAT 寄存器的 [5:1] 位
+    /* Read booting information */
+    ldr    r0, =POWER_BASE
+    ldr    r1, [r0, #OMR_OFFSET]
+    bic    r2, r1, #0xffffffc1      /* 取 OM_STAT 寄存器的 [5:1] 位 */
 
-	/* SD/MMC BOOT */  /* itop 板子 SD启动走这个分支 */
-	cmp     r2, #0x4
-    moveq   r3, #BOOT_MMCSD	  /* 0x03 */
+    /* SD/MMC BOOT itop 板子 SD启动走这个分支 */
+    cmp    r2, #0x4
+    moveq  r3, #BOOT_MMCSD          /* 0x03 */
 
-	/* eMMC441 BOOT */  /* itop 板子 eMMC启动走这个分支 */
-	cmp		r2, #0x28
-	moveq	r3, #BOOT_EMMC441   /* 0x07 */
-	
-	/* For second device booting */
+    /* eMMC441 BOOT itop 板子 eMMC启动走这个分支 */
+    cmp    r2, #0x28
+    moveq  r3, #BOOT_EMMC441        /* 0x07 */
+    
+    /* For second device booting */
     /* 第二启动方式这里没有实现，所以设置 eMMC 启动时，
        当没有可用镜像时，无法自动选择 SDMMC 启动 
        而 三星是支持第二启动的。 详见启动模式 */
+    /* 这里没有实现第二启动方式, 与bl2镜像是密切相关的, 是在bl2镜像中拷贝的 */
     /* TODO: 实现第二启动方式 */
-	
+    
     /* 把上面得到的启动信息放在了 INF_REG3 寄存器了 
      * 放在这个寄存器而不是每次都 OM_STAT寄存器，是因为有第二启动项
      * 而OM_STAT 只是指示OM引脚状态，并非最终启动方式 */
     /* INFORM3 : 0x1200080C 
        是一个用户自定义的寄存器 */
-	ldr	r0, =INF_REG_BASE
-	str	r3, [r0, #INF_REG3_OFFSET]     
+    ldr    r0, =INF_REG_BASE
+    str    r3, [r0, #INF_REG3_OFFSET]     
 
-	/*
-	 * Go setup Memory and board specific bits prior to relocation.
-	 */
-	//b     .
+    /*
+     * Go setup Memory and board specific bits prior to relocation.
+     */
+    //b     .
     /* lowlevel_init 在 board/samsung/smdkc210/lowlevel_init_SCP.S 实现
        这是一个与芯片相关的， SCP POP 不同 */
     /* 将时钟，内存初始化好了，另外获得了启动类型，如果是wakeup相关的，
      * 会直接跳转到内核了，跳转地址与 INF_REG0 有关 */
-	bl	lowlevel_init	/* go setup pll,mux,memory */
+    bl     lowlevel_init            /* go setup pll,mux,memory */
 
     /* PS_HOLD 在 lowlevel_init 中设置过 */
-	ldr	r0, =0x1002330C  /* PS_HOLD_CONTROL register */
-	ldr	r1, =0x00005300	 /* PS_HOLD output high	*/
-	str	r1, [r0]
+    ldr    r0, =0x1002330C          /* PS_HOLD_CONTROL register */
+    ldr    r1, =0x00005300          /* PS_HOLD output high    */
+    str    r1, [r0]
 
-	/* get ready to call C functions */
+    /* get ready to call C functions */
     /* 将堆栈设置在 DDR 中了,前面已经初始化好 DDR 了 0x43e00000 */
     /* 是将栈顶指向了uboot代码的前面，有大量空闲内存使用 */
     /* 使用的 DMC-0, 地址范围: 0x40000000 - 0xA0000000 , 共 1.5GB
        当然, 板子上只有 1G DDR, */
     /* fp 寄存器就是 old-sp 寄存器，前一栈帧 */
-	ldr	sp, _TEXT_PHY_BASE	/* setup temp stack pointer */
-	sub	sp, sp, #12
-	mov	fp, #0			/* no previous frame, so fp=0 */
+    ldr    sp, _TEXT_PHY_BASE       /* setup temp stack pointer */
+    sub    sp, sp, #12
+    mov    fp, #0                   /* no previous frame, so fp=0 */
 
     /* 判断是否已经在RAM中运行了，如果是，则跳转至 after_copy */
     /* 判断方式与 lowlevel_init 中一致 */
-	/* when we already run in ram, we don't need to relocate U-Boot.
-	 * and actually, memory controller must be configured before U-Boot
-	 * is running in ram.
-	 */
-	ldr	r0, =0xff000fff
-	bic	r1, pc, r0		/* r0 <- current base addr of code */
-	ldr	r2, _TEXT_BASE		/* r1 <- original base addr in ram */
-	bic	r2, r2, r0		/* r0 <- current base addr of code */
-	cmp     r1, r2                  /* compare r0, r1                  */
-	beq     after_copy		/* r0 == r1 then skip flash copy   */
+    /* when we already run in ram, we don't need to relocate U-Boot.
+     * and actually, memory controller must be configured before U-Boot
+     * is running in ram.
+     */
+    ldr     r0, =0xff000fff
+    bic     r1, pc, r0              /* r0 <- current base addr of code */
+    ldr     r2, _TEXT_BASE          /* r1 <- original base addr in ram */
+    bic     r2, r2, r0              /* r0 <- current base addr of code */
+    cmp     r1, r2                  /* compare r0, r1                  */
+    beq     after_copy              /* r0 == r1 then skip flash copy   */
 
     /* LED2 */
-	ldr	r0, =0x11000104  /* GPL2(0)  */
-	ldr	r1, =0x00000001	 /* GPL2(0) output high	*/
-	str	r1, [r0]
-	
-	ldr	r0, =0x11000100  /* GPL2(0)  */
-	ldr	r1, =0x00000001	 /* GPL2(0) output high	*/
-	str	r1, [r0]
-	
-	/* wait ?us */
-	mov	r1, #0x10000
-9:	subs	r1, r1, #1
-	bne	9b
+    ldr     r0, =0x11000104         /* GPL2(0)  */
+    ldr     r1, =0x00000001         /* GPL2(0) output high    */
+    str     r1, [r0]
+    
+    ldr     r0, =0x11000100         /* GPL2(0)  */
+    ldr     r1, =0x00000001         /* GPL2(0) output high    */
+    str     r1, [r0]
+    
+    /* wait ?us */
+    mov     r1, #0x10000
+9:  
+    subs    r1, r1, #1
+    bne     9b
 
     /* 从 INFORM3 中读取出启动设备，跳转至相应的处理函数中
      * 只有 BOOT_EMMC441 和 BOOT_MMCSD 两种值 */
-	ldr	r0, =INF_REG_BASE
-	ldr	r1, [r0, #INF_REG3_OFFSET]
-	
+    ldr     r0, =INF_REG_BASE
+    ldr     r1, [r0, #INF_REG3_OFFSET]
+    
     /* EMMC 启动 */
-	cmp     r1, #BOOT_EMMC441
-	beq     emmc441_boot
-	
+    cmp     r1, #BOOT_EMMC441
+    beq     emmc441_boot
+    
     /* MMCSD 启动 */
-	cmp     r1, #BOOT_MMCSD
-	beq     mmcsd_boot
-	
+    cmp     r1, #BOOT_MMCSD
+    beq     mmcsd_boot
+    
     /* 第二启动方式不会走 */
-	cmp     r1, #BOOT_SEC_DEV
-	beq     mmcsd_boot
+    cmp     r1, #BOOT_SEC_DEV
+    beq     mmcsd_boot
 
+    /* 如果 emmc441 启动失败了,则设置INF_REG3为SD启动 */
 second_mmcsd_boot:
-	ldr   r3, =BOOT_MMCSD	
-	ldr	r0, =INF_REG_BASE
-	str	r3, [r0, #INF_REG3_OFFSET]
-	
+    ldr     r3, =BOOT_MMCSD    
+    ldr     r0, =INF_REG_BASE
+    str     r3, [r0, #INF_REG3_OFFSET]
+    
 mmcsd_boot:
     /* 时钟分频，根据手册，16分频 */
     /* 使用的 Xmmc2 接口，对应 MMC2 */
-	ldr	r0, =CMU_BASE
-	ldr	r2, =CLK_DIV_FSYS2_OFFSET
-	ldr	r1, [r0, r2]
-	orr r1, r1, #0xf
-	str r1, [r0, r2]
-	bl      movi_uboot_copy  /* 这里是从 SD卡 中拷贝 */
-	b       after_copy
+    ldr     r0, =CMU_BASE
+    ldr     r2, =CLK_DIV_FSYS2_OFFSET
+    ldr     r1, [r0, r2]
+    orr     r1, r1, #0xf
+    str     r1, [r0, r2]
+    bl      movi_uboot_copy         /* 这里是从 SD卡 中拷贝 */
+    b       after_copy
 
 emmc441_boot:
     /* 时钟分频，根据手册，4分频 */
     /* 使用的 SD_4 接口，对应 MMC4 */
-	ldr	r0, =CMU_BASE
-	ldr	r2, =CLK_DIV_FSYS3_OFFSET
-	ldr	r1, [r0, r2]
-	orr r1, r1, #0x3
-	str r1, [r0, r2]
-	bl		emmc441_uboot_copy  /* 拷贝uboot镜像到DDR中, eMMC4.4  */
-	ldr   r0, =0x43e00000  /* 判断镜像最前面是否为 0x2000，正确则跳转 */
-	ldr   r1, [r0]
-	ldr   r2, =0x2000
-	cmp r1, r2
-	bne  second_mmcsd_boot  /* 镜像不正确，则进行第二启动项 */
-	b	after_copy
+    ldr     r0, =CMU_BASE
+    ldr     r2, =CLK_DIV_FSYS3_OFFSET
+    ldr     r1, [r0, r2]
+    orr     r1, r1, #0x3
+    str     r1, [r0, r2]
+    bl      emmc441_uboot_copy      /* 拷贝uboot镜像到DDR中, eMMC4.4  */
+    ldr     r0, =0x43e00000         /* 判断镜像最前面是否为 0x2000，正确则跳转 */
+    ldr     r1, [r0]
+    ldr     r2, =0x2000
+    cmp     r1, r2
+    bne     second_mmcsd_boot       /* 镜像不正确，则进行第二启动项 */
+    b       after_copy
 
 /* 到这里，uboot镜像已经在DDR中了 */
 after_copy:
@@ -304,42 +307,42 @@ after_copy:
  * 而实际拷贝的地址在 0x43e00000 , 
  * 地址映射关系见 lowlevel_init_SCP.S 中的 mmu_table */
 enable_mmu:
-	/* enable domain access */
-	ldr	r5, =0x0000ffff
-	mcr	p15, 0, r5, c3, c0, 0		@load domain access register
+    /* enable domain access */
+    ldr     r5, =0x0000ffff
+    mcr     p15, 0, r5, c3, c0, 0   @load domain access register
 
     /* 这里借助 _mmu_table_base CFG_PHY_UBOOT_BASE 计算
      * mmu_table 在物理内存中的地址，因为mmu必须设置物理内存 */
-	/* Set the TTB register */
-	ldr	r0, _mmu_table_base
-	ldr	r1, =CFG_PHY_UBOOT_BASE
-	ldr	r2, =0xfff00000
-	bic	r0, r0, r2
-	orr	r1, r0, r1
-	mcr	p15, 0, r1, c2, c0, 0
+    /* Set the TTB register */
+    ldr     r0, _mmu_table_base
+    ldr     r1, =CFG_PHY_UBOOT_BASE
+    ldr     r2, =0xfff00000
+    bic     r0, r0, r2
+    orr     r1, r0, r1
+    mcr     p15, 0, r1, c2, c0, 0
 
     /* 这里开启了 MMU，之后就都是虚拟地址了 */
     /* 注意: 虽然这里开启了 MMU, 但目前使用到的地址都是线性映射的(mmu_table)
        所以与未开启 MMU 时的运行是一样的 */
-	/* Enable the MMU */
+    /* Enable the MMU */
 mmu_on:
-	mrc	p15, 0, r0, c1, c0, 0
-	orr	r0, r0, #1
-	mcr	p15, 0, r0, c1, c0, 0
-	nop
-	nop
-	nop
-	nop
+    mrc     p15, 0, r0, c1, c0, 0
+    orr     r0, r0, #1
+    mcr     p15, 0, r0, c1, c0, 0
+    nop
+    nop
+    nop
+    nop
 
     /* 将 DMC 密度信息存放在了 C变量中 
      * 到这里并未看到 DMC信息如何设置到 CFG_UBOOT_BASE 前面地址的
-     * TODO: 分析C变量作用 */
-	/* store DMC density information in u-boot C level variable */
-	ldr	r0, = CFG_UBOOT_BASE
-	sub	r0, r0, #4
-	ldr	r1, [r0]
-	ldr	r0, _dmc_density
-	str	r1, [r0]
+     * 这个C变量是在POP封装时用的, 确认了内存大小 */
+    /* store DMC density information in u-boot C level variable */
+    ldr     r0, = CFG_UBOOT_BASE
+    sub     r0, r0, #4
+    ldr     r1, [r0]
+    ldr     r0, _dmc_density
+    str     r1, [r0]
 
     /* 下面的设置堆栈和清bss段，需要留意空间是否重叠
      * 在内存中，代码的后面就是bss段，段的末尾使用 _end 表示，
@@ -356,45 +359,45 @@ mmu_on:
      * 根据映射关系，0xC开头的与0x4开头的物理地址一致 
      */
 skip_hw_init:
-	/* Set up the stack						    */
+    /* Set up the stack                            */
     /* 这里重新设置了堆栈，上次设置堆栈将栈顶设置在了紧挨uboot镜像
      * 的地方（减了12），这次将栈设置在了 uboot镜像的后面 (2M) - 4K 处 */
     /* CFG_UBOOT_BASE = 0x43e00000
      * CFG_UBOOT_SIZE = 2 * 1024 * 1024 = 0x200000 = 2M
      * 0x1000 = 4K */
 stack_setup:
-	ldr	sp, =(CFG_UBOOT_BASE + CFG_UBOOT_SIZE - 0x1000)
+    ldr     sp, =(CFG_UBOOT_BASE + CFG_UBOOT_SIZE - 0x1000)
 
     /* 清 bss 段 
      * __bss_start _end 在lds链接脚本中定义 */
 clear_bss:
-	ldr	r0, _bss_start		/* find start of bss segment        */
-	ldr	r1, _bss_end		/* stop here                        */
-	mov 	r2, #0x00000000		/* clear                            */
+    ldr     r0, _bss_start          /* find start of bss segment        */
+    ldr     r1, _bss_end            /* stop here                        */
+    mov     r2, #0x00000000         /* clear                            */
 
     /* 具体的循环清零动作 */
 clbss_l:
-	str	r2, [r0]		/* clear loop...                    */
-	add	r0, r0, #4
-	cmp	r0, r1
-	ble	clbss_l
-	
+    str     r2, [r0]                /* clear loop...                    */
+    add     r0, r0, #4
+    cmp     r0, r1
+    ble     clbss_l
+    
     /* 一些都准备好了，跳转到C语言的 start_armboot 函数中 */
-	ldr	pc, _start_armboot
+    ldr     pc, _start_armboot
 
 /* start_armboot 为 C语言的入口函数 */
 /* 这里的 _start_armboot 处存放的是 C语言函数 start_armboot 的地址 
  * 通过上面的 ldr pc, _start_armboot , 就直接跳转到 C语言函数了 */
 _start_armboot:
-	.word start_armboot
+    .word start_armboot
 
 /* dmc_density 为 C语言变量 */
 _dmc_density:
-	.word dmc_density
+    .word dmc_density
 
 /* mmu_table 地址映射表 */
 _mmu_table_base:
-	.word mmu_table
+    .word mmu_table
 
 /* TODO: theLastJump 分析 */
 /*
@@ -402,32 +405,33 @@ _mmu_table_base:
  * actually, we don't need to do anything about cache if not use d-cache in U-Boot
  * So, in this function we clean only MMU. by scsuh
  *
- * void	theLastJump(void *kernel, int arch_num, uint boot_params);
+ * void    theLastJump(void *kernel, int arch_num, uint boot_params);
  */
-	.globl theLastJump
+.globl theLastJump
 theLastJump:
-	mov	r9, r0
-	ldr	r3, =0xfff00000
-	ldr	r4, _TEXT_PHY_BASE
-	adr	r5, phy_last_jump
-	bic	r5, r5, r3
-	orr	r5, r5, r4
-	mov	pc, r5
+    mov     r9, r0
+    ldr     r3, =0xfff00000
+    ldr     r4, _TEXT_PHY_BASE
+    adr     r5, phy_last_jump
+    bic     r5, r5, r3
+    orr     r5, r5, r4
+    mov     pc, r5
 phy_last_jump:
-	/*
-	 * disable MMU stuff
-	 */
-	mrc	p15, 0, r0, c1, c0, 0
-	bic	r0, r0, #0x00002300	/* clear bits 13, 9:8 (--V- --RS) */
-	bic	r0, r0, #0x00000087	/* clear bits 7, 2:0 (B--- -CAM) */
-	orr	r0, r0, #0x00000002	/* set bit 2 (A) Align */
-	orr	r0, r0, #0x00001000	/* set bit 12 (I) I-Cache */
-	mcr	p15, 0, r0, c1, c0, 0
+    /*
+     * disable MMU stuff
+     */
+    mrc     p15, 0, r0, c1, c0, 0
+    bic     r0, r0, #0x00002300    /* clear bits 13, 9:8 (--V- --RS) */
+    bic     r0, r0, #0x00000087    /* clear bits 7, 2:0 (B--- -CAM) */
+    orr     r0, r0, #0x00000002    /* set bit 2 (A) Align */
+    orr     r0, r0, #0x00001000    /* set bit 12 (I) I-Cache */
+    mcr     p15, 0, r0, c1, c0, 0
 
-	mcr	p15, 0, r0, c8, c7, 0	/* flush v4 TLB */
+    mcr     p15, 0, r0, c8, c7, 0    /* flush v4 TLB */
 
-	mov	r0, #0
-	mov	pc, r9
+    mov     r0, #0
+    mov     pc, r9
+
 /*
  *************************************************************************
  *
@@ -438,159 +442,159 @@ phy_last_jump:
 @
 @ IRQ stack frame.
 @
-#define S_FRAME_SIZE	72
+#define S_FRAME_SIZE    72
 
-#define S_OLD_R0	68
-#define S_PSR		64
-#define S_PC		60
-#define S_LR		56
-#define S_SP		52
+#define S_OLD_R0        68
+#define S_PSR           64
+#define S_PC            60
+#define S_LR            56
+#define S_SP            52
 
-#define S_IP		48
-#define S_FP		44
-#define S_R10		40
-#define S_R9		36
-#define S_R8		32
-#define S_R7		28
-#define S_R6		24
-#define S_R5		20
-#define S_R4		16
-#define S_R3		12
-#define S_R2		8
-#define S_R1		4
-#define S_R0		0
+#define S_IP            48
+#define S_FP            44
+#define S_R10           40
+#define S_R9            36
+#define S_R8            32
+#define S_R7            28
+#define S_R6            24
+#define S_R5            20
+#define S_R4            16
+#define S_R3            12
+#define S_R2            8
+#define S_R1            4
+#define S_R0            0
 
-#define MODE_SVC 0x13
-#define I_BIT	 0x80
+#define MODE_SVC        0x13
+#define I_BIT           0x80
 
 /*
  * use bad_save_user_regs for abort/prefetch/undef/swi ...
  * use irq_save_user_regs / irq_restore_user_regs for IRQ/FIQ handling
  */
 
-	.macro	bad_save_user_regs
-	sub	sp, sp, #S_FRAME_SIZE		@ carve out a frame on current user stack
-	stmia	sp, {r0 - r12}			@ Save user registers (now in svc mode) r0-r12
+.macro    bad_save_user_regs
+    sub     sp, sp, #S_FRAME_SIZE       @ carve out a frame on current user stack
+    stmia   sp, {r0 - r12}              @ Save user registers (now in svc mode) r0-r12
 
-	ldr	r2, _armboot_start
-	sub	r2, r2, #(CONFIG_SYS_MALLOC_LEN)
-	sub	r2, r2, #(CFG_GBL_DATA_SIZE+8)	@ set base 2 words into abort stack
-	ldmia	r2, {r2 - r3}			@ get values for "aborted" pc and cpsr (into parm regs)
-	add	r0, sp, #S_FRAME_SIZE		@ grab pointer to old stack
+    ldr     r2, _armboot_start
+    sub     r2, r2, #(CONFIG_SYS_MALLOC_LEN)
+    sub     r2, r2, #(CFG_GBL_DATA_SIZE+8)    @ set base 2 words into abort stack
+    ldmia   r2, {r2 - r3}               @ get values for "aborted" pc and cpsr (into parm regs)
+    add     r0, sp, #S_FRAME_SIZE       @ grab pointer to old stack
 
-	add	r5, sp, #S_SP
-	mov	r1, lr
-	stmia	r5, {r0 - r3}			@ save sp_SVC, lr_SVC, pc, cpsr
-	mov	r0, sp				@ save current stack into r0 (param register)
-	.endm
+    add     r5, sp, #S_SP
+    mov     r1, lr
+    stmia   r5, {r0 - r3}               @ save sp_SVC, lr_SVC, pc, cpsr
+    mov     r0, sp                      @ save current stack into r0 (param register)
+.endm
 
-	.macro	irq_save_user_regs
-	sub	sp, sp, #S_FRAME_SIZE
-	stmia	sp, {r0 - r12}			@ Calling r0-r12
-	add	r8, sp, #S_PC			@ !!!! R8 NEEDS to be saved !!!! a reserved stack spot would be good.
-	stmdb	r8, {sp, lr}^			@ Calling SP, LR
-	str	lr, [r8, #0]			@ Save calling PC
-	mrs	r6, spsr
-	str	r6, [r8, #4]			@ Save CPSR
-	str	r0, [r8, #8]			@ Save OLD_R0
-	mov	r0, sp
-	.endm
+.macro    irq_save_user_regs
+    sub     sp, sp, #S_FRAME_SIZE
+    stmia   sp, {r0 - r12}              @ Calling r0-r12
+    add     r8, sp, #S_PC               @ !!!! R8 NEEDS to be saved !!!! a reserved stack spot would be good.
+    stmdb   r8, {sp, lr}^               @ Calling SP, LR
+    str     lr, [r8, #0]                @ Save calling PC
+    mrs     r6, spsr
+    str     r6, [r8, #4]                @ Save CPSR
+    str     r0, [r8, #8]                @ Save OLD_R0
+    mov     r0, sp
+.endm
 
-	.macro	irq_restore_user_regs
-	ldmia	sp, {r0 - lr}^			@ Calling r0 - lr
-	mov	r0, r0
-	ldr	lr, [sp, #S_PC]			@ Get PC
-	add	sp, sp, #S_FRAME_SIZE
-	subs	pc, lr, #4			@ return & move spsr_svc into cpsr
-	.endm
+.macro    irq_restore_user_regs
+    ldmia   sp, {r0 - lr}^              @ Calling r0 - lr
+    mov     r0, r0
+    ldr     lr, [sp, #S_PC]             @ Get PC
+    add     sp, sp, #S_FRAME_SIZE
+    subs    pc, lr, #4                  @ return & move spsr_svc into cpsr
+.endm
 
-	.macro get_bad_stack
-	ldr	r13, _armboot_start		@ setup our mode stack (enter in banked mode)
-	sub	r13, r13, #(CONFIG_SYS_MALLOC_LEN)	@ move past malloc pool
-	sub	r13, r13, #(CFG_GBL_DATA_SIZE+8) @ move to reserved a couple spots for abort stack
+.macro get_bad_stack
+    ldr     r13, _armboot_start        @ setup our mode stack (enter in banked mode)
+    sub     r13, r13, #(CONFIG_SYS_MALLOC_LEN)  @ move past malloc pool
+    sub     r13, r13, #(CFG_GBL_DATA_SIZE+8)    @ move to reserved a couple spots for abort stack
 
-	str	lr, [r13]			@ save caller lr in position 0 of saved stack
-	mrs	lr, spsr			@ get the spsr
-	str	lr, [r13, #4]			@ save spsr in position 1 of saved stack
+    str     lr, [r13]                   @ save caller lr in position 0 of saved stack
+    mrs     lr, spsr                    @ get the spsr
+    str     lr, [r13, #4]               @ save spsr in position 1 of saved stack
 
-	mov	r13, #MODE_SVC			@ prepare SVC-Mode
-	@ msr	spsr_c, r13
-	msr	spsr, r13			@ switch modes, make sure moves will execute
-	mov	lr, pc				@ capture return pc
-	movs	pc, lr				@ jump to next instruction & switch modes.
-	.endm
+    mov     r13, #MODE_SVC              @ prepare SVC-Mode
+    @ msr     spsr_c, r13
+    msr     spsr, r13                   @ switch modes, make sure moves will execute
+    mov     lr, pc                      @ capture return pc
+    movs    pc, lr                      @ jump to next instruction & switch modes.
+.endm
 
-	.macro get_bad_stack_swi
-	sub	r13, r13, #4			@ space on current stack for scratch reg.
-	str	r0, [r13]			@ save R0's value.
-	ldr	r0, _armboot_start		@ get data regions start
-	sub	r0, r0, #(CONFIG_SYS_MALLOC_LEN)	@ move past malloc pool
-	sub	r0, r0, #(CFG_GBL_DATA_SIZE+8)	@ move past gbl and a couple spots for abort stack
-	str	lr, [r0]			@ save caller lr in position 0 of saved stack
-	mrs	r0, spsr			@ get the spsr
-	str	lr, [r0, #4]			@ save spsr in position 1 of saved stack
-	ldr	r0, [r13]			@ restore r0
-	add	r13, r13, #4			@ pop stack entry
-	.endm
+.macro get_bad_stack_swi
+    sub     r13, r13, #4                @ space on current stack for scratch reg.
+    str     r0, [r13]                   @ save R0's value.
+    ldr     r0, _armboot_start          @ get data regions start
+    sub     r0, r0, #(CONFIG_SYS_MALLOC_LEN)    @ move past malloc pool
+    sub     r0, r0, #(CFG_GBL_DATA_SIZE+8)      @ move past gbl and a couple spots for abort stack
+    str     lr, [r0]                    @ save caller lr in position 0 of saved stack
+    mrs     r0, spsr                    @ get the spsr
+    str     lr, [r0, #4]                @ save spsr in position 1 of saved stack
+    ldr     r0, [r13]                   @ restore r0
+    add     r13, r13, #4                @ pop stack entry
+.endm
 
-	.macro get_irq_stack			@ setup IRQ stack
-	ldr	sp, IRQ_STACK_START
-	.endm
+.macro get_irq_stack                    @ setup IRQ stack
+    ldr     sp, IRQ_STACK_START
+.endm
 
-	.macro get_fiq_stack			@ setup FIQ stack
-	ldr	sp, FIQ_STACK_START
-	.endm
+.macro get_fiq_stack                    @ setup FIQ stack
+    ldr     sp, FIQ_STACK_START
+.endm
 
 /*
  * exception handlers
  */
-	.align	5
+.align    5
 undefined_instruction:
-	get_bad_stack
-	bad_save_user_regs
-	bl	do_undefined_instruction
+    get_bad_stack
+    bad_save_user_regs
+    bl      do_undefined_instruction
 
-	.align	5
+.align    5
 software_interrupt:
-	get_bad_stack_swi
-	bad_save_user_regs
-	bl	do_software_interrupt
+    get_bad_stack_swi
+    bad_save_user_regs
+    bl      do_software_interrupt
 
-	.align	5
+.align    5
 prefetch_abort:
-	get_bad_stack
-	bad_save_user_regs
-	bl	do_prefetch_abort
+    get_bad_stack
+    bad_save_user_regs
+    bl      do_prefetch_abort
 
-	.align	5
+.align    5
 data_abort:
-	get_bad_stack
-	bad_save_user_regs
-	bl	do_data_abort
+    get_bad_stack
+    bad_save_user_regs
+    bl      do_data_abort
 
-	.align	5
+.align    5
 not_used:
-	get_bad_stack
-	bad_save_user_regs
-	bl	do_not_used
+    get_bad_stack
+    bad_save_user_regs
+    bl      do_not_used
 
-	.align	5
+.align    5
 irq:
-	get_bad_stack
-	bad_save_user_regs
-	bl	do_irq
+    get_bad_stack
+    bad_save_user_regs
+    bl      do_irq
 
-	.align	5
+.align    5
 fiq:
-	get_bad_stack
-	bad_save_user_regs
-	bl	do_fiq
+    get_bad_stack
+    bad_save_user_regs
+    bl      do_fiq
 
-	.align 5
+.align 5
 .global arm_cache_flush
 arm_cache_flush:
-       mcr     p15, 0, r1, c7, c5, 0           @ invalidate I cache
-       mov     pc, lr                          @ back to caller
+    mcr     p15, 0, r1, c7, c5, 0       @ invalidate I cache
+    mov     pc, lr                      @ back to caller
 
 /*
  *     v7_flush_dcache_all()
@@ -601,88 +605,86 @@ arm_cache_flush:
  *
  *     - mm    - mm_struct describing address space
  */
-       .align 5
+.align 5
 .global v7_flush_dcache_all
 v7_flush_dcache_all:
-
-	ldr	r0, =0xffffffff
-	mrc	p15, 1, r0, c0, c0, 1 		@ Read CLIDR
-	ands	r3, r0, #0x7000000
-	mov	r3, r3, LSR #23       		@ Cache level value (naturally aligned)
-	beq 	Finished
-	mov	r10, #0
+    ldr     r0, =0xffffffff
+    mrc     p15, 1, r0, c0, c0, 1       @ Read CLIDR
+    ands    r3, r0, #0x7000000
+    mov     r3, r3, LSR #23             @ Cache level value (naturally aligned)
+    beq     Finished
+    mov     r10, #0
 Loop1:         
-	add	r2, r10, r10, LSR #1  		@ Work out 3xcachelevel
-	mov	r1, r0, LSR r2        		@ bottom 3 bits are the Ctype for this level
-	and	r1, r1, #7            		@ get those 3 bits alone
-	cmp	r1, #2
-	blt	Skip                   		@ no cache or only instruction cache at this level
-	mcr	p15, 2, r10, c0, c0, 0 		@ write the Cache Size selection register
-	mov	r1, #0
-	mcr	p15, 0, r1, c7, c5, 4 		@ PrefetchFlush to sync the change to the CacheSizeID reg
-	mrc	p15, 1, r1, c0, c0, 0 		@ reads current Cache Size ID register
-	and	r2, r1, #0x7           		@ extract the line length field
-	add	r2, r2, #4            		@ add 4 for the line length offset (log2 16 bytes)
-	ldr	r4, =0x3FF
-	ands	r4, r4, r1, LSR #3   		@ R4 is the max number on the way size (right aligned)
-	clz	r5, r4                		@ R5 is the bit position of the way size increment
-	ldr	r7, =0x00007FFF
-	ands	r7, r7, r1, LSR #13  		@ R7 is the max number of the index size (right aligned)
+    add     r2, r10, r10, LSR #1        @ Work out 3xcachelevel
+    mov     r1, r0, LSR r2              @ bottom 3 bits are the Ctype for this level
+    and     r1, r1, #7                  @ get those 3 bits alone
+    cmp     r1, #2
+    blt     Skip                        @ no cache or only instruction cache at this level
+    mcr     p15, 2, r10, c0, c0, 0      @ write the Cache Size selection register
+    mov     r1, #0
+    mcr     p15, 0, r1, c7, c5, 4       @ PrefetchFlush to sync the change to the CacheSizeID reg
+    mrc     p15, 1, r1, c0, c0, 0       @ reads current Cache Size ID register
+    and     r2, r1, #0x7                @ extract the line length field
+    add     r2, r2, #4                  @ add 4 for the line length offset (log2 16 bytes)
+    ldr     r4, =0x3FF
+    ands    r4, r4, r1, LSR #3          @ R4 is the max number on the way size (right aligned)
+    clz     r5, r4                      @ R5 is the bit position of the way size increment
+    ldr     r7, =0x00007FFF
+    ands    r7, r7, r1, LSR #13         @ R7 is the max number of the index size (right aligned)
 Loop2:         
-	mov	r9, r4                      	@ R9 working copy of the max way size (right aligned)
+    mov     r9, r4                      @ R9 working copy of the max way size (right aligned)
 Loop3:         
-	orr	r11, r10, r9, LSL r5        	@ factor in the way number and cache number into R11
-	orr	r11, r11, r7, LSL r2        	@ factor in the index number
-	mcr	p15, 0, r11, c7, c6, 2 		@ invalidate by set/way
-	subs	r9, r9, #1                 	@ decrement the way number
-	bge	Loop3
-	subs	r7, r7, #1                 	@ decrement the index
-	bge	Loop2
+    orr     r11, r10, r9, LSL r5        @ factor in the way number and cache number into R11
+    orr     r11, r11, r7, LSL r2        @ factor in the index number
+    mcr     p15, 0, r11, c7, c6, 2      @ invalidate by set/way
+    subs    r9, r9, #1                  @ decrement the way number
+    bge     Loop3
+    subs    r7, r7, #1                  @ decrement the index
+    bge     Loop2
 Skip:          
-	add	r10, r10, #2                	@ increment the cache number
-	cmp	r3, r10
-	bgt	Loop1
+    add     r10, r10, #2                @ increment the cache number
+    cmp     r3, r10
+    bgt     Loop1
 Finished:
-	mov	pc, lr
-	
-       .align  5
+    mov     pc, lr
+    
+.align  5
 .global disable_l2cache
 disable_l2cache:
-	mrc     p15, 0, r0, c1, c0, 1
-	bic     r0, r0, #(1<<1)
-	mcr     p15, 0, r0, c1, c0, 1
-	mov	pc, lr
+    mrc     p15, 0, r0, c1, c0, 1
+    bic     r0, r0, #(1<<1)
+    mcr     p15, 0, r0, c1, c0, 1
+    mov     pc, lr
 
-
-       .align  5
+.align  5
 .global enable_l2cache
 enable_l2cache:
-	mrc     p15, 0, r0, c1, c0, 1
-	orr     r0, r0, #(1<<1)
-	mcr     p15, 0, r0, c1, c0, 1
-	mov     pc, lr
+    mrc     p15, 0, r0, c1, c0, 1
+    orr     r0, r0, #(1<<1)
+    mcr     p15, 0, r0, c1, c0, 1
+    mov     pc, lr
 
-       .align  5
+.align  5
 .global set_l2cache_auxctrl
 set_l2cache_auxctrl:
-	mov	r0, #0x0
-	mcr     p15, 1, r0, c9, c0, 2
-	mov     pc, lr
+    mov     r0, #0x0
+    mcr     p15, 1, r0, c9, c0, 2
+    mov     pc, lr
 
-       .align  5
+.align  5
 .global set_l2cache_auxctrl_cycle
 set_l2cache_auxctrl_cycle:
-	mrc 	p15, 1, r0, c9, c0, 2
-	bic 	r0, r0, #(0x1<<29)
-	bic 	r0, r0, #(0x1<<21)
-	bic 	r0, r0, #(0x7<<6)
-	bic 	r0, r0, #(0x7<<0)
-	mcr 	p15, 1, r0, c9, c0, 2
-	mov     pc,lr
+    mrc     p15, 1, r0, c9, c0, 2
+    bic     r0, r0, #(0x1<<29)
+    bic     r0, r0, #(0x1<<21)
+    bic     r0, r0, #(0x7<<6)
+    bic     r0, r0, #(0x7<<0)
+    mcr     p15, 1, r0, c9, c0, 2
+    mov     pc, lr
 
-	.align 5
+.align 5
 CoInvalidateDCacheIndex:
-	;/* r0 = index */
-	mcr     p15, 0, r0, c7, c6, 2
-	mov     pc,lr
+    ;/* r0 = index */
+    mcr     p15, 0, r0, c7, c6, 2
+    mov     pc, lr
 

@@ -3,6 +3,7 @@
 #include <asm/proc-armv/ptrace.h>
 #include <s5pc210.h>
 
+/* 记录定时器计数值初值 */
 int timer_load_val = 0;
 
 /* macro to read the 16 bit timer */
@@ -10,10 +11,17 @@ static inline ulong READ_TIMER(void)
 {
 	S5PC21X_TIMERS *const timers = S5PC21X_GetBase_TIMERS();
 
+    /* 读取定时器4 当前的计数值 */
 	return (timers->TCNTO4 & 0xffffffff);
 }
 
+/* 变量均采用的 ulong 型 
+ * 定时器的时钟为 4.125MHz 定是时间有最大值，约为 1041s */
+
+/* 定时器经过的时间计数值 */
 static ulong timestamp;
+
+/* 记录上次获取定时器的计数值, 用于下次获取时判断差值 */
 static ulong lastdec;
 
 void enable_interrupts(void)
@@ -116,9 +124,13 @@ void do_irq(struct pt_regs *pt_regs)
 
 int interrupt_init(void)
 {
-    /* 使用的是 PWM定时器4，该定时器没有输出引脚，仅仅是个定时器 */
+    /* 使用的是 PWM定时器4，该定时器没有输出引脚，仅仅是个定时器
+     * 是一个计数递减的定时器 */
 	S5PC21X_TIMERS *const timers = S5PC21X_GetBase_TIMERS();
 
+    /* Timer 4 使用的 PCLK 时钟(66MHz) 
+     * 配置 TCFG0 的分频值未 16， TCFG1 为默认值 1
+     * 最终定时器时钟频率为 = 66MHz / 16 / 1 = 4.125MHz */
 	/* use PWM Timer 4 because it has no output */
 	/* prescaler for Timer 4 is 16 */
 	timers->TCFG0 = 0x0f00;
@@ -131,7 +143,8 @@ int interrupt_init(void)
 		timer_load_val = 10000;//get_PCLK() / (16 * 100);
 	}
 
-    /* 初始化为 10ms 的溢出时间 */
+    /* 初始化为 10ms 的溢出时间
+     * 但根据上面分频后的时钟为 4.125MHz 所以这里初始化为 10000 是不行的 */
 	/* load value for 10 ms timeout */
 	lastdec = timers->TCNTB4 = timer_load_val;
 	/* auto load, manual update of Timer 4 */
@@ -139,7 +152,6 @@ int interrupt_init(void)
 	/* auto load, start Timer 4 */
 	timers->TCON = (timers->TCON & ~0x00700000) | TCON_4_AUTO | COUNT_4_ON;
 	timestamp = 0;
-
 
 	return (0);
 }
@@ -167,26 +179,37 @@ void udelay(unsigned long usec)
 {
 	ulong tmo, tmp;
 
+    /* 对于比较大的值，即 ms 以上，按照 ms 处理 */
 	if (usec >= 1000) {		/* if "big" number, spread normalization to seconds */
+        /* 转换延时时间为 ms */
 		tmo = usec / 1000;	/* start to normalize for usec to ticks per sec */
+        /* 根据每s计数值 CONFIG_SYS_HZ 转换为该延时时间总共需要计数多少个值 */
 		tmo *= CONFIG_SYS_HZ;		/* find number of "ticks" to wait to achieve target */
 		tmo /= 1000;		/* finish normalize. */
 	}
 	else {				/* else small number, don't kill it prior to HZ multiply */
+        /* 对于比较小的值，则先计算us级计数值，再转换为最终的计数值; 数值计算精度 */
 		tmo = usec * CONFIG_SYS_HZ;
 		tmo /= (1000 * 1000);
 	}
+    /* 到这里为止， tmo 就是延时 usec 时间 定时器需要计数的数量了 */
 
+    /* 获取一下当前的时间戳全局变量
+     * 如果当前时间戳超过了需要计数数值加当前时间戳，也就是产生了溢出
+     * 那就复位一下当前时间戳
+     * 未溢出，则将tmo设置为目标计数值 */
 	tmp = get_timer(0);		/* get current timestamp */
 	if ((tmo + tmp + 1) < tmp)	/* if setting this fordward will roll time stamp */
 		reset_timer_masked();	/* reset "advancing" timestamp to 0, set lastdec value */
 	else
 		tmo += tmp;		/* else, set advancing stamp wake up time */
 
+    /* 不断的查询经过的定时器计数值，判断是否达到目标值 */
 	while (get_timer_masked()<tmo)	/* loop till event */
 		 /*NOP*/;
 }
 
+/* 复位时间计算计数值 */
 void reset_timer_masked(void)
 {
 	/* reset time */
@@ -194,10 +217,12 @@ void reset_timer_masked(void)
 	timestamp = 0;
 }
 
+/* 返回自上次执行 reset_timer_masked 后经过的计数值 */
 ulong get_timer_masked(void)
 {
 	ulong now = READ_TIMER();
 
+    /* 定时器为递减方式 */
 	if (lastdec >= now) {
 		/* normal mode */
 		timestamp += lastdec - now;

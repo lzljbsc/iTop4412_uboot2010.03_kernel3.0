@@ -195,6 +195,8 @@
 
 /* the PWM TImer 4 uses a counter of 41687 for 10 ms, so we need */
 /* it to wrap 100 times (total 4168750) to get 1 sec. */
+/* 这里的数值应该是 4125000  Timer 4 使用PCLK时钟 66MHz，
+ * 经过 16分频后 4.125MHz 所以1s的计数值为 4125000 */
 #define CONFIG_SYS_HZ			        4168750		// at PCLK 66MHz
 
 /* valid baudrates */

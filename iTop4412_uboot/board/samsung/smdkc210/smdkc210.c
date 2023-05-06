@@ -26,6 +26,7 @@ int board_init(void)
 	gd->bd->bi_arch_number = MACH_TYPE;
 
     /* 设置启动参数存放位置，位于物理内存起始地址偏移 0x100(256字节) 处 */
+    /* 这里有一个偏移, 而不是内存起始位置, 将会把这个地址做为参数传给内核 */
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1+0x100);
 
 	return 0;

@@ -61,7 +61,10 @@ int arch_cpu_init(void)
 		strcpy(CORE_NUM_STR,"Quad");
 	}
 	
+    /* 根据配置的外部时钟频率，分频值、倍频值 计算得到的时钟频率 */
+    /*  APLL = 1000MHz, MPLL = 800MHz */
 	printf("	APLL = %ldMHz, MPLL = %ldMHz\n", get_APLL_CLK()/1000000, get_MPLL_CLK()/1000000);
+    /*  ARM_CLOCK = 1000MHz */
 	printf("	ARM_CLOCK = %ldMHz\n", get_ARM_CLK()/1000000);
 	return 0;
 }
@@ -75,6 +78,9 @@ int print_cpuinfo(void)
 {
 	arch_cpu_init();
 
+    /* PMIC_InitIp 初始化了 S5M8767 电源控制芯片
+     * 设置了合适的 buck ldo 电压 */
+    /* PMIC:    S5M8767(VER5.0) */
 	printf("PMIC:	");
 	PMIC_InitIp();
 

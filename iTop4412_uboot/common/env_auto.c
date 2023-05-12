@@ -29,7 +29,8 @@ uchar env_get_char_spec (int index)
 
 int env_init(void)
 {
-    /* 固定使用了 默认环境变量 */
+    /* 固定使用了 默认环境变量, 设置为有效标志 
+     * 默认的环境变量并不一定是最终的，在后面的初始化过程中，有可能更改 */
 	gd->env_addr  = (ulong)&default_environment[0];
 	gd->env_valid = 1;
 
@@ -51,6 +52,9 @@ int saveenv_nand_adv(void)
 	return 0;
 }
 
+/* 保存到 mmc 中， 
+ * 还有个读出 env 的函数 void movi_read_env(ulong addr)
+ * 这里需要测试下 */
 int saveenv_movinand(void)
 {
 	mmc_init(find_mmc_device(0));
@@ -66,6 +70,7 @@ int saveenv_onenand(void)
     return 1;
 }
 
+/* env 保存动作，被 saveenv 命令调用 */
 int saveenv(void)
 {
     if (INF_REG3_REG == 1)

@@ -276,6 +276,7 @@ static int g_flag = 0;
 
 void max8997_init()
 {
+    /* 下面又初始化了下 GPIO为 I2C 功能，前面已经初始化了 */
 	volatile uint* gpio_reg1 = (uint*)0x114000C0;
      uint value;
 
@@ -288,6 +289,8 @@ void max8997_init()
 	i2c_init(0, MAX8997_I2C_ADDR);
 	
 }
+
+/* 读写max8997寄存器， flag用于指示仅读取还是先写入值再读取 */
 void lowlevel_init_max8997(unsigned char Address,unsigned char *Val,int flag)
 {
 	unsigned char addr;

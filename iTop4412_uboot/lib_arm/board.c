@@ -80,6 +80,7 @@ static int off_charge(void)
 
 static int display_banner (void)
 {
+    /* U-Boot 2010.03-dirty (Nov 13 2015 - 02:03:36) for iTOP-4412 Android */
 	printf ("\n\n%s\n\n", version_string);
 	debug ("U-Boot code: %08lX -> %08lX  BSS: -> %08lX\n",
 	       _armboot_start, _bss_start, _bss_end);
@@ -87,6 +88,7 @@ static int display_banner (void)
 	return (0);
 }
 
+/* 计算配置的内存大小，并按照合适单位打印 */
 static int display_dram_config (void)
 {
 	int i;
@@ -96,8 +98,9 @@ static int display_dram_config (void)
 	for (i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
 		size += gd->bd->bi_dram[i].size;
 	}
-	size += 0x100000;
+	size += 0x100000;    /* trustzone 预留的 1MB */
 
+    /* DRAM:     1 GB */
   	puts("DRAM:	");
 	print_size(size, "\n");
 
@@ -170,10 +173,13 @@ void start_armboot (void)
 		}
 	}
 	
+    /* 初始化内存管理单元，预留的内存管理空间就是在上面分配 gd 空间时空闲的
+     * CONFIG_SYS_MALLOC_LEN 大小在配置文件中 */
 	/* armboot_start is defined in the board-specific linker script */
 	mem_malloc_init(_armboot_start - CONFIG_SYS_MALLOC_LEN,
 			CONFIG_SYS_MALLOC_LEN);
 
+    /* 初始化 mmc, 序号与初始化的顺序有关 */
 	puts ("MMC:   ");
 	mmc_exist = mmc_initialize (gd->bd);
 	if (mmc_exist != 0)

@@ -55,6 +55,10 @@ void set_hsmmc_pre_ratio(uint clock)
 	
 
 }
+
+/* mmc 时钟配置函数，使用使用源，选用合适分频进行配置即可 */
+/* 按照 4412 手册中时钟单元部分描述， 所有mmc控制器最高时钟频率为 50MHz */
+/* sclk_mmc4 记录的是 emmc4 控制器的时钟频率，即 板载 emmc 芯片 */
 u32 sclk_mmc4;  //clock source for emmc controller
 void setup_hsmmc_clock(void)
 {
@@ -62,6 +66,9 @@ void setup_hsmmc_clock(void)
 	u32 clock;
 	u32 i;
 
+    /* 时钟源为 MPLL = 800MHz 
+     * 按照下面计算，不大于50MHz的分频值，
+     * 因为 800 正好可以被 50 整除，所以最终分频之后，时钟就是 50MHz */
 	/* MMC2 clock src = SCLKMPLL */
 	tmp = CLK_SRC_FSYS & ~(0x00000f00);
 	CLK_SRC_FSYS = tmp | 0x00000600;
@@ -79,14 +86,16 @@ void setup_hsmmc_clock(void)
 	
 	sddbg("[mjdbg] the sd clock ratio is %d,%d\n",i,clock);
 
-
+    /* MMC4 与 MMC2 类似，只是这里的限制改成了 160MHz，
+     * ？？？手册中最高是 50MHz 啊，这里是问什么？？？ */
+    /* 这里把 MMC4 的时钟频率记录在了 sclk_mmc4 中，其他文件中有用到 */
 	/* MMC4 clock src = SCLKMPLL */
 	tmp = CLK_SRC_FSYS & ~(0x000f0000);
 	CLK_SRC_FSYS = tmp | 0x00060000;
+
 	/* MMC4 clock div */
 	tmp = CLK_DIV_FSYS3 & ~(0x0000ff0f);
 	clock = get_MPLL_CLK()/1000000;
-	
 	for(i=0 ; i<=0xf; i++)	{
 		sclk_mmc4=(clock/(i+1));
 		

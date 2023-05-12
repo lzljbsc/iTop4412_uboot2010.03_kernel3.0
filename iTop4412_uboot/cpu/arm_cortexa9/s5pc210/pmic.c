@@ -92,6 +92,8 @@ void pmic8767_init(void)
 	vdd_g3d = CONFIG_PM_VDD_G3D;
 	vdd_mif = CONFIG_PM_VDD_MIF;
 
+    /* 设置 S5M8767 buck 的电压，此处需参考原理图分析
+     * 这里设置的电压与原理图中不完全相同，高 0.1V 左右 */
 	I2C_S5M8767_VolSetting(PMIC_BUCK1, CALC_S5M8767_VOLT2(vdd_mif * 1000), 1);
 	I2C_S5M8767_VolSetting(PMIC_BUCK2, CALC_S5M8767_VOLT1(vdd_arm * 1000), 1);
 	I2C_S5M8767_VolSetting(PMIC_BUCK3, CALC_S5M8767_VOLT1(vdd_int * 1000), 1);
@@ -137,7 +139,7 @@ void PMIC_InitIp(void)
     u8 addr;
     u8 uSendData[2];
 
-    /* PMIC S5M8767 实际连接在 I2C0 上， I2C1 未连接 */
+    /* PMIC S5M8767 实际连接在 I2C1 上， I2C0 未连接 */
 
     /* GPD1_0 GPD1_1 -> I2C0 */
     GPIO_Init();
@@ -161,6 +163,7 @@ void PMIC_InitIp(void)
     GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_2, 0);	// Pull-Up/Down Disable
     GPIO_SetPullUpDownEach(eGPIO_D1, eGPIO_3, 0);	// Pull-Up/Down Disable
 
+    /* 这里只是初始化了 I2C控制结构体，并未真正初始化硬件 */
     if (I2C_InitIp(I2C1, I2C_TX_CLOCK_125KHZ, I2C_TIMEOUT_INFINITY) != 1) {
         printf("PMIC init filed!\n");
     }
@@ -191,6 +194,7 @@ void PMIC_InitIp(void)
     }  
     else if(id == 0x3 || (0x5 == id) || (21 == id))
     {
+        /* 实际的板子走这个分支 */
         printf("S5M8767(VER5.0)\n");
         Is_TC4_Dvt = 2;
     }  
@@ -200,33 +204,45 @@ void PMIC_InitIp(void)
         Is_TC4_Dvt = 2;
     }
 
+    /* 上面的初始化过程 Is_TC4_Dvt = 2 */
     if(Is_TC4_Dvt)
     {
+        /* 设置buck电压，不清楚为什么到这里还设置
+         * 因为已经到这里了，那很多电压都是正常的了，
+         * 难道在前面的启动流程中设置的不一样？？ */
         pmic8767_init();
         if(Is_TC4_Dvt == 2)
         {
+            /* 设置 0x5a 寄存器， buck9 
+             * buck9 给emmc供电，设置为 0x58 
+             * ON/OFF by buck9en (emmc de  cdn 引脚) */
             val = 0x58;
             lowlevel_init_max8997(0x5a,&val,1);
         }
 
         /* dg change for kinds of coreboard*/
 #if  defined(CONFIG_SCP_1GDDR)
+        /* 0x70 (LDO18)
+         * 根据原理图，LDO18 为 VDDIOPERI_28 */
         val = 0x32;
         lowlevel_init_max8997(0x70, &val, 1);
 #endif
     }
 
     /*---mj configure for emmc ---*/
+    /* 0x6f (LDO17) 原理图: VDDIOAP_MMC012_28 
+     * 是给 4412芯片的 mmc外设供电的 */
     uSendData[0] =0x6f;
     uSendData[1] =0x68;
-
     I2C_SendEx(I2C1, 0xcc, NULL, 0, uSendData, 2);
 
+    /* TP_IOCTL 与屏幕相关的功能 */
     /* add by cym 20141224 for TP_IOCTL GPX0_3 set low */
     Outp32(GPX0CON,(Inp32(GPX0CON)&(~(0xf << 12)))|(0x1 << 12));
     Outp32(GPX0DAT,(Inp32(GPX0DAT)&(~(0x1 << 3)))|(0x0 << 3));
     /* end add */
 
+    /* GPL1_0 LCD_PWON 开机时屏幕点亮 */
     /* add by cym 20150701 7 inch screen twinkle when syatem start */
     Outp32(GPL1DRV,(Inp32(GPL1DRV)&(~(0x3)))|(0x2));
     /* end add */

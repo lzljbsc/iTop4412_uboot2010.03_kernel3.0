@@ -40,6 +40,7 @@ int dram_init(void)
      * 0x0: SCP ; 0x2: POP */
 	if(((*((volatile unsigned long *)CHIP_ID_BASE) & 0x300) >> 8) == 2){
 	 	printf("POP type: ");
+        /* dmc_density 是在 bl2 阶段设置的，在汇编里面 */
 		if(dmc_density == 6){
 			printf("POP_B\n");
 			nr_dram_banks = 2;
@@ -73,6 +74,9 @@ int dram_init(void)
             gd->bd->bi_dram[3].size = PHYS_SDRAM_4_SIZE;
 		}
 	} else{
+        /* SCP的内存在uboot下是固定的，通过配置文件配置的 */
+        /* 总共8个bank，每个bank 128MB， 共 1GB 
+         * 但在汇编阶段的内存初始化中好像不是这样的 */
 		nr_dram_banks = 8;
 		gd->bd->bi_dram[0].start = PHYS_SDRAM_1;
 		gd->bd->bi_dram[0].size = PHYS_SDRAM_1_SIZE;
@@ -90,9 +94,9 @@ int dram_init(void)
 		gd->bd->bi_dram[6].size = PHYS_SDRAM_7_SIZE;
 		gd->bd->bi_dram[7].start = PHYS_SDRAM_8;
 		gd->bd->bi_dram[7].size = PHYS_SDRAM_8_SIZE;
-	
 	}
 
+    /* 预留了最后 1MB 空间给 trustzone */
 //for trustzone
 #ifdef CONFIG_TRUSTZONE
 	gd->bd->bi_dram[nr_dram_banks - 1].size -= 0x100000;
@@ -117,6 +121,7 @@ int board_late_init (void)
 
 int checkboard(void)
 {
+    /* Board:   iTOP-4412 */
 	printf("Board:	%s%s\n", CONFIG_DEVICE_STRING,CORE_NUM_STR);
 	return (0);
 }

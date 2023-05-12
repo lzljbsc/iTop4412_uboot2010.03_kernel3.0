@@ -21,6 +21,7 @@ static uchar env_get_char_init (int index);
 #define XMK_STR(x)	#x
 #define MK_STR(x)	XMK_STR(x)
 
+/* 默认的环境变量，通过配置文件配置 */
 uchar default_environment[] = {
 	"bootcmd="	CONFIG_BOOTCOMMAND		"\0"
 	"bootdelay="	MK_STR(CONFIG_BOOTDELAY)	"\0"
@@ -28,6 +29,7 @@ uchar default_environment[] = {
 	"\0"
 };
 
+/* 默认环境变量占用空间大小 */
 int default_environment_size = sizeof(default_environment);
 
 void env_crc_update (void)

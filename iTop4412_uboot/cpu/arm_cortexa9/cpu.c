@@ -435,6 +435,9 @@ void security_check(void)
 int cpu_mmc_init(bd_t *bis)
 {
 	int ret;
+    
+    /* 配置 mmc 时钟， gpio复用关系，与 芯片相关，
+     * 所以实现的文件在 具体芯片相关目录 中 */
 	setup_hsmmc_clock();
 	setup_hsmmc_cfg_gpio();
 

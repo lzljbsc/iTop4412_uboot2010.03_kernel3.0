@@ -314,6 +314,7 @@ int console_assign(int file, char *devname)
 /* Called before relocation - use serial functions */
 int console_init_f(void)
 {
+    /* 设置为有控制台 */
 	gd->have_console = 1;
 
 	return 0;

@@ -1131,9 +1131,15 @@ int mmc_initialize(bd_t *bis)
 	struct mmc *mmc;
 	int err,dev;
 	
+    /* 链表头，将所有的 mmc 结构体串起来，这样查找的时候容易找到 */
 	INIT_LIST_HEAD (&mmc_devices);
+
+    /* 注册的 emmc 数量， mmc_register 中递增 */
 	cur_dev_num = 0;
 
+    /* board_mmc_init 是弱定义函数，该 uboot 中未重定义，使用的上面的空函数 */
+    /* cpu_mmc_init 在 cpu.c 中实现，初始化 mmc 控制器，与芯片相关
+     * 是用来重写 board_mmc_init 函数的 */
 	if (board_mmc_init(bis) < 0)
 		cpu_mmc_init(bis);
 

@@ -121,7 +121,6 @@ void setup_hsmmc_cfg_gpio(void)
 	writel(0x02222222, 0x11000080);
 	writel(0x00003FF0, 0x11000088);
 	writel(0x00003FFF, 0x1100008C);
-	
 
     /* MMC4 此处是控制 GPK0_2(SD_4_CDn), 用于给 emmc芯片复位 */
 	writel(readl(0x11000048)&~(0xf),0x11000048); //SD_4_CLK/SD_4_CMD pull-down enable

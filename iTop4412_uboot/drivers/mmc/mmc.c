@@ -1037,8 +1037,10 @@ int mmc_send_if_cond(struct mmc *host)
 	return 0;
 }
 
+/* mmc 设备的注册 */
 int mmc_register(struct mmc *mmc)
 {
+    /* 根据下面的 cur_dev_num 操作，mmc 的序号就是注册时的顺序 */
 	/* Setup the universal parts of the block interface just once */
 	mmc->block_dev.if_type = IF_TYPE_MMC;
 	mmc->block_dev.dev = cur_dev_num++;
@@ -1139,12 +1141,17 @@ int mmc_initialize(bd_t *bis)
 
     /* board_mmc_init 是弱定义函数，该 uboot 中未重定义，使用的上面的空函数 */
     /* cpu_mmc_init 在 cpu.c 中实现，初始化 mmc 控制器，与芯片相关
-     * 是用来重写 board_mmc_init 函数的 */
+     * 是用来重写 board_mmc_init 函数的
+     * 在 cpu_mmc_init 函数中，注册了两个mmc设备，分别是板载 emmc 和 SD卡 */
 	if (board_mmc_init(bis) < 0)
 		cpu_mmc_init(bis);
 
+    /* cur_dev_num 是在 mmc_register 函数中递增的，是注册的mmc设备数量
+     * 这里是遍历所有的 mmc设备，进行初始化操作 */
 	for (dev = 0; dev < cur_dev_num; dev++) 
 	{
+        /* 遍历已注册mmc设备，找到指定序号的mmc设备
+         * 根据前面处理，这里不会找不到的 */
 		mmc = find_mmc_device(dev);
 
 		if (mmc) 

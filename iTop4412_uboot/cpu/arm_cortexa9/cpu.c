@@ -441,10 +441,10 @@ int cpu_mmc_init(bd_t *bis)
 	setup_hsmmc_clock();
 	setup_hsmmc_cfg_gpio();
 
-    // 板载 EMMC
+    // 板载 EMMC 是第一个注册的 mmc设备
 	ret = smdk_s5p_mshc_init();
     
-    // SD 卡
+    // SD 卡 是第二个注册的 mmc设备
 	ret = smdk_s3c_hsmmc_init();
 
 	return ret;

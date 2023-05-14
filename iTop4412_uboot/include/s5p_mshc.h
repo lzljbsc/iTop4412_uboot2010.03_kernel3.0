@@ -335,6 +335,7 @@ struct mshci_idmac {
 #define __iomem
 #endif
 
+/* 这是芯片侧的mmc控制器的参数 */
 struct mshci_host {
 	/* Data set by hardware interface driver */
 	const char		*hw_name;	/* Hardware bus name */

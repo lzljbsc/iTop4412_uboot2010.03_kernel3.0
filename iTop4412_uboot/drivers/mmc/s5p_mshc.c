@@ -15,8 +15,10 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define mdelay(x)	udelay(1000*x)
 
+/* mmc 参数结构，包含了读写，发送命令等基本函数指针 */
 struct mmc mmc_channel[MMC_MAX_CHANNEL];
 
+/* 芯片侧 mmc控制器 的参数 */
 struct mshci_host mshc_host[MMC_MAX_CHANNEL];//mj
 
 static struct mshci_idmac idmac_desc[0x10000]; /* it can cover to transfer 256MB at a time */
@@ -683,8 +685,13 @@ static int s5p_mshc_initialize(int channel)
 {
 	struct mmc *mmc;
 
+    /* 有这里看出，有多个控制器时，uboot中的处理是简单粗暴的，
+     * 就是预留了最多的控制器数量，根据通道号直接选择一个 */
 	mmc = &mmc_channel[channel];
 
+    /* 初始化基本的成员，读写函数等
+     * mmc 结构体成员中相当于是对具体的 emmc设备进行操作的 
+     * mshc_host 中的是对芯片的mmc控制器的操作 */
 	sprintf(mmc->name, "S5P_MSHC%d", channel);
 	mmc->priv = &mshc_host[channel];
 	mmc->send_cmd = s5p_mshc_send_command;
@@ -702,6 +709,7 @@ static int s5p_mshc_initialize(int channel)
 
 	mshc_host[channel].clock = 0;
 
+    /* 根据通道确认具体的寄存器基地址，用于后面的初始化配置 */
 	switch(channel) {
 	case 0:
 		mshc_host[channel].ioaddr = (void *)ELFIN_HSMMC_0_BASE;
@@ -722,6 +730,7 @@ static int s5p_mshc_initialize(int channel)
 		printf("mmc err: not supported channel %d\n", channel);
 	}
 	
+    /* 注册到 mmc 模块中, mmc模块是通用的，具有统一的架构 */
 	return mmc_register(mmc);
 }
 
@@ -729,6 +738,7 @@ int smdk_s5p_mshc_init(void)
 {
 	int err;
 
+    /* mmc 接口统一的初始化接口，参数为 通道 */
 	err = s5p_mshc_initialize(4);
 	if(err)
 		return err;

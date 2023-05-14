@@ -380,6 +380,7 @@ int smdk_s3c_hsmmc_init(void)
 {
 	int err;
 
+    /* 注册的是第二个控制器 */
 	err = s3c_hsmmc_initialize(2);
 	if(err)
 		return err;

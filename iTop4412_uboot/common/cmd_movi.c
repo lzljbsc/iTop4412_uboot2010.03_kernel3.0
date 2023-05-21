@@ -22,6 +22,8 @@ raw_area_t raw_area_control;
 
 int init_raw_area_table (block_dev_desc_t * dev_desc)
 {
+    /* 找到具体的 mmc设备，
+     * 其实传入的时候，就是按照具体的设备，引用成员传入的 */
 	struct mmc *host = find_mmc_device(dev_desc->dev);
 
 	/* when last block does not have raw_area definition. */

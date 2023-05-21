@@ -379,7 +379,7 @@ static int get_emmc_inner_ratio(void)
 	
 	if ((s5pc210_cpu_id&0xfffff000) == SMDK4212_ID)
 		inner_ratio = 2;
-	else if((s5pc210_cpu_id&0xfffff000) == SMDK4412_ID)
+	else if((s5pc210_cpu_id&0xfffff000) == SMDK4412_ID) /* 会走这个分支 */
 		inner_ratio = 4;
 	else
 		inner_ratio = 2;
@@ -391,18 +391,25 @@ static int calc_max_emmc_clock(void)
 {
 	u32 inner_ratio;
 	
+    /* get_emmc_inner_ratio 会根据不同的芯片返回不同的值
+     * 在 E4412 中，会返回 4 */
 	inner_ratio = get_emmc_inner_ratio();
 	
+    /* sclk_mmc4 在初始化时钟是已经初始化为 160MHz 了
+     * 所以这里返回的是 40Mhz */
 	return (sclk_mmc4/inner_ratio);
 	
 
 }
+
 static int mshci_change_clock(struct mshci_host *host, uint clock)
 {
 	int div;
 	u32 emmc_clock_output,max_emmc_clock;
 	volatile u32 loop_count;
 	
+    /* 这里在初始化阶段传入的 clock = 400000 
+     * 而 host->clock 之前已经设置为 0 了 */
 	if (clock == host->clock)
 		return 0;
 
@@ -412,6 +419,7 @@ static int mshci_change_clock(struct mshci_host *host, uint clock)
 	if (clock == 0)
 		goto out;
 
+    /* max_emmc_clock = 40Mhz */
 	max_emmc_clock = calc_max_emmc_clock();
 	printf("max_emmc_clock:%d MHZ\n", max_emmc_clock/1000000);
 
@@ -424,6 +432,7 @@ static int mshci_change_clock(struct mshci_host *host, uint clock)
 	
 	printf("Set CLK to %d KHz\n", clock/1000);
 	
+    /* 这里根据传入的 clock 确认分频值 */
 	if(clock == max_emmc_clock)
 	{
 		div =0;  //mj:this is should not used at 8 bit ddr mode..
@@ -642,6 +651,7 @@ static int s5c_mshc_init(struct mmc *mmc)
 	int err = 0;
 	
 	#ifdef CONFIG_EMMC_EMERGENCY
+    /* 该函数有作用 */
 	get_emmc_pre_status(host);
 	#endif
 	

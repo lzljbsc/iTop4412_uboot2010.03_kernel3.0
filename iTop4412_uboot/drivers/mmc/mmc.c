@@ -1003,7 +1003,7 @@ int mmc_startup(struct mmc *host)
 	//printf(" >>>part_type is : %x \n",host->block_dev.part_type);
 
 #ifdef CONFIG_CMD_MOVINAND
-	init_raw_area_table(&host->block_dev);
+    init_raw_area_table(&host->block_dev);
 #endif
 	return 0;
 }
@@ -1066,6 +1066,10 @@ int mmc_init(struct mmc *host)
 {
 	int err;
 
+    /* 回调函数调用，
+     * 对于 emmc -> s5c_mshc_init
+     * 对于 SD   -> s3c_hsmmc_init
+     */
 	err = host->init(host);
 	if (err)
 		return err;
@@ -1156,6 +1160,9 @@ int mmc_initialize(bd_t *bis)
 
 		if (mmc) 
 		{
+            /* 这里会按照注册的顺序，逐个进行初始化，
+             * 时钟线初始化为 500KHz，再提高到工作时钟 40Mhz */
+            /* 该函数中有个 init_raw_area_table 非常关键，分区信息 */
 			err = mmc_init(mmc);
 			if (err && !strcmp(mmc->name, "S5P_MSHC4")) //mj for emergency
 			{	
@@ -1183,6 +1190,8 @@ int mmc_initialize(bd_t *bis)
 			//cur_dev_num = dev;	//mj fix me
 			break;
 		}
+
+        /* 输出 检测成功的mmc的容量信息 */
 		printf("MMC%d:	%ld MB\n",dev,(mmc->capacity/(1024*1024/mmc->read_bl_len)));
 	}
 	return err;

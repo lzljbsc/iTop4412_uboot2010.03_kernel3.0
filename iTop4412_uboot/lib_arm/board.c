@@ -180,6 +180,9 @@ void start_armboot (void)
 			CONFIG_SYS_MALLOC_LEN);
 
     /* 初始化 mmc, 序号与初始化的顺序有关 */
+    /* 这里包含了一个重要的初始化，即 raw_area 的分区信息，
+     * raw_area 分区信息确定了 uboot kernel rootfs 等镜像
+     * 的存放区域，大小，升级，启动过程中都会使用 */
 	puts ("MMC:   ");
 	mmc_exist = mmc_initialize (gd->bd);
 	if (mmc_exist != 0)

@@ -20,12 +20,29 @@ extern int Is_TC4_Dvt;
 
 raw_area_t raw_area_control;
 
+/* 开机时的打印:
+ * 开机过程中，仅有 S5P_MSHC4 可以进入处理 
+ * The host name is S5P_MSHC4
+ * Warning: cannot find the raw area table(c3e3932c) 00000000
+ * fwbl1: 0
+ * bl2: 16
+ * u-boot: 0
+ * env: 1088
+ * knl: 1120
+ * rfs: 13408
+ * recovery: 17504
+ * disk: 32768
+ * MMC0:   3728 MB
+ */
 int init_raw_area_table (block_dev_desc_t * dev_desc)
 {
     /* 找到具体的 mmc设备，
      * 其实传入的时候，就是按照具体的设备，引用成员传入的 */
 	struct mmc *host = find_mmc_device(dev_desc->dev);
 
+    /* raw_area_control 在第一次进入这个函数时还未被初始化，
+     * 第一次进这个函数，是在初始化 emmc4 时，也就是板载 EMMC 
+     * 这里的 host->name = S5P_MSHC4 */
 	/* when last block does not have raw_area definition. */
 	if (raw_area_control.magic_number != MAGIC_NUMBER_MOVI) {
 		int  i = 0;
@@ -34,6 +51,7 @@ int init_raw_area_table (block_dev_desc_t * dev_desc)
 		
 		dbg("The host name is %s\n",host->name);
 		
+        /* 对于板载 EMMC(4GB) high_capacity 为 1 */
 		if(host->high_capacity) {
 			capacity = host->capacity;
 			}
@@ -47,6 +65,7 @@ int init_raw_area_table (block_dev_desc_t * dev_desc)
 		/* add magic number */
 		raw_area_control.magic_number = MAGIC_NUMBER_MOVI;
 
+        /* raw_area 总预留了 16MB */
 		/* init raw_area will be 16MB */
 		raw_area_control.start_blk = 16*1024*1024/MOVI_BLKSIZE;
 		raw_area_control.total_blk = capacity;
@@ -55,6 +74,11 @@ int init_raw_area_table (block_dev_desc_t * dev_desc)
 
 		image = raw_area_control.image;
 
+        /* 这里区分了 mmc4 和 其他的接口
+         * mmc4 是EMMC，其他接口是 SD卡
+         * 根据三星手册，EMMC时，bl1 是从第0个扇区开始存放 
+         * 而 SD卡，bl1 是从第1个扇区开始存放 */
+        /* fwbl1 和 bl2 是不能单独升级的，与uboot镜像一起升级 */
 		/* image 0 should be fwbl1 */
 		if(strcmp(host->name, "S5P_MSHC4") == 0)
 			image[0].start_blk = 0;
@@ -63,9 +87,9 @@ int init_raw_area_table (block_dev_desc_t * dev_desc)
 		
 		image[0].used_blk = MOVI_FWBL1_BLKCNT;
 		image[0].size = FWBL1_SIZE;
-		image[0].attribute = 0x0;
+		image[0].attribute = 0x0;  /* attribute 是那个镜像区域 */
 		strcpy(image[0].description, "fwbl1");
-		dbg("fwbl1: %d\n", image[0].start_blk);
+		dbg("fwbl1: %d\n", image[0].start_blk);  // fwbl1: 0
 
 		/* image 1 should be bl2 */
 		image[1].start_blk = image[0].start_blk + image[0].used_blk;
@@ -73,7 +97,7 @@ int init_raw_area_table (block_dev_desc_t * dev_desc)
 		image[1].size = BL2_SIZE;
 		image[1].attribute = 0x3;
 		strcpy(image[1].description, "bl2");
-		dbg("bl2: %d\n", image[1].start_blk);
+		dbg("bl2: %d\n", image[1].start_blk);  // bl2: 16
 
 		#if 0
 		/* image 2 should be uboot */
@@ -84,6 +108,7 @@ int init_raw_area_table (block_dev_desc_t * dev_desc)
 		strcpy(image[2].description, "bootloader");
 		dbg("u-boot: %d\n", image[2].start_blk);
 		#else
+        /* 在 EMMC 时，三个镜像合为一个 */
 		/*BL1,BL2,u-boot have been combined together when compiling for EMMC*/
 		if(strcmp(host->name, "S5P_MSHC4") == 0)
 			image[2].start_blk = 0;
@@ -91,35 +116,45 @@ int init_raw_area_table (block_dev_desc_t * dev_desc)
 			image[2].start_blk = (eFUSE_SIZE/MOVI_BLKSIZE);
 		
 			image[2].used_blk = MOVI_FWBL1_BLKCNT+MOVI_UBOOT_BLKCNT+MOVI_BL2_BLKCNT;
+            /* 这里的uboot的size是 519KB，而实际是 515KB
+             * 使用 movi read uboot  addr 指令可以看出读了 1038扇区
+             * 其实没有关系，只是多读了一点而已
+             * 但是在写入时，会多写入，导致后面的出错 */
+                            // 495KB           8KB       16KB
 			image[2].size = PART_SIZE_UBOOT+FWBL1_SIZE+BL2_SIZE;
 			image[2].attribute = 0x2;
 			strcpy(image[2].description, "bootloader");
-			dbg("u-boot: %d\n", image[2].start_blk);
+			dbg("u-boot: %d\n", image[2].start_blk); // u-boot: 0
 		#endif
+
+        /* environment 区域，从 1088 扇区开始，总共预留了 16KB区域 */
 		/* image 3 should be environment */
 		image[3].start_blk = (544*1024)/MOVI_BLKSIZE;
 		image[3].used_blk = MOVI_ENV_BLKCNT;
 		image[3].size = CONFIG_ENV_SIZE;
 		image[3].attribute = 0x10;
 		strcpy(image[3].description, "environment");
-		dbg("env: %d\n", image[3].start_blk);
+		dbg("env: %d\n", image[3].start_blk);   // env: 1088
 
+        /* kernel 区域，从 1120 扇区开始，总共预留了 6MB 区域 */
 		/* image 4 should be kernel */
 		image[4].start_blk = image[3].start_blk + image[3].used_blk;
 		image[4].used_blk = MOVI_ZIMAGE_BLKCNT;
 		image[4].size = PART_SIZE_KERNEL;
 		image[4].attribute = 0x4;
 		strcpy(image[4].description, "kernel");
-		dbg("knl: %d\n", image[4].start_blk);
+		dbg("knl: %d\n", image[4].start_blk);  // knl: 1120
 
+        /* rfs 区域，从 13408 扇区开始，总共预留了 2MB 区域 */
 		/* image 5 should be RFS */
 		image[5].start_blk = image[4].start_blk + image[4].used_blk;
 		image[5].used_blk = MOVI_ROOTFS_BLKCNT;
 		image[5].size = PART_SIZE_ROOTFS;
 		image[5].attribute = 0x8;
 		strcpy(image[5].description, "ramdisk");
-		dbg("rfs: %d\n", image[5].start_blk);
+		dbg("rfs: %d\n", image[5].start_blk);  // rfs: 13408
 		
+        /* recovery 区域， 从 17504 扇区开始，将 raw_area 剩余的区域用于该分区 */
 		#ifdef CONFIG_RECOVERY
 		/* image 6 should be Recovery */
 		image[6].start_blk = image[5].start_blk + image[5].used_blk;
@@ -127,23 +162,23 @@ int init_raw_area_table (block_dev_desc_t * dev_desc)
 		image[6].size = image[6].used_blk * MOVI_BLKSIZE;
 		image[6].attribute = 0x6;
 		strcpy(image[6].description, "Recovery");
-		dbg("recovery: %d\n", image[6].start_blk);
+		dbg("recovery: %d\n", image[6].start_blk);  // recovery: 17504
 		#endif
 
-		
+        /* disk 为除 raw_area 外剩余的可用区域 
+         * raw_area 预留了 16MB， 所以，这里是从 32768 扇区开始的 */
 		/* image 7 should be disk */
 		image[7].start_blk = RAW_AREA_SIZE/MOVI_BLKSIZE;
 		image[7].size = capacity-RAW_AREA_SIZE;
 		image[7].used_blk = image[7].size/MOVI_BLKSIZE;
 		image[7].attribute = 0xff;
 		strcpy(image[7].description, "disk");
-		dbg("disk: %d\n", image[7].start_blk);
+		dbg("disk: %d\n", image[7].start_blk);  // disk: 32768
+
 		for (i=8; i<15; i++) {
 			raw_area_control.image[i].start_blk = 0;
 			raw_area_control.image[i].used_blk = 0;
 		}
-		
-		
 	}
 
 	return 0;

@@ -85,11 +85,14 @@ uchar *env_get_addr (int index)
 
 void set_default_env(void)
 {
+    /* 走到这里，则是恢复默认环境变量 */
 	if (sizeof(default_environment) > ENV_SIZE) {
 		puts ("*** Error - default environment is too large\n\n");
 		return;
 	}
 
+    /* 将环境变量内存置0， 并拷贝默认环境变量到内存
+     * 并更新CRC，设置有效标志 */
 	memset(env_ptr, 0, sizeof(env_t));
 	memcpy(env_ptr->data, default_environment,
 	       sizeof(default_environment));
@@ -99,15 +102,16 @@ void set_default_env(void)
 
 void env_relocate (void)
 {
-	/*
-	 * We must allocate a buffer for the environment
-	 */
+	/* * We must allocate a buffer for the environment */
 	env_ptr = (env_t *)malloc (CONFIG_ENV_SIZE);
 	DEBUGF ("%s[%d] malloced ENV at %p\n", __FUNCTION__,__LINE__,env_ptr);
 
+    /* gd-env_valid 在设置默认环境变量时已设置为1
+     * 环境变量应该是在存储介质中读出来，判断有效性的 
+     * 但在前面的初始化序列中，强制设置为默认环境变量了 */
 	if (gd->env_valid == 0) {
 		puts ("*** Warning - bad CRC, using default environment\n\n");
-		show_boot_progress (-60);
+		show_boot_progress (-60);  /* 弱定义函数，无具体实现 */
 		set_default_env();
 	}
 	else {

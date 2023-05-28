@@ -17,6 +17,8 @@ static int console_setfile(int file, struct stdio_dev * dev)
 	case stdin:
 	case stdout:
 	case stderr:
+
+        /* 启动新设备, 这里使用的串口设备, 无该回调函数 */
 		/* Start new device */
 		if (dev->start) {
 			error = dev->start();
@@ -25,9 +27,12 @@ static int console_setfile(int file, struct stdio_dev * dev)
 				break;
 		}
 
+        /* stdio_devices 在 stdio.c 中定义，
+         * 记录了三个输入输出设备对应的具体设备 */
 		/* Assign the new device (leaving the existing one started) */
 		stdio_devices[file] = dev;
 
+        /* 更新到 jumptable ，无实际作用 */
 		/*
 		 * Update monitor functions
 		 * (to use the console stuff by other applications)
@@ -83,6 +88,7 @@ static inline void console_doenv(int file, struct stdio_dev *dev)
 
 /** U-Boot INITIAL CONSOLE-NOT COMPATIBLE FUNCTIONS *************************/
 
+/* 直接的串口输出，直接调用了串口底层接口 */
 void serial_printf(const char *fmt, ...)
 {
 	va_list args;
@@ -100,6 +106,7 @@ void serial_printf(const char *fmt, ...)
 	serial_puts(printbuffer);
 }
 
+/* C库函数了 */
 int fgetc(int file)
 {
 	if (file < MAX_FILES) {
@@ -225,6 +232,7 @@ void vprintf(const char *fmt, va_list args)
 	puts(printbuffer);
 }
 
+/* 测试 ctrl-c 是否按下，有个全局控制是否使能 ctrl-c 标志 ctrlc_disabled */
 /* test if ctrl-c was pressed */
 static int ctrlc_disabled = 0;	/* see disable_ctrl() */
 static int ctrlc_was_pressed = 0;
@@ -255,6 +263,8 @@ int disable_ctrlc(int disable)
 	return prev;
 }
 
+/* 是否检测到 ctrl-c 
+ * 真正的检测在 ctrlc 函数中，这里只是返回了之前检测的标志 */
 int had_ctrlc (void)
 {
 	return ctrlc_was_pressed;
@@ -271,6 +281,7 @@ inline void dbg(const char *fmt, ...)
 
 /** U-Boot INIT FUNCTIONS *************************************************/
 
+/* 查找指定名字且符合标志的设备 */
 struct stdio_dev *search_device(int flags, char *name)
 {
 	struct stdio_dev *dev;
@@ -283,6 +294,8 @@ struct stdio_dev *search_device(int flags, char *name)
 	return NULL;
 }
 
+/* 指定某名字的设备到 file 控制台
+ * 如把名为 serial 的设备指定到 stdin 控制台 */
 int console_assign(int file, char *devname)
 {
 	int flag;
@@ -320,6 +333,10 @@ int console_init_f(void)
 	return 0;
 }
 
+/* 输入输出口设备名 
+ * In:    serial
+ * Out:   serial
+ * Err:   serial */
 void stdio_print_current_devices(void)
 {
 	/* Print information */
@@ -354,6 +371,10 @@ int console_init_r(void)
 	struct list_head *pos;
 	struct stdio_dev *dev;
 
+    /* list 就是在 stdio.c 中注册 stdio_dev 的链表头，
+     * 只注册了一个 stdio_dev 设备，而且 flags 中包含了 DEV_FLAGS_INPUT 
+     * DEV_FLAGS_OUTPUT ，所以这里 inputdev outputdev 就是指向了 
+     * stdio.c 中注册的 serial 设备 */
 	/* Scan devices looking for input and output devices */
 	list_for_each(pos, list) {
 		dev = list_entry(pos, struct stdio_dev, list);
@@ -379,10 +400,15 @@ int console_init_r(void)
 		console_setfile(stdin, inputdev);
 	}
 
+    /* 已初始化标志 */
 	gd->flags |= GD_FLG_DEVINIT;	/* device initialization completed */
 
 	stdio_print_current_devices();
 
+    /* 设置了环境变量 
+     * stdin   serial 
+     * stdout  serial 
+     * stderr  serial */
 	/* Setting environment variables */
 	for (i = 0; i < 3; i++) {
 		setenv(stdio_names[i], stdio_devices[i]->name);

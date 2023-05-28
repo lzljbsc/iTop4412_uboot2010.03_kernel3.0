@@ -16,8 +16,10 @@
 
 #include "compiler.h"
 
+/* CRC 头 */
 #define ENV_HEADER_SIZE	(sizeof(uint32_t))
 
+/* 实际存放环境变量的空间 */
 #define ENV_SIZE (CONFIG_ENV_SIZE - ENV_HEADER_SIZE)
 
 typedef	struct environment_s {

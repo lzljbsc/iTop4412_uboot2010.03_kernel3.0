@@ -233,6 +233,7 @@
 #define PHYS_SDRAM_8            (unsigned long)(MEMORY_BASE_ADDRESS + 7 * SDRAM_BANK_SIZE) /* SDRAM Bank #2 */
 #define PHYS_SDRAM_8_SIZE       (unsigned long)SDRAM_BANK_SIZE
 
+/* 预留的环境变量空间， 16KB */
 #define CONFIG_ENV_SIZE		            0x4000	/* Total Size of Environment Sector */
 
 /*

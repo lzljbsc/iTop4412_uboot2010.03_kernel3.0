@@ -110,16 +110,20 @@ void env_relocate_spec_onenand(void)
 
 void env_relocate_spec(void)
 {
+    /* INF_REG3_REG 寄存器值:
+     * EMMC启动: 0x07  SD卡启动: 0x03 */
 	if (INF_REG3_REG == 1)
 		env_relocate_spec_onenand();
 	else if (INF_REG3_REG == 2)
 		env_relocate_spec_nand();
 	else if (INF_REG3_REG == 3)
-		env_relocate_spec_movinand();
+		env_relocate_spec_movinand();   /* SD卡启动走这个分支 */
 	else
-		use_default();
+		use_default();    /* EMMC启动走这个分支 */
 }
 
+/* 与 set_default_env 处理一致 ，
+ * 直接恢复默认，并计算CRC，设置有效标志 */
 static void use_default()
 {
 	puts("*** Warning - using default environment\n\n");

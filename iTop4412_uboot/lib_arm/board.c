@@ -190,13 +190,18 @@ void start_armboot (void)
 		puts ("0 MB\n");
 	}
 
+    /* 重新配置环境变量，在前面的初始化序列中，已经强制将环境变量设置为默认
+     * 即默认环境变量数组 */
 	/* initialize environment */
 	env_relocate ();
 
+    /* 初始化了 stdio_dev 设备，与 serial 绑定了，提供了基本的数据输入输出功能 */
 	stdio_init ();	/* get the devices list going. */
 
+    /* 初始了 jumptable gd->jt */
 	jumptable_init ();
 
+    /* 初始化控制台到一具体设备 */
 	console_init_r ();	/* fully init console as a device */
 
 	/* enable exceptions */

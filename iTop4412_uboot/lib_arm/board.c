@@ -205,13 +205,15 @@ void start_armboot (void)
 	console_init_r ();	/* fully init console as a device */
 
 	/* enable exceptions */
-	enable_interrupts ();
+	enable_interrupts (); /* 空实现 */
 
+    /* 目前还没有 loadaddr 环境变量，该分支无效 */
 	/* Initialize from environment */
 	if ((s = getenv ("loadaddr")) != NULL) {
 		load_addr = simple_strtoul (s, NULL, 16);
 	}
 
+    /* 检查启动方式，设置了最终使用的 bootcmd 命令 */
 	board_late_init ();
 
 	/* main_loop() can return to retry autoboot, if so just run it again. */

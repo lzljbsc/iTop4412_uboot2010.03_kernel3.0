@@ -37,6 +37,7 @@ extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 typedef int boot_os_fn (int flag, int argc, char *argv[],
 			bootm_headers_t *images); /* pointers to os/initrd/fdt */
 
+/* 引导 linux 的函数 */
 #ifdef CONFIG_BOOTM_LINUX
 extern boot_os_fn do_bootm_linux;
 #endif
@@ -296,6 +297,8 @@ int do_bootm_subcommand (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 /* bootm - boot application image from image in memory */
 /*******************************************************************/
 
+/* 对于 itop4412 开发板，启动linux的命令为: bootm 40008000 40df0000 
+ * 进入该函数前，已经将镜像拷贝到内存指定位置，传入的参数为镜像所在地址 */
 int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	ulong		iflag;
@@ -308,19 +311,29 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	image_header_t	*hdr;
 	ulong		addr;
 
+    /* 默认传入的参数为 bootm 40008000 40df0000 */
 	/* find out kernel image address */
 	if (argc < 2) {
 		addr = load_addr;
 		debug ("*  kernel: default image load address = 0x%08lx\n",
 				load_addr);
 	} else {
+        /* 该分支 addr = 40008000 */
 		addr = simple_strtoul(argv[1], NULL, 16);
 	}
 
+    /* 判断是否为 zImage 文件，在36字节偏移处，存放了标志 
+     * 这个标志与 内核的 arch/arm/boot/compressed/head.S 文件有关 */
+    /* 4412 的启动文件即是 zImage ，可以从内核镜像中找到 这个标记 */
 	if (*(ulong *)(addr + 9*4) == LINUX_ZIMAGE_MAGIC) {
+        /* 因为使用的 zImage ，会进入该分支 */
 		u32 val;
 		printf("Boot with zImage\n");
 
+        /* zImage 头部需要更改的，下面就是更改的内容
+         * hdr->ih_os 在镜像中默认为 00，这里更改为 IH_OS_LINUX 了
+         * hdr->ih_ep 在镜像中默认为 0xE1A00000 (填充值，无意义)
+         *            这里更改为了镜像的头部地址， */
 		//addr = virt_to_phys(addr);
 		hdr = (image_header_t *)addr;
 		hdr->ih_os = IH_OS_LINUX;
@@ -328,6 +341,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		
 		memmove (&images.legacy_hdr_os_copy, hdr, sizeof(image_header_t));
 
+        /* 全局变量 images 中保存下 镜像头地址 */
 		/* save pointer to image header */
 		images.legacy_hdr_os = hdr;
 
@@ -403,10 +417,15 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 #if defined(CONFIG_ZIMAGE_BOOT)
 after_header_check:
+    /* 设置 os 类型 IH_OS_LINUX */
 	images.os.os = hdr->ih_os;
+    /* 入口地址， image_get_ep 是一个生成宏，就是获取 image_header_t 中的 ih_os 项
+     * 根据前面的设置       hdr->ih_ep = ntohl(addr); 
+     * 就是传入的地址参数 0x40008000 */
 	images.ep = image_get_ep (&images.legacy_hdr_os_copy);
 #endif
 
+    /* boot_fn = do_bootm_linux 真正的 linux启动函数 */ 
 	boot_fn = boot_os[images.os.os];
 
 	if (boot_fn == NULL) {
@@ -418,8 +437,10 @@ after_header_check:
 		return 1;
 	}
 
+    /* 启动内核前的处理，此处为空 */
 	arch_preboot_os();
 
+    /* 调用了 do_bootm_linux 函数，正常不会返回了 */
 	boot_fn(0, argc, argv, &images);
 
 	show_boot_progress (-9);

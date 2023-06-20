@@ -74,15 +74,20 @@ void main_loop (void)
 	char *s;
 	int bootdelay;
 
+    /* bootdelay 默认为 2s */
 	s = getenv ("bootdelay");
 	bootdelay = s ? (int)simple_strtol(s, NULL, 10) : CONFIG_BOOTDELAY;
 
 	debug ("### main_loop entered: bootdelay=%d\n\n", bootdelay);
 
+    /* 在 board_late_init 中初始化了， 
+     * movi read kernel 40008000;movi read rootfs 40df0000 100000;bootm 40008000 40df0000 */
     s = getenv ("bootcmd");
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 
+    /* 读串口超时判断，指定时间内无数据输入，则运行 s 命令，
+     * 这里系统正常启动时，就会超时并执行 s 命令 */
 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
 		run_command (s, 0);
 	}

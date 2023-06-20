@@ -27,6 +27,8 @@ int board_init(void)
 
     /* 设置启动参数存放位置，位于物理内存起始地址偏移 0x100(256字节) 处 */
     /* 这里有一个偏移, 而不是内存起始位置, 将会把这个地址做为参数传给内核 */
+    /* 这个位置需要传递给内核使用，不能被覆盖
+     * 内核中建议放在16KiB处，其实放哪里无所谓，只要不被覆盖即可 */
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1+0x100);
 
 	return 0;
@@ -107,10 +109,12 @@ int dram_init(void)
 
 int board_late_init (void)
 {
+    /* 检查启动方式， BOOT_MMCSD(0x03)  /  BOOT_EMMC441(0x07) */
     int ret = check_bootmode();
     if ((ret == BOOT_MMCSD || ret == BOOT_EMMC441 || ret == BOOT_EMMC43 )
             && boot_mode == 0) {
         //printf("board_late_init\n");
+        /* 设置启动命令 */
         char boot_cmd[100];
         sprintf(boot_cmd, "movi read kernel 40008000;movi read rootfs 40df0000 100000;bootm 40008000 40df0000");
         setenv("bootcmd", boot_cmd);
@@ -190,10 +194,12 @@ int  chk_bootdev(void)//mj for boot device check
 
 }
 
+/* 检查启动方式,
+ * 对于 itop4412 板子，只有两个返回值  0x03  0x07 */
 int check_bootmode(void)
 {
 	int boot_dev =0 ;
-	OmPin = INF_REG3_REG;
+	OmPin = INF_REG3_REG;  /* itop4412 只有两个值 BOOT_MMCSD(0x03)  /  BOOT_EMMC441(0x07) */
 	
 	//printf("\n\nChecking Boot Mode ...");
 

@@ -19,7 +19,7 @@ COBJS-y	+= cache.o
 ifndef CONFIG_SYS_NO_CP15_CACHE
 COBJS-y	+= cache-cp15.o
 endif
-COBJS-y	+= interrupts.o
+#COBJS-y	+= interrupts.o
 COBJS-y	+= reset.o
 
 SRCS	:= $(GLSOBJS:.o=.S) $(GLCOBJS:.o=.c) \

@@ -243,6 +243,7 @@ static struct tagtable __tagtable_##fn __tag = { tag, fn }
 	((unsigned long)(&((struct tag *)0L)->member + 1)	\
 		<= (tag)->hdr.size * 4)
 
+/* 这里需要注意，size 是 4字节长度 */
 #define tag_next(t)	((struct tag *)((u32 *)(t) + (t)->hdr.size))
 #define tag_size(type)	((sizeof(struct tag_header) + sizeof(struct type)) >> 2)
 

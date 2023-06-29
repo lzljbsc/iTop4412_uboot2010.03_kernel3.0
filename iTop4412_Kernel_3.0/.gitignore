@@ -2,6 +2,7 @@
 *.o
 *.o.cmd
 *.cmd
+*.order
 
 .config
 .missing-syscalls.d
@@ -10,6 +11,7 @@
 .tmp_kallsyms2.S
 .tmp_vmlinux1
 .tmp_vmlinux2
+.tmp_versions/
 .version
 
 Module.symvers

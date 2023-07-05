@@ -27,7 +27,7 @@ INITRD_PHYS := $(initrd_phys-y)
 
 export ZRELADDR INITRD_PHYS PARAMS_PHYS
 
-targets := Image zImage xipImage bootpImage uImage
+targets := Image zImage xipImage uImage
 
 ifeq ($(CONFIG_XIP_KERNEL),y)
 
@@ -76,14 +76,6 @@ $(obj)/uImage:	$(obj)/zImage FORCE
 	$(call if_changed,uimage)
 	@echo '  Image $@ is ready'
 
-$(obj)/bootp/bootp: $(obj)/zImage initrd FORCE
-	$(Q)$(MAKE) $(build)=$(obj)/bootp $@
-	@:
-
-$(obj)/bootpImage: $(obj)/bootp/bootp FORCE
-	$(call if_changed,objcopy)
-	@echo '  Kernel: $@ is ready'
-
 PHONY += initrd FORCE
 initrd:
 	@test "$(INITRD_PHYS)" != "" || \
@@ -111,4 +103,4 @@ i:
 	$(CONFIG_SHELL) $(srctree)/$(src)/install.sh $(KERNELRELEASE) \
 	$(obj)/Image System.map "$(INSTALL_PATH)"
 
-subdir-	    := bootp compressed
+subdir-	    := compressed

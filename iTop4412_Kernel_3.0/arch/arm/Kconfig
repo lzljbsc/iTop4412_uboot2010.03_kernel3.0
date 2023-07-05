@@ -893,8 +893,6 @@ endchoice
 source "arch/arm/plat-samsung/Kconfig"
 source "arch/arm/plat-s5p/Kconfig"
 
-source "arch/arm/mach-s5pv210/Kconfig"
-
 source "arch/arm/mach-exynos/Kconfig"
 
 # Definitions to make life easier

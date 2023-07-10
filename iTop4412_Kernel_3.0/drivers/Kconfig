@@ -14,15 +14,11 @@ source "drivers/scsi/Kconfig"
 
 source "drivers/md/Kconfig"
 
-source "drivers/target/Kconfig"
-
 source "drivers/firewire/Kconfig"
 
 source "drivers/macintosh/Kconfig"
 
 source "drivers/net/Kconfig"
-
-source "drivers/telephony/Kconfig"
 
 # input before char - char/joystick depends on it. As does USB.
 
@@ -41,8 +37,6 @@ source "drivers/w1/Kconfig"
 source "drivers/power/Kconfig"
 
 source "drivers/hwmon/Kconfig"
-
-source "drivers/thermal/Kconfig"
 
 source "drivers/watchdog/Kconfig"
 

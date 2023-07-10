@@ -4,8 +4,6 @@ source "drivers/base/Kconfig"
 
 source "drivers/connector/Kconfig"
 
-source "drivers/pnp/Kconfig"
-
 source "drivers/block/Kconfig"
 
 # misc before ide - BLK_DEV_SGIIOC4 depends on SGI_IOC4
@@ -36,10 +34,6 @@ source "drivers/i2c/Kconfig"
 
 source "drivers/spi/Kconfig"
 
-source "drivers/pps/Kconfig"
-
-source "drivers/ptp/Kconfig"
-
 source "drivers/gpio/Kconfig"
 
 source "drivers/w1/Kconfig"
@@ -51,8 +45,6 @@ source "drivers/hwmon/Kconfig"
 source "drivers/thermal/Kconfig"
 
 source "drivers/watchdog/Kconfig"
-
-source "drivers/ssb/Kconfig"
 
 source "drivers/mfd/Kconfig"
 
@@ -91,8 +83,6 @@ source "drivers/uio/Kconfig"
 source "drivers/vlynq/Kconfig"
 
 source "drivers/xen/Kconfig"
-
-source "drivers/staging/Kconfig"
 
 source "drivers/platform/Kconfig"
 

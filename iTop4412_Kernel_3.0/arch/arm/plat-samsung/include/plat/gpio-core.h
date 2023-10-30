@@ -74,6 +74,7 @@ struct s3c_gpio_chip {
 #endif
 };
 
+/* 从 gpio_chip 结构体反向找到 s3c_gpio_chip 结构体 */
 static inline struct s3c_gpio_chip *to_s3c_gpio(struct gpio_chip *gpc)
 {
 	return container_of(gpc, struct s3c_gpio_chip, chip);
@@ -140,6 +141,8 @@ extern int samsung_gpiolib_to_irq(struct gpio_chip *chip, unsigned int offset);
 extern struct s3c_gpio_cfg s3c24xx_gpiocfg_default;
 
 #ifdef CONFIG_S3C_GPIO_TRACK
+/* 根据 gpio号 查找 s3c_gpio_chip 结构体
+ * 顺序排列的，直接索引即可 */
 extern struct s3c_gpio_chip *s3c_gpios[S3C_GPIO_END];
 
 static inline struct s3c_gpio_chip *s3c_gpiolib_getchip(unsigned int chip)

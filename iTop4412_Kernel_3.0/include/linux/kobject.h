@@ -27,8 +27,11 @@
 #include <linux/wait.h>
 #include <asm/atomic.h>
 
+/* uevent helper 路径最大长度 */
 #define UEVENT_HELPER_PATH_LEN		256
+/* uevent 环境变量最大数量 */
 #define UEVENT_NUM_ENVP			32	/* number of env pointers */
+/* uevent 环境变量缓冲区长度 */
 #define UEVENT_BUFFER_SIZE		2048	/* buffer for the variables */
 
 /* path to the userspace helper executed on an event */
@@ -47,6 +50,7 @@ extern u64 uevent_seqnum;
  * kobject_uevent_env(kobj, KOBJ_CHANGE, env) with additional event
  * specific variables added to the event environment.
  */
+/* kobject action 枚举，不能随意添加 */
 enum kobject_action {
 	KOBJ_ADD,
 	KOBJ_REMOVE,
@@ -58,31 +62,35 @@ enum kobject_action {
 };
 
 struct kobject {
-	const char		*name;
-	struct list_head	entry;
-	struct kobject		*parent;
-	struct kset		*kset;
-	struct kobj_type	*ktype;
-	struct sysfs_dirent	*sd;
-	struct kref		kref;
-	unsigned int state_initialized:1;
-	unsigned int state_in_sysfs:1;
+	const char		*name;      /* kobject 名字, sysfs 文件系统中目录名 */
+	struct list_head	entry;  /* 与kset 和 其他 kobject 组成双向链表 */
+	struct kobject		*parent;/* 指向父 kobject , sysfs 中的父目录 */
+	struct kset		*kset;      /* 指向所属 kset */
+	struct kobj_type	*ktype; /* kobject 的属性，即目录下的文件 */
+	struct sysfs_dirent	*sd;    /* 指向 sysfs 中的节点， 类似 inode  */
+	struct kref		kref;       /* 引用计数，原子变量 */
+	unsigned int state_initialized:1;   /* 是否已初始化 */
+	unsigned int state_in_sysfs:1;      /* 是否已在 sysfs 中 */
 	unsigned int state_add_uevent_sent:1;
 	unsigned int state_remove_uevent_sent:1;
-	unsigned int uevent_suppress:1;
+	unsigned int uevent_suppress:1;     /* 是否支持发送 uevent , =1 不发送 */
 };
 
+/* 设置 kobject 名字 */
 extern int kobject_set_name(struct kobject *kobj, const char *name, ...)
 			    __attribute__((format(printf, 2, 3)));
 extern int kobject_set_name_vargs(struct kobject *kobj, const char *fmt,
 				  va_list vargs);
 
+/* 返回 kobject 的 名字 */
 static inline const char *kobject_name(const struct kobject *kobj)
 {
 	return kobj->name;
 }
 
+/* 初始化 kobject， 设置 kobj_type */
 extern void kobject_init(struct kobject *kobj, struct kobj_type *ktype);
+/* 将 kobject 加入到 sysfs 中 */
 extern int __must_check kobject_add(struct kobject *kobj,
 				    struct kobject *parent,
 				    const char *fmt, ...)
@@ -93,8 +101,10 @@ extern int __must_check kobject_init_and_add(struct kobject *kobj,
 					     const char *fmt, ...)
 	__attribute__((format(printf, 4, 5)));
 
+/* 将 kobject 从 sysfs 中移除 */
 extern void kobject_del(struct kobject *kobj);
 
+/* 创建 kobject ,并使用默认的 kobj_type  */
 extern struct kobject * __must_check kobject_create(void);
 extern struct kobject * __must_check kobject_create_and_add(const char *name,
 						struct kobject *parent);
@@ -108,13 +118,14 @@ extern void kobject_put(struct kobject *kobj);
 extern char *kobject_get_path(struct kobject *kobj, gfp_t flag);
 
 struct kobj_type {
-	void (*release)(struct kobject *kobj);
-	const struct sysfs_ops *sysfs_ops;
-	struct attribute **default_attrs;
+	void (*release)(struct kobject *kobj);      /* 释放函数，引用计数=0时调用 */
+	const struct sysfs_ops *sysfs_ops;          /* 属性读写操作函数 */
+	struct attribute **default_attrs;           /* 属性列表，可以有多个 */
 	const struct kobj_ns_type_operations *(*child_ns_type)(struct kobject *kobj);
 	const void *(*namespace)(struct kobject *kobj);
 };
 
+/* kobject 发送 uevent 时填充环境变量使用 */
 struct kobj_uevent_env {
 	char *envp[UEVENT_NUM_ENVP];
 	int envp_idx;
@@ -129,6 +140,8 @@ struct kset_uevent_ops {
 		      struct kobj_uevent_env *env);
 };
 
+/* 为了方便匹配 属性 和 (show/store) 方法，提供了这样一个结构
+ * */
 struct kobj_attribute {
 	struct attribute attr;
 	ssize_t (*show)(struct kobject *kobj, struct kobj_attribute *attr,
@@ -159,10 +172,10 @@ struct sock;
  * desired.
  */
 struct kset {
-	struct list_head list;
-	spinlock_t list_lock;
-	struct kobject kobj;
-	const struct kset_uevent_ops *uevent_ops;
+	struct list_head list;  /* 双向链表，将所有kobject链起来 */
+	spinlock_t list_lock;   /* 自旋锁，互斥访问 */
+	struct kobject kobj;    /* 内建的 kobject  */
+	const struct kset_uevent_ops *uevent_ops;   /* uevent 相关 */
 };
 
 extern void kset_init(struct kset *kset);
@@ -177,16 +190,21 @@ static inline struct kset *to_kset(struct kobject *kobj)
 	return kobj ? container_of(kobj, struct kset, kobj) : NULL;
 }
 
+/* 递增 kset 引用计数 */
 static inline struct kset *kset_get(struct kset *k)
 {
+    /* 递增的是 kset 中内嵌的 kobject 的引用计数 */
 	return k ? to_kset(kobject_get(&k->kobj)) : NULL;
 }
 
+/* 递减 kset 引用计数 */
 static inline void kset_put(struct kset *k)
 {
+    /* 递减的是 kset 中内嵌的 kobject 的引用计数 */
 	kobject_put(&k->kobj);
 }
 
+/* 返回 kobject 中的 kobj_type 结构成员 */
 static inline struct kobj_type *get_ktype(struct kobject *kobj)
 {
 	return kobj->ktype;
@@ -207,6 +225,7 @@ extern struct kobject *power_kobj;
 /* The global /sys/firmware/ kobject for people to chain off of */
 extern struct kobject *firmware_kobj;
 
+/* 热插拔相关， kobject 产生 uevent 事件 */
 #if defined(CONFIG_HOTPLUG)
 int kobject_uevent(struct kobject *kobj, enum kobject_action action);
 int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,

@@ -15,6 +15,7 @@
 
 #include "gpio-exynos4.h"
 #include "gpio-exynos5.h"
+
 //yulu
 #if defined(CONFIG_ARCH_EXYNOS)
 #define S3C_GPIO_SLP_OUT0       ((__force s3c_gpio_pull_t)0x00)
@@ -26,14 +27,19 @@
 #define S3C_GPIO_SETPIN_ONE          1
 #define S3C_GPIO_SETPIN_NONE	     2
 #endif
+
 #define GPIO_LEVEL_LOW          0
 #define GPIO_LEVEL_HIGH         1
 #define GPIO_LEVEL_NONE         2
 #define GPIO_INPUT              0
 #define GPIO_OUTPUT             1
 
+/* 配置文件中定义  CONFIG_ARCH_EXYNOS4 */
 #if defined(CONFIG_ARCH_EXYNOS4)
+/* S3C_GPIO_END 就是 GPIO总数量 */
 #define S3C_GPIO_END		EXYNOS4_GPIO_END
+/* EXYNOS4XXX_GPIO_END 与 EXYNOS5_GPIO_END 是相同的 
+ * CONFIG_SAMSUNG_GPIO_EXTRA 定义为 0  */
 #define ARCH_NR_GPIOS		(EXYNOS4XXX_GPIO_END +	\
 				CONFIG_SAMSUNG_GPIO_EXTRA)
 #elif defined(CONFIG_ARCH_EXYNOS5)

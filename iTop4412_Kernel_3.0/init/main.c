@@ -713,12 +713,16 @@ int __init_or_module do_one_initcall(initcall_t fn)
 }
 
 
+/* 这三个变量是在 vmlinux.lds 中定义的，标识了 early_initcall 以及其他级别的初始
+ * 化的代码段的起始地址，就是为了索引初始化函数 */
 extern initcall_t __initcall_start[], __initcall_end[], __early_initcall_end[];
 
 static void __init do_initcalls(void)
 {
 	initcall_t *fn;
 
+    /* 遍历所有 level 下的 init函数，依次调用
+     * 根据段存放规则， level0 优先级最高， level7 优先级最低*/
 	for (fn = __early_initcall_end; fn < __initcall_end; fn++)
 		do_one_initcall(*fn);
 }
@@ -732,13 +736,13 @@ static void __init do_initcalls(void)
  */
 static void __init do_basic_setup(void)
 {
-	cpuset_init_smp();
-	usermodehelper_init();
+	cpuset_init_smp();  /* 初始化内核 control group 的 cpuset 子系统 */
+	usermodehelper_init();  /* 使能 usermodehelper */
 	init_tmpfs();
-	driver_init();
+	driver_init();      /* 驱动模块总线、文件系统注册,包括 bus,devtmpfs,platform */
 	init_irq_proc();
 	do_ctors();
-	do_initcalls();
+	do_initcalls();     /* 调用 level 0 到 level 7 的 initcall 函数 */
 }
 
 static void __init do_pre_smp_initcalls(void)

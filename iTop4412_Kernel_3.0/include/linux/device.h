@@ -183,7 +183,9 @@ extern struct klist *bus_get_device_klist(struct bus_type *bus);
  * of any specific device.
  */
 struct device_driver {
+    /* 驱动名称，将与设备名称进行匹配 */
 	const char		*name;
+    /* 此驱动程序的设备所属的总线 */
 	struct bus_type		*bus;
 
 	struct module		*owner;
@@ -191,6 +193,7 @@ struct device_driver {
 
 	bool suppress_bind_attrs;	/* disables bind/unbind via sysfs */
 
+    /* 设备树的匹配表  open firmware */
 	const struct of_device_id	*of_match_table;
 
 	int (*probe) (struct device *dev);
@@ -198,10 +201,13 @@ struct device_driver {
 	void (*shutdown) (struct device *dev);
 	int (*suspend) (struct device *dev, pm_message_t state);
 	int (*resume) (struct device *dev);
+    /* 由驱动内核自动创建的默认属性 */
 	const struct attribute_group **groups;
 
+    /* 电源管理相关 */
 	const struct dev_pm_ops *pm;
 
+    /* 驱动私有数据 */
 	struct driver_private *p;
 };
 
@@ -218,7 +224,7 @@ extern void wait_for_device_probe(void);
 
 
 /* sysfs interface for exporting driver attributes */
-
+/* 驱动属性结构， 参考 kobj_attribute */
 struct driver_attribute {
 	struct attribute attr;
 	ssize_t (*show)(struct device_driver *driver, char *buf);
@@ -410,17 +416,29 @@ extern void class_destroy(struct class *cls);
  * If "name" is specified, the uevent will contain it in
  * the DEVTYPE variable.
  */
+/* struct device_type 表示设备的类型，该结构体一般被嵌入使用。
+ * 一个 class 或一个 总线 可以包含不同类型的设备， 比如 “分区” 和 “磁盘” 
+ * “鼠标” 和 “事件” 
+ * 该结构体的理解类似于 kobject 的 kobj_type , 如果特指了 name ，
+ * uevent 将把它包含在 DEVTYPE 变量中 */
 struct device_type {
+    /* 设备类型名称，当设备添加到内核时，会触发 "DEVTYPE=name"的 uevent 事件 
+     * 通知用户空间某个类型的设备可用 */
 	const char *name;
+    /* 该类型设备默认的属性集合 */
 	const struct attribute_group **groups;
+    /* 同一设备类型公共的 uevent 发送接口，和 struct kobj_type 类似 */
 	int (*uevent)(struct device *dev, struct kobj_uevent_env *env);
 	char *(*devnode)(struct device *dev, mode_t *mode);
+    /* 同一设备类型共用的释放接口，如果设备有自定义，优先使用自己的 */
 	void (*release)(struct device *dev);
 
+    /* 电源管理相关 */
 	const struct dev_pm_ops *pm;
 };
 
 /* interface for exporting device attributes */
+/* 设备属性结构， 参考 kobj_attribute */
 struct device_attribute {
 	struct attribute	attr;
 	ssize_t (*show)(struct device *dev, struct device_attribute *attr,
@@ -549,29 +567,40 @@ struct device_dma_parameters {
  * a higher-level representation of the device.
  */
 struct device {
-	struct device		*parent;
+	struct device		*parent;    /* 本设备的父节点，大部分情况下，父节点是bus
+                                        节点或主控制器，如果父节点为NULL，那就是
+                                        一个 (top-level)顶层设备，一般不是我们想
+                                        要的 */
 
-	struct device_private	*p;
+	struct device_private	*p;     /* 用于保存设备驱动核心部分的私有数据，详细的
+                                        描述可以参考 struct device_private 的描述 */
 
-	struct kobject kobj;
+    /* 该数据结构对应的 struct kobject */
+	struct kobject kobj;            
+    /* 设备的名称，同样会赋给 kobj , sysfs 中会显示 */
 	const char		*init_name; /* initial name of the device */
+    /* 设备类型，参考 struct device_type */
 	const struct device_type *type;
 
-	struct mutex		mutex;	/* mutex to synchronize calls to
-					 * its driver.
-					 */
+	struct mutex		mutex;	/* mutex to synchronize calls to * its driver.  */
 
+    /* 该设备挂在哪个总线上 */
 	struct bus_type	*bus;		/* type of bus device is on */
-	struct device_driver *driver;	/* which driver has allocated this
-					   device */
-	void		*platform_data;	/* Platform specific data, device
-					   core doesn't touch it */
+    /* 该设备对应的驱动 */
+	struct device_driver *driver;	/* which driver has allocated this device */
+    /* 设备的平台数据，例如：对于定制版的设备，典型的是嵌入式和基于SOC的硬件，
+     * linux 经常使用 platform_data 指向该板的数据结构体，描述设备及其链接方式 
+     * 这可能包含了可用的端口，芯片变量，GPIO等，这种做法缩小了 BSP， 
+     * 并最小化驱动中的 #ifdefs */
+	void		*platform_data;	/* Platform specific data, device core doesn't touch it */
+    /* 和电源管理相关 */
 	struct dev_pm_info	power;
 	struct dev_power_domain	*pwr_domain;
 
 #ifdef CONFIG_NUMA
 	int		numa_node;	/* NUMA node this device is close to */
 #endif
+    /* DMA 操作相关 */
 	u64		*dma_mask;	/* dma mask (if dma'able device) */
 	u64		coherent_dma_mask;/* Like dma_mask, but for
 					     alloc_coherent mappings as
@@ -586,10 +615,12 @@ struct device {
 	struct dma_coherent_mem	*dma_mem; /* internal for coherent mem
 					     override */
 	/* arch specific additions */
+    /* 架构相关数据，定义在架构相关的 .h 中 */
 	struct dev_archdata	archdata;
 
 	struct device_node	*of_node; /* associated device tree node */
 
+    /* 设备号， 创建 sysfs的 dev，一般由 Major 和 Minor 两部分组成 */
 	dev_t			devt;	/* dev_t, creates the sysfs "dev" */
 
 	spinlock_t		devres_lock;

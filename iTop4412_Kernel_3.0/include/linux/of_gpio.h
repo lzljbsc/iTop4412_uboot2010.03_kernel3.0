@@ -30,6 +30,7 @@ enum of_gpio_flags {
 	OF_GPIO_ACTIVE_LOW = 0x1,
 };
 
+/* 配置中没有该定义，不支持设备树 */
 #ifdef CONFIG_OF_GPIO
 
 /*

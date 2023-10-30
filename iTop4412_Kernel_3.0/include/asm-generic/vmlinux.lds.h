@@ -616,6 +616,9 @@
 		*(.init.setup)						\
 		VMLINUX_SYMBOL(__setup_end) = .;
 
+/* 初始化阶段的回调函数，
+ * 又进一步划分成了 8个 level 
+ * 可以根据初始化顺序定义在不同的 level 中 */
 #define INITCALLS							\
 	*(.initcallearly.init)						\
 	VMLINUX_SYMBOL(__early_initcall_end) = .;			\
@@ -637,6 +640,7 @@
   	*(.initcall7.init)						\
   	*(.initcall7s.init)
 
+/* 初始化的回调函数段 */
 #define INIT_CALLS							\
 		VMLINUX_SYMBOL(__initcall_start) = .;			\
 		INITCALLS						\
@@ -793,6 +797,7 @@
 		VMLINUX_SYMBOL(_einittext) = .;				\
 	}
 
+/* 定义 .init.data 段，下面几个段都是放在这个段中的 */
 #define INIT_DATA_SECTION(initsetup_align)				\
 	.init.data : AT(ADDR(.init.data) - LOAD_OFFSET) {		\
 		INIT_DATA						\

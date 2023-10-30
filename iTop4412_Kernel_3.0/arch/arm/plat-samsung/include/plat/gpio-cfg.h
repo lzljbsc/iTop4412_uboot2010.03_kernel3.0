@@ -51,6 +51,8 @@ struct s3c_gpio_chip;
  * @sa s3c_gpio_setpull
  * @sa s3c_gpio_getpull
  */
+/* GPIO 上下拉、复用功能配置 
+ * 在调用 s3c_gpio_cfgpin 等函数时会实际调到这里的函数 */
 struct s3c_gpio_cfg {
 	unsigned int	cfg_eint;
 
@@ -63,6 +65,9 @@ struct s3c_gpio_cfg {
 			       unsigned config);
 };
 
+/* GPIO复用功能配置相关宏
+ * 在配置复用功能时，调用 s3c_gpio_cfgpin 函数 
+ * 如： s3c_gpio_cfgpin(EXYNOS4_GPX0(1), S3C_GPIO_SFN(2)) */
 #define S3C_GPIO_SPECIAL_MARK	(0xfffffff0)
 #define S3C_GPIO_SPECIAL(x)	(S3C_GPIO_SPECIAL_MARK | (x))
 
@@ -97,6 +102,8 @@ struct s3c_gpio_cfg {
  * correct position in the control register, although these are discouraged
  * in newer kernels and are only being kept for compatibility.
  */
+/* 配置gpio复用功能
+ * 这个函数是被驱动直接调用的 */
 extern int s3c_gpio_cfgpin(unsigned int pin, unsigned int to);
 
 /**
@@ -130,6 +137,9 @@ extern int s3c_gpio_cfgpin_range(unsigned int start, unsigned int nr,
  * up or down settings, and it may be dependent on the chip that is being
  * used to whether the particular mode is available.
  */
+/* s3c_gpio_setpull_exynos4 这类函数使用，用于设置GPIO的上下拉
+ * 这只是个宏定义，一般会与GPIO的寄存器配置值有一定关系
+ * 但在4412上，PULL_UP 的值是 0x03 ，所以在驱动代码中特殊处理了 */
 #define S3C_GPIO_PULL_NONE	((__force s3c_gpio_pull_t)0x00)
 #define S3C_GPIO_PULL_DOWN	((__force s3c_gpio_pull_t)0x01)
 #define S3C_GPIO_PULL_UP	((__force s3c_gpio_pull_t)0x02)
@@ -180,6 +190,7 @@ static inline int s3c_gpio_cfgrange_nopull(unsigned int pin, unsigned int size,
 	return s3c_gpio_cfgall_range(pin, size, cfg, S3C_GPIO_PULL_NONE);
 }
 
+/* GPIO 驱动能力相关 */
 /* Define values for the drvstr available for each gpio pin.
  *
  * These values control the value of the output signal driver strength,
@@ -209,6 +220,7 @@ extern s5p_gpio_drvstr_t s5p_gpio_get_drvstr(unsigned int pin);
 */
 extern int s5p_gpio_set_drvstr(unsigned int pin, s5p_gpio_drvstr_t drvstr);
 
+/* 掉电模式下 GPIO 输入输出状态相关配置 */
 /* Define values for the power down configuration available for each gpio pin.
  *
  * These values control the state of the power down configuration resistors
@@ -239,6 +251,7 @@ extern int s5p_gpio_set_pd_cfg(unsigned int pin, s5p_gpio_pd_cfg_t pd_cfg);
 */
 extern s5p_gpio_pd_cfg_t s5p_gpio_get_pd_cfg(unsigned int pin);
 
+/* 掉电模式下 GPIO 上下拉状态相关配置 */
 /* Define values for the power down pull-{up,down} available for each gpio pin.
  *
  * These values control the state of the power down mode pull-{up,down}

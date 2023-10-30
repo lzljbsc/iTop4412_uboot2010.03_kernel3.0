@@ -24,6 +24,10 @@
  * by disabling interrupts.
 */
 
+/* GPIO复用功能、上下拉配置 
+ * 调用 s3c_gpio_chip 中的回调函数
+ * 回调函数对应到最下面的四个函数 
+ * 在 rch/arm/plat-samsung/gpio-config.c 是实现 */
 static inline int s3c_gpio_do_setcfg(struct s3c_gpio_chip *chip,
 				     unsigned int off, unsigned int config)
 {
@@ -48,6 +52,7 @@ static inline s3c_gpio_pull_t s3c_gpio_do_getpull(struct s3c_gpio_chip *chip,
 	return chip->config->get_pull(chip, off);
 }
 
+/* 下面的函数 4412 中并未使用 */
 /**
  * s3c_gpio_setcfg_s3c24xx - S3C24XX style GPIO configuration.
  * @chip: The gpio chip that is being configured.
@@ -103,7 +108,10 @@ extern int s3c_gpio_setcfg_s3c24xx_a(struct s3c_gpio_chip *chip,
  */
 extern unsigned s3c_gpio_getcfg_s3c24xx_a(struct s3c_gpio_chip *chip,
 					  unsigned int off);
+/* end of 下面的函数 4412 中并未使用 */
 
+/* 下面两个函数的函数原型在 
+ * arch/arm/plat-samsung/gpio-config.c */
 /**
  * s3c_gpio_setcfg_s3c64xx_4bit - S3C64XX 4bit single register GPIO config.
  * @chip: The gpio chip that is being configured.
@@ -146,30 +154,8 @@ extern unsigned s3c_gpio_getcfg_s3c64xx_4bit(struct s3c_gpio_chip *chip,
  * S3C2443 = Pull-Both [not same as S3C6400]
  */
 
-/**
- * s3c_gpio_setpull_1up() - Pull configuration for choice of up or none.
- * @chip: The gpio chip that is being configured.
- * @off: The offset for the GPIO being configured.
- * @param: pull: The pull mode being requested.
- *
- * This is a helper function for the case where we have GPIOs with one
- * bit configuring the presence of a pull-up resistor.
- */
-extern int s3c_gpio_setpull_1up(struct s3c_gpio_chip *chip,
-				unsigned int off, s3c_gpio_pull_t pull);
-
-/**
- * s3c_gpio_setpull_1down() - Pull configuration for choice of down or none
- * @chip: The gpio chip that is being configured
- * @off: The offset for the GPIO being configured
- * @param: pull: The pull mode being requested
- *
- * This is a helper function for the case where we have GPIOs with one
- * bit configuring the presence of a pull-down resistor.
- */
-extern int s3c_gpio_setpull_1down(struct s3c_gpio_chip *chip,
-				  unsigned int off, s3c_gpio_pull_t pull);
-
+/* 下面两个函数的函数原型在 
+ * arch/arm/plat-samsung/gpio-config.c */
 /**
  * s3c_gpio_setpull_upown() - Pull configuration for choice of up, down or none
  * @chip: The gpio chip that is being configured.
@@ -197,55 +183,6 @@ extern int s3c_gpio_setpull_updown(struct s3c_gpio_chip *chip,
 */
 extern s3c_gpio_pull_t s3c_gpio_getpull_updown(struct s3c_gpio_chip *chip,
 					       unsigned int off);
-
-/**
- * s3c_gpio_getpull_1up() - Get configuration for choice of up or none
- * @chip: The gpio chip that the GPIO pin belongs to
- * @off: The offset to the pin to get the configuration of.
- *
- * This helper function reads the state of the pull-up resistor for the
- * given GPIO in the same case as s3c_gpio_setpull_1up.
-*/
-extern s3c_gpio_pull_t s3c_gpio_getpull_1up(struct s3c_gpio_chip *chip,
-					    unsigned int off);
-
-/**
- * s3c_gpio_getpull_1down() - Get configuration for choice of down or none
- * @chip: The gpio chip that the GPIO pin belongs to
- * @off: The offset to the pin to get the configuration of.
- *
- * This helper function reads the state of the pull-down resistor for the
- * given GPIO in the same case as s3c_gpio_setpull_1down.
-*/
-extern s3c_gpio_pull_t s3c_gpio_getpull_1down(struct s3c_gpio_chip *chip,
-					    unsigned int off);
-
-/**
- * s3c_gpio_setpull_s3c2443() - Pull configuration for s3c2443.
- * @chip: The gpio chip that is being configured.
- * @off: The offset for the GPIO being configured.
- * @param: pull: The pull mode being requested.
- *
- * This is a helper function for the case where we have GPIOs with two
- * bits configuring the presence of a pull resistor, in the following
- * order:
- *	00 = Pull-up resistor connected
- *	10 = Pull-down resistor connected
- *	x1 = No pull up resistor
- */
-extern int s3c_gpio_setpull_s3c2443(struct s3c_gpio_chip *chip,
-				    unsigned int off, s3c_gpio_pull_t pull);
-
-/**
- * s3c_gpio_getpull_s3c2443() - Get configuration for s3c2443 pull resistors
- * @chip: The gpio chip that the GPIO pin belongs to.
- * @off: The offset to the pin to get the configuration of.
- *
- * This helper function reads the state of the pull-{up,down} resistor for the
- * given GPIO in the same case as s3c_gpio_setpull_upown.
-*/
-extern s3c_gpio_pull_t s3c_gpio_getpull_s3c2443(struct s3c_gpio_chip *chip,
-						unsigned int off);
 
 #endif /* __PLAT_GPIO_CFG_HELPERS_H */
 

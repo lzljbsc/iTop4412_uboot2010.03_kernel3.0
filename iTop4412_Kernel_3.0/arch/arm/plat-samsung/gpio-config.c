@@ -21,8 +21,16 @@
 #include <plat/gpio-cfg.h>
 #include <plat/gpio-cfg-helpers.h>
 
+/* 底层的GPIO复用功能配置函数
+ * 传入的是GPIO编号，如 EXYNOS4_GPX0(1), 
+ * 复用功能传入的是 S3C_GPIO_SFN(2) 
+ * 每个GPIO对应的复用功能，需要参考手册
+ * 这个函数中，根据传入的GPIO编号查找 gpio_chip 结构，
+ * 再找到对应的 s3c_gpio_chip 结构，
+ * 然后调用 s3c_gpio_cfg 结构中的回调函数 */
 int s3c_gpio_cfgpin(unsigned int pin, unsigned int config)
 {
+    /* 查找到 s3c_gpio_chip 结构，包含有回调函数 */
 	struct s3c_gpio_chip *chip = s3c_gpiolib_getchip(pin);
 	unsigned long flags;
 	int offset;
@@ -41,6 +49,7 @@ int s3c_gpio_cfgpin(unsigned int pin, unsigned int config)
 }
 EXPORT_SYMBOL(s3c_gpio_cfgpin);
 
+/* 配置一组GPIO 功能 */
 int s3c_gpio_cfgpin_range(unsigned int start, unsigned int nr,
 			  unsigned int cfg)
 {
@@ -56,6 +65,7 @@ int s3c_gpio_cfgpin_range(unsigned int start, unsigned int nr,
 }
 EXPORT_SYMBOL_GPL(s3c_gpio_cfgpin_range);
 
+/* 带有上下拉配置的 一组GPIO配置 */
 int s3c_gpio_cfgall_range(unsigned int start, unsigned int nr,
 			  unsigned int cfg, s3c_gpio_pull_t pull)
 {
@@ -72,6 +82,7 @@ int s3c_gpio_cfgall_range(unsigned int start, unsigned int nr,
 }
 EXPORT_SYMBOL_GPL(s3c_gpio_cfgall_range);
 
+/* 获取当前GPIO配置 */
 unsigned s3c_gpio_getcfg(unsigned int pin)
 {
 	struct s3c_gpio_chip *chip = s3c_gpiolib_getchip(pin);
@@ -92,6 +103,7 @@ unsigned s3c_gpio_getcfg(unsigned int pin)
 EXPORT_SYMBOL(s3c_gpio_getcfg);
 
 
+/* 设置GPIO上下拉 */
 int s3c_gpio_setpull(unsigned int pin, s3c_gpio_pull_t pull)
 {
 	struct s3c_gpio_chip *chip = s3c_gpiolib_getchip(pin);
@@ -111,6 +123,7 @@ int s3c_gpio_setpull(unsigned int pin, s3c_gpio_pull_t pull)
 }
 EXPORT_SYMBOL(s3c_gpio_setpull);
 
+/* 获取GPIO上下拉 */
 s3c_gpio_pull_t s3c_gpio_getpull(unsigned int pin)
 {
 	struct s3c_gpio_chip *chip = s3c_gpiolib_getchip(pin);
@@ -130,6 +143,7 @@ s3c_gpio_pull_t s3c_gpio_getpull(unsigned int pin)
 }
 EXPORT_SYMBOL(s3c_gpio_getpull);
 
+/* 下面的函数 4412 中并未使用 */
 #ifdef CONFIG_S3C_GPIO_CFG_S3C24XX
 int s3c_gpio_setcfg_s3c24xx_a(struct s3c_gpio_chip *chip,
 			      unsigned int off, unsigned int cfg)
@@ -208,6 +222,10 @@ unsigned int s3c_gpio_getcfg_s3c24xx(struct s3c_gpio_chip *chip,
 #endif
 
 #ifdef CONFIG_S3C_GPIO_CFG_S3C64XX
+/* 底层配置接口
+ * 用于根据传入的GPIO复用功能配置项，配置对应的GPIO口
+ * 函数实现主要是根据 off 偏移计算GPIO配置寄存器中需要配置的数值
+ * 再写入对应寄存器即可 */
 int s3c_gpio_setcfg_s3c64xx_4bit(struct s3c_gpio_chip *chip,
 				 unsigned int off, unsigned int cfg)
 {
@@ -231,6 +249,8 @@ int s3c_gpio_setcfg_s3c64xx_4bit(struct s3c_gpio_chip *chip,
 	return 0;
 }
 
+/* 底层获取配置
+ * 上面函数的逆过程，实现也比较简单 */
 unsigned s3c_gpio_getcfg_s3c64xx_4bit(struct s3c_gpio_chip *chip,
 				      unsigned int off)
 {
@@ -252,6 +272,7 @@ unsigned s3c_gpio_getcfg_s3c64xx_4bit(struct s3c_gpio_chip *chip,
 #endif /* CONFIG_S3C_GPIO_CFG_S3C64XX */
 
 #ifdef CONFIG_S3C_GPIO_PULL_UPDOWN
+/* 底层的上下拉操作函数，直接使用虚拟地址操作寄存器 */
 int s3c_gpio_setpull_updown(struct s3c_gpio_chip *chip,
 			    unsigned int off, s3c_gpio_pull_t pull)
 {
@@ -267,6 +288,7 @@ int s3c_gpio_setpull_updown(struct s3c_gpio_chip *chip,
 	return 0;
 }
 
+/* 底层的上下拉操作函数，直接使用虚拟地址操作寄存器 */
 s3c_gpio_pull_t s3c_gpio_getpull_updown(struct s3c_gpio_chip *chip,
 					unsigned int off)
 {
@@ -278,108 +300,9 @@ s3c_gpio_pull_t s3c_gpio_getpull_updown(struct s3c_gpio_chip *chip,
 	pup &= 0x3;
 	return (__force s3c_gpio_pull_t)pup;
 }
-
-#ifdef CONFIG_S3C_GPIO_PULL_S3C2443
-int s3c_gpio_setpull_s3c2443(struct s3c_gpio_chip *chip,
-				unsigned int off, s3c_gpio_pull_t pull)
-{
-	switch (pull) {
-	case S3C_GPIO_PULL_NONE:
-		pull = 0x01;
-		break;
-	case S3C_GPIO_PULL_UP:
-		pull = 0x00;
-		break;
-	case S3C_GPIO_PULL_DOWN:
-		pull = 0x02;
-		break;
-	}
-	return s3c_gpio_setpull_updown(chip, off, pull);
-}
-
-s3c_gpio_pull_t s3c_gpio_getpull_s3c2443(struct s3c_gpio_chip *chip,
-					unsigned int off)
-{
-	s3c_gpio_pull_t pull;
-
-	pull = s3c_gpio_getpull_updown(chip, off);
-
-	switch (pull) {
-	case 0x00:
-		pull = S3C_GPIO_PULL_UP;
-		break;
-	case 0x01:
-	case 0x03:
-		pull = S3C_GPIO_PULL_NONE;
-		break;
-	case 0x02:
-		pull = S3C_GPIO_PULL_DOWN;
-		break;
-	}
-
-	return pull;
-}
-#endif
 #endif
 
-#if defined(CONFIG_S3C_GPIO_PULL_UP) || defined(CONFIG_S3C_GPIO_PULL_DOWN)
-static int s3c_gpio_setpull_1(struct s3c_gpio_chip *chip,
-			 unsigned int off, s3c_gpio_pull_t pull,
-			 s3c_gpio_pull_t updown)
-{
-	void __iomem *reg = chip->base + 0x08;
-	u32 pup = __raw_readl(reg);
-
-	if (pull == updown)
-		pup &= ~(1 << off);
-	else if (pull == S3C_GPIO_PULL_NONE)
-		pup |= (1 << off);
-	else
-		return -EINVAL;
-
-	__raw_writel(pup, reg);
-	return 0;
-}
-
-static s3c_gpio_pull_t s3c_gpio_getpull_1(struct s3c_gpio_chip *chip,
-				     unsigned int off, s3c_gpio_pull_t updown)
-{
-	void __iomem *reg = chip->base + 0x08;
-	u32 pup = __raw_readl(reg);
-
-	pup &= (1 << off);
-	return pup ? S3C_GPIO_PULL_NONE : updown;
-}
-#endif /* CONFIG_S3C_GPIO_PULL_UP || CONFIG_S3C_GPIO_PULL_DOWN */
-
-#ifdef CONFIG_S3C_GPIO_PULL_UP
-s3c_gpio_pull_t s3c_gpio_getpull_1up(struct s3c_gpio_chip *chip,
-				     unsigned int off)
-{
-	return s3c_gpio_getpull_1(chip, off, S3C_GPIO_PULL_UP);
-}
-
-int s3c_gpio_setpull_1up(struct s3c_gpio_chip *chip,
-			 unsigned int off, s3c_gpio_pull_t pull)
-{
-	return s3c_gpio_setpull_1(chip, off, pull, S3C_GPIO_PULL_UP);
-}
-#endif /* CONFIG_S3C_GPIO_PULL_UP */
-
-#ifdef CONFIG_S3C_GPIO_PULL_DOWN
-s3c_gpio_pull_t s3c_gpio_getpull_1down(struct s3c_gpio_chip *chip,
-				     unsigned int off)
-{
-	return s3c_gpio_getpull_1(chip, off, S3C_GPIO_PULL_DOWN);
-}
-
-int s3c_gpio_setpull_1down(struct s3c_gpio_chip *chip,
-			 unsigned int off, s3c_gpio_pull_t pull)
-{
-	return s3c_gpio_setpull_1(chip, off, pull, S3C_GPIO_PULL_DOWN);
-}
-#endif /* CONFIG_S3C_GPIO_PULL_DOWN */
-
+/* GPIO 驱动能力配置 */
 #ifdef CONFIG_S5P_GPIO_DRVSTR
 s5p_gpio_drvstr_t s5p_gpio_get_drvstr(unsigned int pin)
 {
@@ -404,6 +327,7 @@ s5p_gpio_drvstr_t s5p_gpio_get_drvstr(unsigned int pin)
 }
 EXPORT_SYMBOL(s5p_gpio_get_drvstr);
 
+/* 设置GPIO驱动能力 */
 int s5p_gpio_set_drvstr(unsigned int pin, s5p_gpio_drvstr_t drvstr)
 {
 	struct s3c_gpio_chip *chip = s3c_gpiolib_getchip(pin);
@@ -430,6 +354,9 @@ int s5p_gpio_set_drvstr(unsigned int pin, s5p_gpio_drvstr_t drvstr)
 EXPORT_SYMBOL(s5p_gpio_set_drvstr);
 #endif	/* CONFIG_S5P_GPIO_DRVSTR */
 
+/* 掉电模式下GPIO状态相关处理
+ * 该代码中并未使用，也就是都用的芯片模式值 
+ * 可以根据单板进行配置 */
 s5p_gpio_pd_cfg_t s5p_gpio_get_pd_cfg(unsigned int pin)
 {
 	struct s3c_gpio_chip *chip = s3c_gpiolib_getchip(pin);

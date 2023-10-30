@@ -27,6 +27,7 @@ static struct kobj_attribute _name##_attr = \
 
 #if defined(CONFIG_HOTPLUG)
 /* current uevent sequence number */
+/* uevent_seqnum 输出， 在 kobject_uevent.c 中定义 */
 static ssize_t uevent_seqnum_show(struct kobject *kobj,
 				  struct kobj_attribute *attr, char *buf)
 {
@@ -35,6 +36,7 @@ static ssize_t uevent_seqnum_show(struct kobject *kobj,
 KERNEL_ATTR_RO(uevent_seqnum);
 
 /* uevent helper program, used during early boot */
+/* uevent_helper 可执行文件，可以通过 /sys/kernel/uevent_helper 更改 */
 static ssize_t uevent_helper_show(struct kobject *kobj,
 				  struct kobj_attribute *attr, char *buf)
 {
@@ -184,19 +186,23 @@ static struct attribute * kernel_attrs[] = {
 	NULL
 };
 
+/* attribute_group  */
 static struct attribute_group kernel_attr_group = {
 	.attrs = kernel_attrs,
 };
 
+/* /sys/kernel/ 目录创建 */
 static int __init ksysfs_init(void)
 {
 	int error;
 
+    /* 创建 kernel ，父为NULL  */
 	kernel_kobj = kobject_create_and_add("kernel", NULL);
 	if (!kernel_kobj) {
 		error = -ENOMEM;
 		goto exit;
 	}
+    /* 添加 attribute_group */
 	error = sysfs_create_group(kernel_kobj, &kernel_attr_group);
 	if (error)
 		goto kset_exit;
@@ -218,4 +224,5 @@ exit:
 	return error;
 }
 
+/* 初始化阶段的函数，启动时自动调用 */
 core_initcall(ksysfs_init);

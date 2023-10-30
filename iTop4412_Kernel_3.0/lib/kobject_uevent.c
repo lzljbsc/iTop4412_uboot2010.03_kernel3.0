@@ -27,7 +27,12 @@
 #include <net/net_namespace.h>
 
 
+/* uevent 序列号，会做为环境变量传递给用户层程序
+ * 在 /sys/kernel/uevent_seqnum */
 u64 uevent_seqnum;
+/* uevent_helper ，默认为 /sbin/hotplug, 可以通过内核配置更改 
+ * 另外，已将 uevent_helper 通过 sysfs 导出， 在 /sys/kernel/uevent_helper 
+ * 直接在应用层更改即可 */
 char uevent_helper[UEVENT_HELPER_PATH_LEN] = CONFIG_UEVENT_HELPER_PATH;
 static DEFINE_SPINLOCK(sequence_lock);
 #ifdef CONFIG_NET
@@ -40,6 +45,7 @@ static DEFINE_MUTEX(uevent_sock_mutex);
 #endif
 
 /* the strings here must match the enum in include/linux/kobject.h */
+/* uevent action 匹配字符串，不能更改 */
 static const char *kobject_actions[] = {
 	[KOBJ_ADD] =		"add",
 	[KOBJ_REMOVE] =		"remove",
@@ -58,6 +64,7 @@ static const char *kobject_actions[] = {
  *
  * Returns 0 if the action string was recognized.
  */
+/* 转换字符串类型 action 到 枚举类型 action */
 int kobject_action_type(const char *buf, size_t count,
 			enum kobject_action *type)
 {
@@ -70,6 +77,7 @@ int kobject_action_type(const char *buf, size_t count,
 	if (!count)
 		goto out;
 
+    /* 逐个遍历 kobject_actions 匹配，完全匹配模式 */
 	for (action = 0; action < ARRAY_SIZE(kobject_actions); action++) {
 		if (strncmp(kobject_actions[action], buf, count) != 0)
 			continue;
@@ -83,6 +91,7 @@ out:
 	return ret;
 }
 
+/* CONFIG_NET  // TODO: 待分析 kobject uevent netlink 方式 */
 #ifdef CONFIG_NET
 static int kobj_bcast_filter(struct sock *dsk, struct sk_buff *skb, void *data)
 {
@@ -101,6 +110,7 @@ static int kobj_bcast_filter(struct sock *dsk, struct sk_buff *skb, void *data)
 }
 #endif
 
+/* // TODO: 待分析 kobj_usermode_filter 作用 */
 static int kobj_usermode_filter(struct kobject *kobj)
 {
 	const struct kobj_ns_type_operations *ops;
@@ -126,16 +136,18 @@ static int kobj_usermode_filter(struct kobject *kobj)
  * Returns 0 if kobject_uevent_env() is completed with success or the
  * corresponding error when it fails.
  */
+/* 发送一个带有环境变量数据的 uevent 
+ * 处理两种方式  netlink  usermodehelper  */
 int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		       char *envp_ext[])
 {
-	struct kobj_uevent_env *env;
-	const char *action_string = kobject_actions[action];
-	const char *devpath = NULL;
-	const char *subsystem;
+	struct kobj_uevent_env *env;    /* 环境变量存放缓冲区 */
+	const char *action_string = kobject_actions[action];    /* uevent 字符串 */
+	const char *devpath = NULL;     /* kobject 的完整路径 */
+	const char *subsystem;          /* subsystem name , 可能是 kobject 的 name */
 	struct kobject *top_kobj;
-	struct kset *kset;
-	const struct kset_uevent_ops *uevent_ops;
+	struct kset *kset;              /* 所属的 kset */
+	const struct kset_uevent_ops *uevent_ops;   /* 所属 kset 的 kset_uevent_ops */
 	u64 seq;
 	int i = 0;
 	int retval = 0;
@@ -147,10 +159,12 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		 kobject_name(kobj), kobj, __func__);
 
 	/* search the kset we belong to */
+    /* 找到所属的 kset ，通过父 kobject 逐级向上找 */
 	top_kobj = kobj;
 	while (!top_kobj->kset && top_kobj->parent)
 		top_kobj = top_kobj->parent;
 
+    /* 只有属于 kset 才能够发送 uevent ，不属于任何 kset 则报错 */
 	if (!top_kobj->kset) {
 		pr_debug("kobject: '%s' (%p): %s: attempted to send uevent "
 			 "without kset!\n", kobject_name(kobj), kobj,
@@ -158,10 +172,12 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		return -EINVAL;
 	}
 
+    /* 所属的 kset 以及 kset 中的 uevent_ops  */
 	kset = top_kobj->kset;
 	uevent_ops = kset->uevent_ops;
 
 	/* skip the event, if uevent_suppress is set*/
+    /* 如果 uevent_suppress = 1, 则会忽略 uevent  */
 	if (kobj->uevent_suppress) {
 		pr_debug("kobject: '%s' (%p): %s: uevent_suppress "
 				 "caused the event to drop!\n",
@@ -169,6 +185,9 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		return 0;
 	}
 	/* skip the event, if the filter returns zero. */
+    /* 如果 kset 中的 uevent_ops 的 filter 回调函数 
+     * 返回0，则忽略本次 kobject 的 uevent 
+     * filter 回调起到过滤作用，对kobject 能够发送的 uevent 做了限制 */
 	if (uevent_ops && uevent_ops->filter)
 		if (!uevent_ops->filter(kset, kobj)) {
 			pr_debug("kobject: '%s' (%p): %s: filter function "
@@ -178,6 +197,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		}
 
 	/* originating subsystem */
+    /* kset uevent_ops 回调函数 name ， 如果没有该回调，则使用 kobject 的 name */
 	if (uevent_ops && uevent_ops->name)
 		subsystem = uevent_ops->name(kset, kobj);
 	else
@@ -190,11 +210,13 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	}
 
 	/* environment buffer */
+    /* 分配环境变量存放空间 */
 	env = kzalloc(sizeof(struct kobj_uevent_env), GFP_KERNEL);
 	if (!env)
 		return -ENOMEM;
 
 	/* complete object path */
+    /* kobject 的完整路径， 如： /sys/class/block/sda/ */
 	devpath = kobject_get_path(kobj, GFP_KERNEL);
 	if (!devpath) {
 		retval = -ENOENT;
@@ -202,6 +224,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	}
 
 	/* default keys */
+    /* 默认环境变量，必要的信息 */
 	retval = add_uevent_var(env, "ACTION=%s", action_string);
 	if (retval)
 		goto exit;
@@ -213,6 +236,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		goto exit;
 
 	/* keys passed in from the caller */
+    /* 将调用者传入的环境变量依次加入 */
 	if (envp_ext) {
 		for (i = 0; envp_ext[i]; i++) {
 			retval = add_uevent_var(env, "%s", envp_ext[i]);
@@ -222,6 +246,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	}
 
 	/* let the kset specific function add its stuff */
+    /* kset uevent_ops 回调函数 uevent 特殊处理 */
 	if (uevent_ops && uevent_ops->uevent) {
 		retval = uevent_ops->uevent(kset, kobj, env);
 		if (retval) {
@@ -238,19 +263,24 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	 * send an "add" event, "remove" will automatically generated by
 	 * the core, if not already done by the caller.
 	 */
+    /* 标记 event 已发送或已移除标志
+     * 这个在 kobject_put 时会使用 */
 	if (action == KOBJ_ADD)
 		kobj->state_add_uevent_sent = 1;
 	else if (action == KOBJ_REMOVE)
 		kobj->state_remove_uevent_sent = 1;
 
 	/* we will send an event, so request a new sequence number */
+    /* 将要发送一个 event ， 生成一个新的 seqnum  */
 	spin_lock(&sequence_lock);
 	seq = ++uevent_seqnum;
 	spin_unlock(&sequence_lock);
+    /* seqnum 也要添加到环境变量中 */
 	retval = add_uevent_var(env, "SEQNUM=%llu", (unsigned long long)seq);
 	if (retval)
 		goto exit;
 
+    /* // TODO: kobject uevent net 待分析 */
 #if defined(CONFIG_NET)
 	/* send netlink message */
 	mutex_lock(&uevent_sock_mutex);
@@ -290,10 +320,12 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	mutex_unlock(&uevent_sock_mutex);
 #endif
 
+    /* 预设的用户空间可执行程序 */
 	/* call uevent_helper, usually only enabled during early boot */
 	if (uevent_helper[0] && !kobj_usermode_filter(kobj)) {
 		char *argv [3];
 
+        /* 组织环境变量 */
 		argv [0] = uevent_helper;
 		argv [1] = (char *)subsystem;
 		argv [2] = NULL;
@@ -305,6 +337,8 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		if (retval)
 			goto exit;
 
+        /* 调用 call_usermodehelper ，调用用户空间程序 
+         * // TODO: 待分析 call_usermodehelper */
 		retval = call_usermodehelper(argv[0], argv,
 					     env->envp, UMH_WAIT_EXEC);
 	}
@@ -325,6 +359,9 @@ EXPORT_SYMBOL_GPL(kobject_uevent_env);
  * Returns 0 if kobject_uevent() is completed with success or the
  * corresponding error when it fails.
  */
+/* 发送一个 uevent 通知用户空间
+ * 调用预设的 uevent_helper 用户空间程序
+ * 有两种实现 netlink(udev),  userhelper(mdev) busybox 中使用的 mdev */
 int kobject_uevent(struct kobject *kobj, enum kobject_action action)
 {
 	return kobject_uevent_env(kobj, action, NULL);
@@ -339,16 +376,19 @@ EXPORT_SYMBOL_GPL(kobject_uevent);
  * Returns 0 if environment variable was added successfully or -ENOMEM
  * if no space was available.
  */
+/* 添加 uevent 环境变量 */
 int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...)
 {
 	va_list args;
 	int len;
 
+    /* envp_idx 记录当前已经存放的数量 */
 	if (env->envp_idx >= ARRAY_SIZE(env->envp)) {
 		WARN(1, KERN_ERR "add_uevent_var: too many keys\n");
 		return -ENOMEM;
 	}
 
+    /* 将字符串格式化后放入缓冲区中， buflen 记录已经使用的长度 */
 	va_start(args, format);
 	len = vsnprintf(&env->buf[env->buflen],
 			sizeof(env->buf) - env->buflen,
@@ -360,12 +400,14 @@ int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...)
 		return -ENOMEM;
 	}
 
+    /* envp 记录每个环境变量的起始指针 */
 	env->envp[env->envp_idx++] = &env->buf[env->buflen];
 	env->buflen += len + 1;
 	return 0;
 }
 EXPORT_SYMBOL_GPL(add_uevent_var);
 
+/* kobject uevent netlink 方式待分析 */
 #if defined(CONFIG_NET)
 static int uevent_net_init(struct net *net)
 {

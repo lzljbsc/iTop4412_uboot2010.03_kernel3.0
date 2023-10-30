@@ -5,6 +5,7 @@
 #include <linux/types.h>
 #include <linux/errno.h>
 
+/* 该配置已定义 */
 #ifdef CONFIG_GPIOLIB
 
 #include <linux/compiler.h>
@@ -22,6 +23,7 @@
  * actually an estimate of a board-specific value.
  */
 
+/*  GPIO 数量默认值， 平台可以自己定义该值 */
 #ifndef ARCH_NR_GPIOS
 #define ARCH_NR_GPIOS		256
 #endif
@@ -35,6 +37,7 @@
  * platform data and other tables.
  */
 
+/* 使用该函数，判断GPIO号是否合法 */
 static inline bool gpio_is_valid(int number)
 {
 	return number >= 0 && number < ARCH_NR_GPIOS;
@@ -46,28 +49,39 @@ struct module;
 struct device_node;
 
 /**
+ * GPIO 控制器 抽象
  * struct gpio_chip - abstract a GPIO controller
+ * 仅用于调试
  * @label: for diagnostics
  * @dev: optional device providing the GPIOs
  * @owner: helps prevent removal of modules exporting active GPIOs
+ * chip 特殊的 request 回调函数，如开启电源，使能时钟等，可以休眠
  * @request: optional hook for chip-specific activation, such as
  *	enabling module power and clock; may sleep
+ * chip 特殊的 free 回调函数
  * @free: optional hook for chip-specific deactivation, such as
  *	disabling module power and clock; may sleep
+ * 设置为 输入模式
  * @direction_input: configures signal "offset" as input, or returns error
+ * 获取 GPIO 口状态
  * @get: returns value for signal "offset"; for output signals this
  *	returns either the value actually sensed, or zero
+ *	设置为 输出模式
  * @direction_output: configures signal "offset" as output, or returns error
+ * 设置 GPIO 口状态
  * @set: assigns output value for signal "offset"
  * @to_irq: optional hook supporting non-static gpio_to_irq() mappings;
  *	implementation may not sleep
  * @dbg_show: optional routine to show contents in debugfs; default code
  *	will be used when this is omitted, but custom code can show extra
  *	state (such as pullup/pulldown configuration).
+ * gpio 首序号，如果是个负值，则注册时动态分配
  * @base: identifies the first GPIO number handled by this chip; or, if
  *	negative during registration, requests dynamic ID allocation.
+ * gpio 数量
  * @ngpio: the number of GPIOs handled by this controller; the last GPIO
  *	handled is (base + ngpio - 1).
+ * 如果 get() / set() 方法有休眠操作，该标志必须设置
  * @can_sleep: flag must be set iff get()/set() methods sleep, as they
  *	must while accessing GPIO expander chips over I2C or SPI
  * @names: if set, must be an array of strings to use as alternative
@@ -170,6 +184,7 @@ extern int __gpio_cansleep(unsigned gpio);
 
 extern int __gpio_to_irq(unsigned gpio);
 
+/* request 相关， struct gpio 用于申请一组 gpio */
 /**
  * struct gpio - a structure describing a GPIO with configuration
  * @gpio:	the GPIO number
@@ -202,6 +217,7 @@ extern void gpio_unexport(unsigned gpio);
 
 #else	/* !CONFIG_GPIOLIB */
 
+/* 该函数无用 */
 static inline bool gpio_is_valid(int number)
 {
 	/* only non-negative numbers are valid */

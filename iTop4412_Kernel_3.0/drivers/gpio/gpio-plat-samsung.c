@@ -47,19 +47,25 @@
  * we can use s3c_gpiolib_get and s3c_gpiolib_set to change the state of
  * the output.
 */
-
+/* 配置gpio口为输入
+ * 传入的参数是 gpiolib 中的结构 */
 static int samsung_gpiolib_4bit_input(struct gpio_chip *chip,
 				      unsigned int offset)
 {
+    /* 利用 container_of 大法找到平台相关结构 */
 	struct s3c_gpio_chip *ourchip = to_s3c_gpio(chip);
+    /* 对应GPIO组的寄存器基地址 */
 	void __iomem *base = ourchip->base;
 	unsigned long flags;
 	unsigned long con;
 
 	s3c_gpio_lock(ourchip, flags);
 
+    /* 先获取原配置，这里只能获取整组GPIO的配置，不能单独某个GPIO口 */
 	con = __raw_readl(base + GPIOCON_OFF);
+    /* 将GPIO对应的寄存器位清零，输入模式配置就是 0x0，所以不需要配其他的了 */
 	con &= ~(0xf << con_4bit_shift(offset));
+    /* 配置写会寄存器，配置完成了 */
 	__raw_writel(con, base + GPIOCON_OFF);
 
 	s3c_gpio_unlock(ourchip, flags);
@@ -77,7 +83,9 @@ static int samsung_gpiolib_4bit_output(struct gpio_chip *chip,
 				       unsigned int offset, int value)
 #endif
 {
+    /* 利用 container_of 大法找到平台相关结构 */
 	struct s3c_gpio_chip *ourchip = to_s3c_gpio(chip);
+    /* 对应GPIO组的寄存器基地址 */
 	void __iomem *base = ourchip->base;
 	unsigned long flags;
 	unsigned long con;
@@ -85,17 +93,24 @@ static int samsung_gpiolib_4bit_output(struct gpio_chip *chip,
 
 	s3c_gpio_lock(ourchip, flags);
 
+    /* 先获取原配置，这里只能获取整组GPIO的配置，不能单独某个GPIO口 */
 	con = __raw_readl(base + GPIOCON_OFF);
+    /* 先清除原配置（清0），在写入新的配置（0x1，对应 输出） */
 	con &= ~(0xf << con_4bit_shift(offset));
 	con |= 0x1 << con_4bit_shift(offset);
 
+    /* 获取当前GPIO组的数据寄存器值，该寄存器每个位对应一个GPIO口
+     * 输入模式下对应GPIO端口状态
+     * 输出模式下对应输出状态 */
 	dat = __raw_readl(base + GPIODAT_OFF);
 
+    /* 默认输出电平 */
 	if (value)
 		dat |= 1 << offset;
 	else
 		dat &= ~(1 << offset);
 
+    /* 将配置寄存器值写入寄存器，包含了输出模式和默认输出电平 */
 	__raw_writel(dat, base + GPIODAT_OFF);
 	__raw_writel(con, base + GPIOCON_OFF);
 	__raw_writel(dat, base + GPIODAT_OFF);
@@ -201,8 +216,11 @@ static int samsung_gpiolib_4bit2_output(struct gpio_chip *chip,
 
 void __init samsung_gpiolib_add_4bit(struct s3c_gpio_chip *chip)
 {
+    /* 设置 gpiolib 中的结构体 gpio_chip 的成员，
+     * 在调用内核提供的gpio控制函数时，最终会调用到这里 */
 	chip->chip.direction_input = samsung_gpiolib_4bit_input;
 	chip->chip.direction_output = samsung_gpiolib_4bit_output;
+    /* 电源管理部分，不属于 gpiolib 部分 */
 	chip->pm = __gpio_pm(&s3c_gpio_pm_4bit);
 }
 
@@ -213,6 +231,7 @@ void __init samsung_gpiolib_add_4bit2(struct s3c_gpio_chip *chip)
 	chip->pm = __gpio_pm(&s3c_gpio_pm_4bit);
 }
 
+/* 逐个 s3c_gpio_chip 注册到 gpiolib */
 void __init samsung_gpiolib_add_4bit_chips(struct s3c_gpio_chip *chip,
 					   int nr_chips)
 {
@@ -222,6 +241,9 @@ void __init samsung_gpiolib_add_4bit_chips(struct s3c_gpio_chip *chip,
 	}
 }
 
+/* 这个函数在 4412中并未使用
+ * 该函数适用于每个 GPIO口需要 4bit的配置，
+ * 但每组GPIO多于8个，也就是控制寄存器或其他寄存器有两个 寄存器的情况 */
 void __init samsung_gpiolib_add_4bit2_chips(struct s3c_gpio_chip *chip,
 					    int nr_chips)
 {
@@ -231,6 +253,8 @@ void __init samsung_gpiolib_add_4bit2_chips(struct s3c_gpio_chip *chip,
 	}
 }
 
+/* 这个函数在 4412中并未使用
+ * 该函数适用于每个 GPIO口需要 2bit的配置， */
 void __init samsung_gpiolib_add_2bit_chips(struct s3c_gpio_chip *chip,
 					   int nr_chips)
 {

@@ -3,6 +3,8 @@
 
 /* see Documentation/gpio.txt */
 
+/* 用于 gpio 操作是的参数
+ * 如 gpio_request_one */
 /* make these flag values available regardless of GPIO kconfig options */
 #define GPIOF_DIR_OUT	(0 << 0)
 #define GPIOF_DIR_IN	(1 << 0)
@@ -14,11 +16,15 @@
 #define GPIOF_OUT_INIT_LOW	(GPIOF_DIR_OUT | GPIOF_INIT_LOW)
 #define GPIOF_OUT_INIT_HIGH	(GPIOF_DIR_OUT | GPIOF_INIT_HIGH)
 
+/* 配置文件中定义了 CONFIG_GENERIC_GPIO */
+/* 这是一个GPIO约定，在帮助文件中有介绍，
+ * 如果平台支持该约定，则定义 GENERIC_GPIO ，并提供 <asm/gpio.h> 文件 */
 #ifdef CONFIG_GENERIC_GPIO
 #include <asm/gpio.h>
 
 #else
 
+/* 下面的均无效 */
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/errno.h>

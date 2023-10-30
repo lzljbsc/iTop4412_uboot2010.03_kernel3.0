@@ -15,6 +15,7 @@
 #include <linux/io.h>
 #include <linux/gpio.h>
 
+/* 配置文件中定义了 CONFIG_MTK_COMBO_COMM=m */
 #if defined(CONFIG_MTK_COMBO_COMM) || defined(CONFIG_MTK_COMBO_COMM_MODULE)	//add by cym 20130301
 #include <linux/module.h>
 #endif
@@ -26,20 +27,26 @@
 #include <plat/gpio-cfg-helpers.h>
 #include <plat/cpu.h>
 
+/* 设置/获取上下拉状态的操作函数，这部分函数并未统一到内核下
+ * 需要平台自行实现 */
 int s3c_gpio_setpull_exynos4(struct s3c_gpio_chip *chip,
 				unsigned int off, s3c_gpio_pull_t pull)
 {
+    /* pull-up 配置为 0x3 见手册 */
 	if (pull == S3C_GPIO_PULL_UP)
 		pull = 3;
 
+    /* 底层修改寄存器进行配置 */
 	return s3c_gpio_setpull_updown(chip, off, pull);
 }
 
+/* 获取GPIO的上下拉状态 */
 s3c_gpio_pull_t s3c_gpio_getpull_exynos4(struct s3c_gpio_chip *chip,
 						unsigned int off)
 {
 	s3c_gpio_pull_t pull;
 
+    /* 底层读寄存器获取配置状态 */
 	pull = s3c_gpio_getpull_updown(chip, off);
 	if (pull == 3)
 		pull = S3C_GPIO_PULL_UP;
@@ -47,6 +54,8 @@ s3c_gpio_pull_t s3c_gpio_getpull_exynos4(struct s3c_gpio_chip *chip,
 	return pull;
 }
 
+/* GPIO的上下拉配置，复用功能配置
+ * 区分了有中断和无中断两种，在下面的GPIO chip结构中赋值到对应的GPIO组上 */
 static struct s3c_gpio_cfg gpio_cfg = {
 	.set_config	= s3c_gpio_setcfg_s3c64xx_4bit,
 	.set_pull	= s3c_gpio_setpull_exynos4,
@@ -59,6 +68,14 @@ static struct s3c_gpio_cfg gpio_cfg_noint = {
 	.get_pull	= s3c_gpio_getpull_exynos4,
 };
 
+/* GPIO端口地址映射， S5P_VA_GPIO1 等宏是虚拟地址
+ * 在 arch/arm/mach-exynos/cpu-exynos4.c 中与物理地址关联 
+ * .virtual    = (unsigned long)S5P_VA_GPIO1,      
+ * .pfn        = __phys_to_pfn(EXYNOS4_PA_GPIO1),  
+ * .length     = SZ_4K,                            
+ * .type       = MT_DEVICE,                        
+ * 总之，下面的这个结构体就是描述了GPIO控制寄存器的地址关系，
+ * 包括虚拟地址，从而对应到物理地址，每组GPIO的数量 */
 /*
  * Following are the gpio banks in v310.
  *
@@ -75,13 +92,13 @@ struct s3c_gpio_chip exynos4_gpio_common_4bit[] = {
 static struct s3c_gpio_chip exynos4_gpio_common_4bit[] = {
 #endif
 	{
-		.base	= S5P_VA_GPIO1,
-		.eint_offset = 0x0,
+		.base	= S5P_VA_GPIO1,             /* 寄存器基地址,虚拟地址 */
+		.eint_offset = 0x0,                 /* 对应的 EXT 中断配置寄存器偏移 */
 		.group	= 0,
-		.chip	= {
-			.base	= EXYNOS4_GPA0(0),
-			.ngpio	= EXYNOS4_GPIO_A0_NR,
-			.label	= "GPA0",
+		.chip	= {                         /* gpio_lib 中的 chip 结构体 */
+			.base	= EXYNOS4_GPA0(0),      /* GPIO 序号基数 */
+			.ngpio	= EXYNOS4_GPIO_A0_NR,   /* 本chip gpio数量 */
+			.label	= "GPA0",               /* chip 标签 */
 		},
 	}, {
 		.base	= (S5P_VA_GPIO1 + 0x20),
@@ -238,7 +255,7 @@ static struct s3c_gpio_chip exynos4_gpio_common_4bit[] = {
 		},
 	}, {
 		.base   = (S5P_VA_GPIO2 + 0x120),
-		.config	= &gpio_cfg_noint,
+		.config	= &gpio_cfg_noint,              /* 无中断复用功能的，预先配置 */
 		.chip	= {
 			.base	= EXYNOS4_GPY0(0),
 			.ngpio	= EXYNOS4_GPIO_Y0_NR,
@@ -515,6 +532,8 @@ static struct s3c_gpio_chip exynos4212_gpio_4bit[] = {
 	},
 };
 
+/* core_initcall 函数，内核初始化时会自动调用，较早期调用
+ * 参考 include/linux/init.h */
 static __init int exynos4_gpiolib_init(void)
 {
 	struct s3c_gpio_chip *chip;
@@ -522,10 +541,11 @@ static __init int exynos4_gpiolib_init(void)
 	int nr_chips;
 
 	/* GPIO common part  */
-
+    /* 计算GPIO组数量，在gpiolib添加时用到 */
 	chip = exynos4_gpio_common_4bit;
 	nr_chips = ARRAY_SIZE(exynos4_gpio_common_4bit);
 
+    /* 设置 config成员函数，配置上下拉的操作函数 */
 	for (i = 0; i < nr_chips; i++, chip++) {
 		if (chip->config == NULL)
 			chip->config = &gpio_cfg;
@@ -533,6 +553,7 @@ static __init int exynos4_gpiolib_init(void)
 			pr_err("No allocation of base address for [common gpio]");
 	}
 
+    /* 注册 s3c_gpio_chip 中的 gpio_chip 结构到 gpiolib 中 */
 	samsung_gpiolib_add_4bit_chips(exynos4_gpio_common_4bit, nr_chips);
 
 	/* Only 4210 GPIO  part */
@@ -563,6 +584,7 @@ static __init int exynos4_gpiolib_init(void)
 		samsung_gpiolib_add_4bit_chips(exynos4212_gpio_4bit, nr_chips);
 	}
 
+    /* 下面的作用还未分析，涉及到中断资源的使用 */
 	s5p_register_gpioint_bank(IRQ_GPIO_XA, 0, IRQ_GPIO1_NR_GROUPS);
 	s5p_register_gpioint_bank(IRQ_GPIO_XB, IRQ_GPIO1_NR_GROUPS, IRQ_GPIO2_NR_GROUPS);
 

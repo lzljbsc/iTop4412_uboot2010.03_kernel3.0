@@ -66,11 +66,16 @@ struct driver_private {
  * Nothing outside of the driver core should ever touch these fields.
  */
 struct device_private {
+    /* 子设备的 klist 链表 */
 	struct klist klist_children;
+    /* 接入父设备的 klist_children 时所需要的 klist 节点 */
 	struct klist_node knode_parent;
+    /* 接入驱动的设备链表时所需要的 klist 节点 */
 	struct klist_node knode_driver;
+    /* 接入总线的设备链表时所需要的 klist 节点 */
 	struct klist_node knode_bus;
 	void *driver_data;
+    /* 回指 struct device 结构体指针 */
 	struct device *device;
 };
 #define to_device_private_parent(obj)	\

@@ -20,6 +20,8 @@
 
 /* Practically, GPIO banks up to GPZ are the configurable gpio banks */
 
+/* 各组GPIO的数量
+ * 参考手册 GPIO章节 */
 /* Common GPIO bank sizes */
 #define EXYNOS4_GPIO_A0_NR	(8)
 #define EXYNOS4_GPIO_A1_NR	(6)
@@ -76,10 +78,16 @@
 #define EXYNOS4212_GPIO_V4_NR	(2)
 
 /* GPIO bank numbers */
-
+/* 计算下一组GPIO的起始标号
+ * 其中 CONFIG_S3C_GPIO_SPACE = 0 , 是每个GPIO组之间的间隙 
+ * 这个宏其实是一个小技巧，借用前面的的枚举类型 和 上面已定义的_NR 宏
+ * 自动计算出下一个，这样比较方便，不易出错 */
 #define EXYNOS4_GPIO_NEXT(__gpio) \
 	((__gpio##_START) + (__gpio##_NR) + CONFIG_S3C_GPIO_SPACE + 1)
 
+/* GPIO号 
+ * 这里是把所有有效的GPIO紧密的排列的，如 GPIOA1 组只有6个，
+ * 但下一组 GPIOB 并未空出2个，而是紧接着排列的 */
 enum exynos4_gpio_number {
 	EXYNOS4_GPIO_A0_START		= 0,
 	EXYNOS4_GPIO_A1_START		= EXYNOS4_GPIO_NEXT(EXYNOS4_GPIO_A0),
@@ -113,6 +121,7 @@ enum exynos4_gpio_number {
 	EXYNOS4_GPIO_Z_START		= EXYNOS4_GPIO_NEXT(EXYNOS4_GPIO_Y6),
 };
 
+/* 4210 仅适用于 4210 ，4412 中并未使用 */
 enum exynos4210_gpio_number {
 	EXYNOS4210_GPIO_E0_START	= EXYNOS4_GPIO_NEXT(EXYNOS4_GPIO_Z),
 	EXYNOS4210_GPIO_E1_START	= EXYNOS4_GPIO_NEXT(EXYNOS4210_GPIO_E0),
@@ -123,6 +132,7 @@ enum exynos4210_gpio_number {
 	EXYNOS4210_GPIO_J1_START	= EXYNOS4_GPIO_NEXT(EXYNOS4210_GPIO_J0),
 };
 
+/* 4212 适用于4412， 本代码中会使用 */
 enum exynos4212_gpio_number {
 	EXYNOS4212_GPIO_J0_START	= EXYNOS4_GPIO_NEXT(EXYNOS4_GPIO_Z),
 	EXYNOS4212_GPIO_J1_START	= EXYNOS4_GPIO_NEXT(EXYNOS4212_GPIO_J0),
@@ -138,6 +148,7 @@ enum exynos4212_gpio_number {
 	EXYNOS4212_GPIO_V4_START	= EXYNOS4_GPIO_NEXT(EXYNOS4212_GPIO_V3),
 };
 
+/* 索引GPIO，使用时需要留意各组GPIO数量，不要超了 */
 /* EXYNOS4 GPIO number definitions */
 #define EXYNOS4_GPA0(_nr)	(EXYNOS4_GPIO_A0_START + (_nr))
 #define EXYNOS4_GPA1(_nr)	(EXYNOS4_GPIO_A1_START + (_nr))
@@ -191,10 +202,12 @@ enum exynos4212_gpio_number {
 #define EXYNOS4212_GPV3(_nr)	(EXYNOS4212_GPIO_V3_START + (_nr))
 #define EXYNOS4212_GPV4(_nr)	(EXYNOS4212_GPIO_V4_START + (_nr))
 
+/* 最后一个GPIO编号，也即是所有GPIO的数量 */
 /* the end of the EXYNOS4 specific gpios */
 #define EXYNOS4210_GPIO_END	(EXYNOS4212_GPV4(EXYNOS4212_GPIO_V4_NR) + 1)
 #define EXYNOS4212_GPIO_END	(EXYNOS4210_GPJ1(EXYNOS4210_GPIO_J1_NR) + 1)
 
+/* 选个数量大的做为 4系列 GPIO数量 */
 #define EXYNOS4XXX_GPIO_END	(EXYNOS4212_GPIO_END > EXYNOS4210_GPIO_END ? \
 				 EXYNOS4212_GPIO_END : EXYNOS4210_GPIO_END)
 #define EXYNOS4_GPIO_END	EXYNOS4XXX_GPIO_END

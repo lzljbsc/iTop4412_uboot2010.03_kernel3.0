@@ -1,0 +1,734 @@
+﻿OK
+
+U-Boot 2010.03 (7月 05 2023 - 20:26:32) for iTOP-4412 Android
+
+        APLL = 1000MHz, MPLL = 800MHz
+        ARM_CLOCK = 1000MHz
+PMIC:   S5M8767(VER5.0)
+Board:  iTOP-4412
+DRAM:    1 GB
+MMC:   max_emmc_clock:40 MHZ
+Set CLK to 400 KHz
+EMMC CLOCK OUTPUT:: 400KHz -[div:50]
+response timeout error : 00000104 cmd 8
+response timeout error : 00000104 cmd 55
+max_emmc_clock:40 MHZ
+Input CLK [ 50 MHz] is higher than limit [40 MHZ]
+Set CLK to 40000 KHz
+EMMC clock output: 40000 KHz
+max_emmc_clock:40 MHZ
+Input CLK [ 50 MHz] is higher than limit [40 MHZ]
+Set CLK to 40000 KHz
+EMMC clock output: 40000 KHz
+MMC0:   3728 MB
+SD sclk_mmc is 400K HZ
+SD sclk_mmc is 50000K HZ
+SD sclk_mmc is 50000K HZ
+MMC1:   486 MB
+*** Warning - using default environment
+
+In:    serial
+Out:   serial
+Err:   serial
+eMMC OPEN Success.!!
+                        !!!Notice!!!
+!You must close eMMC boot Partition after all image writing!
+!eMMC boot partition has continuity at image writing time.!
+!So, Do not close boot partition, Before, all images is written.!
+
+MMC read: dev # 0, block # 48, count 16 ...16 blocks read: OK
+eMMC CLOSE Success.!!
+
+
+Checking Boot Mode ... EMMC4.41
+SYSTEM ENTER NORMAL BOOT MODE
+Hit any key to stop autoboot:  0 
+reading kernel.. 1120, 12288 
+MMC read: dev # 0, block # 1120, count 12288 ...12288 blocks read: OK
+completed
+reading RFS.. 13408, 2048 
+MMC read: dev # 0, block # 13408, count 2048 ...2048 blocks read: OK
+completed
+Boot with zImage
+Wrong Ramdisk Image Format
+[err] boot_get_ramdisk
+
+Starting kernel ...
+
+Uncompressing Linux... done, booting the kernel.
+[    0.000000] Initializing cgroup subsys cpu
+[    0.000000] Linux version 3.0.15 (allan@ubuntu-16) (gcc version 4.4.1 (Sourcery G++ Lite 2009q3-67) ) #7 SMP PREEMPT Sun Nov 5 11:06:41 CST 2023
+[    0.000000] setup_arch->machine_arch_type : 3698
+[    0.000000] CPU: ARMv7 Processor [413fc090] revision 0 (ARMv7), cr=10c5387d
+[    0.000000] CPU: VIPT nonaliasing data cache, VIPT aliasing instruction cache
+[    0.000000] Machine: SMDK4X12
+[    0.000000] arm_add_memory: start: 0x40000000  size: 0x08000000
+[    0.000000] arm_add_memory: start: 0x48000000  size: 0x08000000
+[    0.000000] arm_add_memory: start: 0x50000000  size: 0x08000000
+[    0.000000] arm_add_memory: start: 0x58000000  size: 0x08000000
+[    0.000000] arm_add_memory: start: 0x60000000  size: 0x08000000
+[    0.000000] arm_add_memory: start: 0x68000000  size: 0x08000000
+[    0.000000] arm_add_memory: start: 0x70000000  size: 0x08000000
+[    0.000000] arm_add_memory: start: 0x78000000  size: 0x07f00000
+[    0.000000] NR_BANKS too low, ignoring high memory
+[    0.000000] **************************
+[    0.000000] reserve_panic_dump_area!!
+[    0.000000] **************************
+[    0.000000] Memory policy: ECC disabled, Data cache writealloc
+[    0.000000] CPU EXYNOS4412 (id 0xe4412011)
+[    0.000000] S3C24XX Clocks, Copyright 2004 Simtec Electronics
+[    0.000000] s3c_register_clksrc: clock audiocdclk has no registers set
+[    0.000000] audiocdclk: no parent clock specified
+[    0.000000] s3c_register_clksrc: clock armclk has no registers set
+[    0.000000] EXYNOS4: PLL settings, A=1000000000, M=800000000, E=96000000 V=350000000
+[    0.000000] EXYNOS4: ARMCLK=1000000000, DMC=400000000, ACLK200=24000000
+[    0.000000] ACLK160=160000000, ACLK133=133333333, ACLK100=100000000
+[    0.000000] EXYNOS4: ACLK400=24000000 ACLK266=800000000
+[    0.000000] uclk1: source is mout_mpll_user (6), rate is 100000000
+[    0.000000] uclk1: source is mout_mpll_user (6), rate is 100000000
+[    0.000000] uclk1: source is mout_mpll_user (6), rate is 100000000
+[    0.000000] uclk1: source is mout_mpll_user (6), rate is 100000000
+[    0.000000] sclk_csis: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_csis: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_cam0: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_cam1: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_fimc: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_fimc: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_fimc: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_fimc: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_fimd: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_fimd: source is xusbxti (1), rate is 1500000
+[    0.000000] sclk_mfc: source is mout_mfc0 (0), rate is 200000000
+[    0.000000] sclk_g3d: source is mout_g3d0 (0), rate is 41666666
+[    0.000000] sclk_pwi: source is xusbxti (1), rate is 1500000
+[    0.000000] PERCPU: Embedded 7 pages/cpu @c11bb000 s6752 r8192 d13728 u32768
+[    0.000000] Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 251650
+[    0.000000] Kernel command line: root=/dev/mmcblk0p2 rootfstype=ext4 init=/linuxrc console=ttySAC2,115200
+[    0.000000] log_buf_len: 524288
+[    0.000000] early log buf free: 127051(96%)
+[    0.000000] PID hash table entries: 4096 (order: 2, 16384 bytes)
+[    0.000000] Dentry cache hash table entries: 131072 (order: 7, 524288 bytes)
+[    0.000000] Inode-cache hash table entries: 65536 (order: 6, 262144 bytes)
+[    0.000000] Memory: 736MB 255MB = 991MB total
+[    0.000000] Memory: 613972k/613972k available, 400812k reserved, 261120K highmem
+[    0.000000] Virtual kernel memory layout:
+[    0.000000]     vector  : 0xffff0000 - 0xffff1000   (   4 kB)
+[    0.000000]     fixmap  : 0xfff00000 - 0xfffe0000   ( 896 kB)
+[    0.000000]     DMA     : 0xfea00000 - 0xffe00000   (  20 MB)
+[    0.000000]     vmalloc : 0xee800000 - 0xf6000000   ( 120 MB)
+[    0.000000]     lowmem  : 0xc0000000 - 0xee000000   ( 736 MB)
+[    0.000000]     pkmap   : 0xbfe00000 - 0xc0000000   (   2 MB)
+[    0.000000]     modules : 0xbf000000 - 0xbfe00000   (  14 MB)
+[    0.000000]       .init : 0xc0008000 - 0xc003e000   ( 216 kB)
+[    0.000000]       .text : 0xc003e000 - 0xc08cf000   (8772 kB)
+[    0.000000]       .data : 0xc08d0000 - 0xc0974e00   ( 660 kB)
+[    0.000000]        .bss : 0xc09750f0 - 0xc09b18d0   ( 242 kB)
+[    0.000000] SLUB: Genslabs=13, HWalign=32, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+[    0.000000] Preemptible hierarchical RCU implementation.
+[    0.000000] NR_IRQS:456
+[    0.000000] Calibrating delay loop... 1992.29 BogoMIPS (lpj=4980736)
+[    0.045000] pid_max: default: 32768 minimum: 301
+[    0.045000] Mount-cache hash table entries: 512
+[    0.045000] Initializing cgroup subsys debug
+[    0.045000] Initializing cgroup subsys cpuacct
+[    0.045000] Initializing cgroup subsys freezer
+[    0.045000] CPU: Testing write buffer coherency: ok
+[    0.045000] **********panic_dump_test****************
+[    0.045000] There is no valid panic information in memory
+[    0.045000] **************************
+[    0.045000] L310 cache controller enabled
+[    0.045000] l2x0: 16 ways, CACHE_ID 0x4100c4c8, AUX_CTRL 0x7e470001, Cache size: 1048576 B
+[    0.075000] CPU1: Booted secondary processor
+[    0.095000] CPU2: Booted secondary processor
+[    0.115000] CPU3: Booted secondary processor
+[    0.115000] Brought up 4 CPUs
+[    0.115000] SMP: Total of 4 processors activated (7969.17 BogoMIPS).
+[    0.120000] print_constraints: dummy: 
+[    0.120000] NET: Registered protocol family 16
+[    0.120000] value1 = 0, value2 = 0, type = 0x0
+[    0.120000] value1 = 0, value2 = 0, type = 0x0
+[    1.125000] exynos4_pmu_init: PMU supports 4412(96)
+[    1.125000] S3C Power Management, Copyright 2004 Simtec Electronics
+[    1.125000] EXYNOS4: Initializing architecture
+[    1.125000] panic_file create OK !!
+[    1.125000] s3c-adc exynos4412-adc: attached adc driver
+[    1.125000] samsung-pd samsung-pd.0: power domain registered
+[    1.125000] samsung-pd samsung-pd.1: power domain registered
+[    1.125000] samsung-pd samsung-pd.2: power domain registered
+[    1.125000] samsung-pd samsung-pd.5: power domain registered
+[    1.125000] samsung-pd samsung-pd.4: power domain registered
+[    1.125000] samsung-pd samsung-pd.6: power domain registered
+[    1.125000] samsung-pd samsung-pd.7: power domain registered
+[    1.130000] s3c24xx-pwm s3c24xx-pwm.1: tin at 100000000, tdiv at 100000000, tin=divclk, base 8
+[    1.130000] UMP: UMP device driver  loaded
+[    1.145000] bio: create slab <bio-0> at 0
+[    1.145000] SCSI subsystem initialized
+[    1.145000] s3c64xx_spi_probe(969)
+[    1.145000] s3c64xx_spi_probe(1092)
+[    1.145000] s3c64xx_spi_probe(1113)
+[    1.150000] usbcore: registered new interface driver usbfs
+[    1.150000] usbcore: registered new interface driver hub
+[    1.150000] usbcore: registered new device driver usb
+[    1.150000] i2c-gpio i2c-gpio.0: using pins 42 (SDA) and 43 (SCL)
+[    1.150000] +s5m8767_pmic_probe()
+[    1.150000] print_constraints: vdd_mif range: 900 <--> 1100 mV at 1100 mV 
+[    1.150000] print_constraints: vdd_arm range: 850 <--> 1450 mV at 1200 mV 
+[    1.150000] print_constraints: vdd_int range: 875 <--> 1200 mV at 1000 mV 
+[    1.155000] print_constraints: vdd_g3d range: 750 <--> 1500 mV at 1100 mV 
+[    1.155000] print_constraints: vdd_m12 range: 750 <--> 1500 mV at 1200 mV 
+[    1.155000] print_constraints: vdd12_5m range: 750 <--> 1500 mV at 1200 mV 
+[    1.155000] print_constraints: vddf28_emmc range: 750 <--> 3000 mV at 2850 mV 
+[    1.170000] print_constraints: VDDQ_M12: 1500 mV 
+[    1.170000] print_constraints: VDD18_2M: 1800 mV 
+[    1.170000] print_constraints: VDD10_MIPI: 1000 mV 
+[    1.185000] print_constraints: VDD33_LCD: 3300 mV 
+[    1.185000] print_constraints: VDD18_MIPI: 1800 mV 
+[    1.195000] print_constraints: VDD33_UOTG: 3300 mV 
+[    1.200000] print_constraints: VDD10_USH: 1000 mV 
+[    1.200000] print_constraints: VDD18_HSIC: 1800 mV 
+[    1.200000] print_constraints: VDDIOPERI_28: 3300 mV 
+[    1.215000] print_constraints: DC33V_TP: 3300 mV 
+[    1.215000] print_constraints: VDD28_CAM: 1800 mV 
+[    1.215000] print_constraints: VDD28_AF: 2800 mV 
+[    1.220000] print_constraints: VDDA28_2M: 2800 mV 
+[    1.220000] print_constraints: VDD28_TF: 2800 mV 
+[    1.230000] print_constraints: VDD33_A31: 3300 mV 
+[    1.255000] print_constraints: VDD18_CAM: 1800 mV 
+[    1.255000] print_constraints: VDD18_A31: 1800 mV 
+[    1.255000] print_constraints: GPS_1V8: 1800 mV 
+[    1.260000] print_constraints: DVDD12: 1200 mV 
+[    1.260000] -s5m8767_pmic_probe()
+[    1.260000] s5m87xx 1-0066: S5M87xx MFD probe done!!! 
+[    1.260000] s3c-i2c s3c2440-i2c.1: i2c-1: S3C I2C adapter
+[    1.260000] s3c-i2c s3c2440-i2c.3: i2c-3: S3C I2C adapter
+[    1.260000] s3c-i2c s3c2440-i2c.4: i2c-4: S3C I2C adapter
+[    1.260000] s3c-i2c s3c2440-i2c.5: i2c-5: S3C I2C adapter
+[    1.260000] s3c-i2c s3c2440-i2c.7: i2c-7: S3C I2C adapter
+[    1.260000] Advanced Linux Sound Architecture Driver Version 1.0.24.
+[    1.260000] Bluetooth: Core ver 2.16
+[    1.260000] NET: Registered protocol family 31
+[    1.260000] Bluetooth: HCI device and connection manager initialized
+[    1.260000] Bluetooth: HCI socket layer initialized
+[    1.260000] Bluetooth: L2CAP socket layer initialized
+[    1.260000] Bluetooth: SCO socket layer initialized
+[    1.260000] cfg80211: Calling CRDA to update world regulatory domain
+[    1.260000] Switching to clocksource mct-frc
+[    1.260263] Switched to NOHz mode on CPU #0
+[    1.260486] Switched to NOHz mode on CPU #3
+[    1.260493] Switched to NOHz mode on CPU #1
+[    1.260500] Switched to NOHz mode on CPU #2
+[    1.261887] NET: Registered protocol family 2
+[    1.262060] IP route cache hash table entries: 32768 (order: 5, 131072 bytes)
+[    1.262693] TCP established hash table entries: 131072 (order: 8, 1048576 bytes)
+[    1.264195] TCP bind hash table entries: 65536 (order: 7, 786432 bytes)
+[    1.264999] TCP: Hash tables configured (established 131072 bind 65536)
+[    1.265036] TCP reno registered
+[    1.265053] UDP hash table entries: 512 (order: 2, 16384 bytes)
+[    1.265092] UDP-Lite hash table entries: 512 (order: 2, 16384 bytes)
+[    1.265356] NET: Registered protocol family 1
+[    1.265567] PMU: registered new PMU device of type 0
+[    1.265699] Exynos4 : ARM Clock down on idle mode is enabled
+[    1.266516] regulator_consumer_probe: loading tc4-regulator-consumer
+[    1.266536]  Register vdd_consumer_early_suspend done
+[    1.267147] Loaded driver for PL330 DMAC-0 s3c-pl330
+[    1.267163]  DBUFF-64x8bytes Num_Chans-8 Num_Peri-1 Num_Events-32
+[    1.267461] Loaded driver for PL330 DMAC-1 s3c-pl330
+[    1.267476]  DBUFF-32x4bytes Num_Chans-8 Num_Peri-32 Num_Events-32
+[    1.267574] Loaded driver for PL330 DMAC-2 s3c-pl330
+[    1.267589]  DBUFF-32x4bytes Num_Chans-8 Num_Peri-32 Num_Events-32
+[    1.274699] highmem bounce pool size: 64 pages
+[    1.274894] ashmem: initialized
+[    1.283017] fuse init (API version 7.16)
+[    1.283330] msgmni has been set to 689
+[    1.283966] io scheduler noop registered
+[    1.283980] io scheduler deadline registered
+[    1.284037] io scheduler cfq registered (default)
+[    1.284901] value1 = 0, value2 = 0, type = 0x0
+[    1.535047] (s3cfb_cfg_gpio, 98): BK_VDD_ON
+[    1.640084] (s3cfb_cfg_gpio, 120): LCD_PWDN ON
+[    1.644567] 
+[    1.644571]  CPU type: 
+[    1.644581]  Exynos 4412
+[    1.644593] value1 = 0, value2 = 0, type = 0x0
+[    1.655426] parent clock: 800000000, vclk: 65475000, vclk div: 12
+[    1.905062] (s3cfb_backlight_on, 363): LCD_PWM_ON
+[    1.910075] (s3cfb_backlight_on, 434): VGA_EN_ON
+[    1.910095] s3cfb s3cfb.0: registered successfully
+[    1.910798] Serial: 8250/16550 driver, 4 ports, IRQ sharing disabled
+[    2.195263] s5pv210-uart.0: ttySAC0 at MMIO 0x13800000 (irq = 16) is a S3C6400/10
+[    2.280060] s5pv210-uart.1: ttySAC1 at MMIO 0x13810000 (irq = 20) is a S3C6400/10
+[    2.355061] s5pv210-uart.2: ttySAC2 at MMIO 0x13820000 (irq = 24) is a S3C6400/10
+[    3.423515] console [ttySAC2] enabled
+[    3.470066] s5pv210-uart.3: ttySAC3 at MMIO 0x13830000 (irq = 28) is a S3C6400/10
+[    3.551060] SI GPS Initialize
+[    3.552828] max485_ctl Initialize
+[    3.556139] leds Initialize
+[    3.559026] buzzer_ctl       initialized
+[    3.562164] exynos_adc_probe, 124
+[    3.565320] exynos_adc_probe, 134
+[    3.568742] exynos_adc_probe, 136
+[    3.571915] adc      initialized
+[    3.574956] relay_ctl        initialized
+[    3.584461] brd: module loaded
+[    3.589257] loop: module loaded
+[    3.590971] pmem: 0 init
+[    3.593751] pmem_gpu1: 0 init
+[    3.603064] CAN device driver interface
+[    3.605450] PPP generic driver version 2.4.2
+[    3.610130] usbcore: registered new interface driver dm9601
+[    3.615379] usbcore: registered new interface driver dm9620
+[    3.620962] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    3.627408] 
+[    3.627412] 
+[    3.627414]  [usb_host_phy_init]++++++++++++++
+[    3.634868] s5p-ehci s5p-ehci: S5P EHCI Host Controller
+[    3.639914] s5p-ehci s5p-ehci: new USB bus registered, assigned bus number 1
+[    3.647042] s5p-ehci s5p-ehci: irq 134, io mem 0x12580000
+[    3.660040] s5p-ehci s5p-ehci: USB 0.0 started, EHCI 1.00
+[    3.664094] usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice=0300
+[    3.672141] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    3.679341] usb usb1: New USB device Class: Class=9, SubClass=0, Protocol=0
+[    3.686288] usb usb1: Product: S5P EHCI Host Controller
+[    3.691491] usb usb1: Manufacturer: Linux 3.0.15 ehci_hcd
+[    3.696872] usb usb1: SerialNumber: s5p-ehci
+[    3.701628] hub 1-0:1.0: USB hub found
+[    3.704855] hub 1-0:1.0: 3 ports detected
+[    3.709447] usbcore: registered new interface driver cdc_acm
+[    3.714494] cdc_acm: USB Abstract Control Model driver for USB modems and ISDN adapters
+[    3.722478] Initializing USB Mass Storage driver...
+[    3.727480] usbcore: registered new interface driver usb-storage
+[    3.733328] USB Mass Storage support registered.
+[    3.738169] usbcore: registered new interface driver usbserial
+[    3.743745] usbserial: USB Serial Driver core
+[    3.748196] USB Serial support registered for GSM modem (1-port)
+[    3.754224] usbcore: registered new interface driver option
+[    3.759629] option: v0.7.2:USB Driver for GSM modems
+[    3.764781] s3c-udc : S3C HS USB OTG Device Driver,(c) 2008-2009 Samsung Electronics
+[    3.764787] s3c-udc : version 15 March 2009
+[    3.778525] android_usb gadget: Mass Storage Function, version: 2009/09/11
+[    3.783945] android_usb gadget: Number of LUNs=3
+[    3.788543]  lun0: LUN: removable file: (no medium)
+[    3.793404]  lun1: LUN: removable file: (no medium)
+[    3.798264]  lun2: LUN: removable file: (no medium)
+[    3.803405] android_usb gadget: android_usb ready
+[    3.807996] mousedev: could not register psaux device, error: -16
+[    3.813888] mousedev: PS/2 mouse device common for all mice
+[    3.820123] input: gpio-keys as /devices/platform/gpio-keys/input/input0
+[    3.826777] input: samsung-keypad as /devices/platform/samsung-keypad/input/input1
+[    3.834073] usbcore: registered new interface driver xpad
+[    3.839181] usbcore: registered new interface driver usb_acecad
+[    3.844962] acecad: v3.2:USB Acecad Flair tablet driver
+[    3.850286] usbcore: registered new interface driver aiptek
+[    3.855725] aiptek: v2.3 (May 2, 2007):Aiptek HyperPen USB Tablet Driver (Linux 2.6.x)
+[    3.863622] aiptek: Bryan W. Headley/Chris Atenasio/Cedric Brun/Rene van Paassen
+[    3.871117] usbcore: registered new interface driver gtco
+[    3.876384] GTCO usb driver version: 2.00.0006
+[    3.880750] usbcore: registered new interface driver hanwang
+[    3.886567] usbcore: registered new interface driver kbtab
+[    3.891920] kbtab: v0.0.2:USB KB Gear JamStudio Tablet driver
+[    3.897767] usbcore: registered new interface driver wacom
+[    3.903118] wacom: v1.52:USB Wacom tablet driver
+[    3.907959] tsc2007 7-0048: i2c io error: -6
+[    3.912114] tsc2007 7-0048: i2c io error: -6
+[    3.916354] tsc2007 7-0048: i2c io error: -6
+[    3.920607] tsc2007 7-0048: i2c io error: -6
+[    3.924847] tsc2007 7-0048: i2c io error: -6
+[    3.929113] tsc2007 7-0048: i2c io error: -6
+[    3.934193] S3C24XX RTC, (c) 2004,2006 Simtec Electronics
+[    3.938673] s3c-rtc s3c64xx-rtc: rtc disabled, re-enabling
+[    3.944124] s3c_rtc_gettime() 2165-25-30 30:40:26
+[    3.949132] using rtc device, s3c, for alarms
+[    3.952961] s3c-rtc s3c64xx-rtc: rtc core: registered s3c as rtc0
+[    3.962115] s5m_rtc_read_time: 2012/1/1 0:2:21(0)
+[    3.966448] s5m_rtc_read_alarm: 2000/0/1 0:0:0(-1)
+[    3.971652] s5m_rtc_read_time: 2012/1/1 0:2:21(0)
+[    3.975067] s5m-rtc s5m-rtc: rtc core: registered s5m-rtc as rtc1
+[    3.981350] s5m-rtc s5m-rtc: RTC CHIP NAME: s5m-rtc
+[    3.985935] i2c /dev entries driver
+[    3.990299] Linux media interface: v0.10
+[    3.993537] lirc_dev: IR Remote Control driver registered, major 251 
+[    3.999632] IR NEC protocol handler initialized
+[    4.004144] IR RC5(x) protocol handler initialized
+[    4.008916] IR RC6 protocol handler initialized
+[    4.013430] IR JVC protocol handler initialized
+[    4.017943] IR Sony protocol handler initialized
+[    4.022544] IR RC5 (streamzap) protocol handler initialized
+[    4.028099] IR LIRC bridge handler initialized
+[    4.032526] Linux video capture interface: v2.00
+[    4.037231] ov5640_module_init()->5375 install module
+[    4.037236] ov5640_module_init
+[    4.046887] s3c-csis: Samsung MIPI-CSIS0 driver probed successfully
+[    4.052343] s3c-csis: Samsung MIPI-CSIS1 driver probed successfully
+[    4.058685] Initialize JPEG driver
+[    4.062194] s5p-jpeg s5p-jpeg: JPEG driver is registered to /dev/video12
+[    4.068790] s5p-jpeg s5p-jpeg: JPEG driver is registered to /dev/video11
+[    4.075528] i2c i2c-0: attached s5p_ddc into i2c adapter successfully
+[    4.081853] i2c-core: driver [s5p_ddc] using legacy suspend method
+[    4.087907] i2c-core: driver [s5p_ddc] using legacy resume method
+[    4.093986] S5P HPD Driver, (c) 2009 Samsung Electronics
+[    4.099667] S5P CEC Driver, (c) 2009 Samsung Electronics
+[    4.105422] MFC(Multi Function Codec - FIMV v5.x) registered successfully
+[    4.111783] Samsung Graphics 2D driver, (c) 2011 Samsung Electronics
+[    4.118187] Mali: init_mali_clock mali_clock c08eacc4 
+[    4.125543] Mali: failed to get cpufreq level for 1200MHzMali: Mali device driver  loaded
+[    4.142952] usbcore: registered new interface driver uvcvideo
+[    4.148476] USB Video Class driver (v1.1.0)
+[    4.152775] S3C2410 Watchdog Timer, (c) 2004 Simtec Electronics
+[    4.158845] s3c2410-wdt s3c2410-wdt: watchdog inactive, reset disabled, irq enabled
+[    4.166899] device-mapper: uevent: version 1.0.3
+[    4.171111] device-mapper: ioctl: 4.20.0-ioctl (2011-02-02) initialised: dm-devel@redhat.com
+[    4.179227] Bluetooth: HCI UART driver ver 2.2
+[    4.183631] Bluetooth: HCI H4 protocol initialized
+[    4.188403] Bluetooth: HCI BCSP protocol initialized
+[    4.193350] Bluetooth: HCILL protocol initialized
+[    4.198037] Bluetooth: HCIATH3K protocol initialized
+[    4.203668] cpuidle: using governor ladder
+[    4.208086] cpuidle: using governor menu
+[    4.211084] mshci: Mobile Storage Host Controller Interface driver
+[    4.217134] mshci: Copyright (c) 2011 Samsung Electronics Co., Ltd
+[    4.223376] clock source 0: sclk_dwmci (160000000 Hz)
+[    4.228338] dw_mmc dw_mmc: clock source 0: sclk_dwmci (160000000 Hz)
+[    4.234895] mmc0: Version ID 0x5342240a.
+[    4.238575] mjdbg: cmu_max_clcok:800000000
+[    4.242652] mjdbg: host->max_clk: 800000000
+[    4.247037] mmc0: FIFO WMARK FOR RX 0x11 WX 0x1. ###########
+[    4.253847] mmc0: MSHCI controller on samsung-mshci [dw_mmc] using IDMA
+[    4.259251] sdhci: Secure Digital Host Controller Interface driver
+[    4.265222] sdhci: Copyright(c) Pierre Ossman
+[    4.266039] mmc0:mshci_set_clock, 400000@ration:4,11[mjdbg] cmu_set_clock: 400000
+[    4.277100] s3c-sdhci s3c-sdhci.2: clock source 0: sclk_mmc (10666666 Hz)
+[    4.280042] *******mmc0: inserted!!!!!******
+[    4.288053] mmc0: cmd 52 response timeout error
+[    4.293634] mmc1: no vmmc regulator found
+[    4.296557] mmc0: cmd 52 response timeout error
+[    4.304220] mmc1: SDHCI controller on samsung-hsmmc [s3c-sdhci.2] using ADMA
+[    4.309855] wake enabled for irq 359
+[    4.313590] s3c-sdhci s3c-sdhci.3: clock source 0: sclk_mmc (10666666 Hz)
+[    4.320142] mmc0: cmd 8 response timeout error
+[    4.325622] sdhci_s3c_probe: set MMC_PM_IGNORE_PM_NOTIFY for mmc2 pm_flags
+[    4.331424] mmc0: cmd 5 response timeout error
+[    4.336854] sdhci_s3c_probe: set MMC_PM_KEEP_POWER | MMC_PM_WAKE_SDIO_IRQ for mmc2 pm_caps
+[    4.344096] mmc0: cmd 5 response timeout error
+[    4.349538] mmc2: no vmmc regulator found
+[    4.352516] mmc0: cmd 5 response timeout error
+[    4.358127] mmc2: SDHCI controller on samsung-hsmmc [s3c-sdhci.3] using ADMA
+[    4.363975] mmc0: cmd 5 response timeout error
+[    4.370214] mmc0: cmd 55 response timeout error
+[    4.375081] mmc0: cmd 55 response timeout error
+[    4.379949] mmc0: cmd 55 response timeout error
+[    4.384820] mmc0: cmd 55 response timeout error
+[    4.399750] usbcore: registered new interface driver usbhid
+[    4.403860] usbhid: USB HID core driver
+[    4.409785] GPS: mt3326_gps_power: Switching GPS device on
+[    4.413855] GPS: mt3326_gps_power: ignore power control: 1
+[    4.419275] GPS: mt3326_gps_probe: Registering chardev
+[    4.424396] GPS: mt3326_gps_probe: major: 249, minor: 0
+[    4.430937] GPS: mt3326_gps_probe: Done
+[    4.434730] Samsung Audio Subsystem Driver, (c) 2011 Samsung Electronics
+[    4.440162] audss_init: RCLK SRC[busclk]
+[    4.456251] mmc0:mshci_set_clock, 50000000@ration:4,11[mjdbg] cmu_set_clock: 50000000
+[    4.473985] mmc0: new high speed DDR MMC card at address 0001
+[    4.478610] mmcblk0: mmc0:0001 4YMD3R 3.64 GiB 
+[    4.484883]  mmcblk0: p1 p2 p3 p4
+[    4.515061] *******mmc1: inserted!!!!!******
+[    4.557715] asoc: wm8960-hifi <-> samsung-i2s.0 mapping ok
+[    4.564470] Samsung SRP driver, (c) 2010 Samsung Electronics
+[    4.578427] SRP: Driver successfully probed
+[    4.581341] ALSA device list:
+[    4.584135]   #0: TOPEET-WM8960
+[    4.587324] mmc1: new high speed SD card at address b368
+[    4.592906] mmcblk1: mmc1:b368 UD    486 MiB 
+[    4.596953] GACT probability NOT on
+[    4.600339] Mirror/redirect action on
+[    4.603965] u32 classifier
+[    4.606869]     Actions configured
+[    4.610134]  mmcblk1: p1
+[    4.612723] Netfilter messages via NETLINK v0.30.
+[    4.617334] nf_conntrack version 0.5.0 (9593 buckets, 38372 max)
+[    4.624135] ctnetlink v0.93: registering with nfnetlink.
+[    4.628570] NF_TPROXY: Transparent proxy support initialized, version 4.1.0
+[    4.636587] NF_TPROXY: Copyright (c) 2006-2007 BalaBit IT Ltd.
+[    4.641555] xt_time: kernel timezone is -0000
+[    4.647072] ip_tables: (C) 2000-2006 Netfilter Core Team
+[    4.650954] *******mmc2: inserted!!!!!******
+[    4.660170] arp_tables: (C) 2002 David S. Miller
+[    4.663358] TCP cubic registered
+[    4.667438] NET: Registered protocol family 10
+[    4.674184] Mobile IPv6
+[    4.675216] ip6_tables: (C) 2000-2006 Netfilter Core Team
+[    4.680750] IPv6 over IPv4 tunneling driver
+[    4.689258] NET: Registered protocol family 17
+[    4.692259] NET: Registered protocol family 15
+[    4.696665] can: controller area network core (rev 20090105 abi 8)
+[    4.702888] NET: Registered protocol family 29
+[    4.705066] *******mmc2: inserted!!!!!******
+[    4.711509] can: raw protocol (rev 20090105)
+[    4.716109] Bluetooth: RFCOMM TTY layer initialized
+[    4.720630] Bluetooth: RFCOMM socket layer initialized
+[    4.725742] Bluetooth: RFCOMM ver 1.11
+[    4.729461] Bluetooth: BNEP (Ethernet Emulation) ver 1.3
+[    4.734768] Bluetooth: BNEP filters: protocol multicast
+[    4.739991] NET: Registered protocol family 35
+[    4.744674] EXYNOS4X12: Adaptive Support Voltage init
+[    4.749442] EXYNOS4X12(SG):  ORIG : 4 MOD : 0 RESULT : 4
+[    4.750090] *******mmc2: inserted!!!!!******
+[    4.759020] EXYNOS4X12(SG):  ORIG : 4 MOD : 0 RESULT : 4
+[    4.764285] ************ exynos4x12_set_abb:0x0, 0x0, 0x0, 0x0, 0x8000008e
+[    4.771137] VFP support v0.3: implementor 41 architecture 3 part 30 variant 9 rev 4
+[    4.778783] Registering SWP/SWPB emulation handler
+[    4.783555] DVFS : VDD_ARM Voltage table set with 4 Group
+[    4.788931] exynos4x12_cpufreq_init:topeet pop
+[    4.790128] *******mmc2: inserted!!!!!******
+[    4.798003] [ 302612 ] Memory Type Undertermined.
+[    4.802306] DVFS : VDD_INT Voltage table set with 4 Group
+[    4.880324] exynos4_integrated_dvfs_hotplug_init, max(1400000),min(200000)
+[    4.889758] regulator_init_complete: VDD18_MIPI: incomplete constraints, leaving on
+[    4.896429] regulator_init_complete: VDD10_MIPI: incomplete constraints, leaving on
+[    4.904064] regulator_init_complete: VDD18_2M: incomplete constraints, leaving on
+[    4.912883] regulator_init_complete: vdd_int range: incomplete constraints, leaving on
+[    4.919807] regulator_init_complete: vdd_arm range: incomplete constraints, leaving on
+[    4.927775] regulator_init_complete: vdd_mif range: incomplete constraints, leaving on
+[    4.935637] USB_DEVICE_ATTACHED
+[    5.051610] exynos_usb_Device: Exynos USB Device Driver
+[    5.055377] value1 = 0, value2 = 0, type = 0x0
+[    5.056513] android_work: did not send uevent (0 0   (null))
+[    5.070458] ==ft5x0x_ts_init: reset==
+[    5.116842] android_work: sent uevent USB_STATE=CONNECTED
+[    5.150469] android_work: sent uevent USB_STATE=DISCONNECTED
+[    5.265030] usb 1-3: new high speed USB device number 2 using s5p-ehci
+[    5.288646] android_work: sent uevent USB_STATE=CONNECTED
+[    5.400432] usb 1-3: New USB device found, idVendor=0424, idProduct=3503, bcdDevice=a1a0
+[    5.407058] usb 1-3: New USB device strings: Mfr=0, Product=0, SerialNumber=0
+[    5.414176] usb 1-3: New USB device Class: Class=9, SubClass=0, Protocol=2
+[    5.421582] hub 1-3:1.0: USB hub found
+[    5.424915] hub 1-3:1.0: 3 ports detected
+[    5.447088] android_work: sent uevent USB_STATE=DISCONNECTED
+[    5.580415] input: ft5x0x_ts as /devices/virtual/input/input2
+[    5.584421] android_work: sent uevent USB_STATE=CONNECTED
+[    5.600167] read reg (0xa6) error, -6
+[    5.602357] ft5x0x_ts 3-0038: chip not found
+[    5.710264] usb 1-3.2: new high speed USB device number 3 using s5p-ehci
+[    5.731073] ft5x0x_ts 3-0038: probe ft5x0x TouchScreen failed, -6
+[    5.737588] s5m_rtc_read_time: 2012/1/1 0:2:22(0)
+[    5.740956] s3c_rtc_settime() 2012-1-1 0:2:22
+[    5.745568] s5m_rtc_set_time: 2012/1/1 0:2:22(0)
+[    5.749864] android_work: sent uevent USB_STATE=DISCONNECTED
+[    5.780199] s5m-rtc s5m-rtc: setting system clock to 2012-01-01 00:02:22 UTC (1325376142)
+[    5.788501] FIMC0 registered successfully
+[    5.792425] FIMC1 registered successfully
+[    5.796401] FIMC2 registered successfully
+[    5.800391] FIMC3 registered successfully
+[    5.803849] S5P TVOUT Driver v3.0 (c) 2010 Samsung Electronics
+[    5.830750] usb 1-3.2: config 1 interface 0 altsetting 0 endpoint 0x83 has an invalid bInterval 0, changing to 9
+[    5.876015] android_work: sent uevent USB_STATE=CONNECTED
+[    5.930354] usb 1-3.2: New USB device found, idVendor=0a46, idProduct=9621, bcdDevice=0101
+[    5.937262] usb 1-3.2: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+[    5.944580] usb 1-3.2: New USB device Class: Class=0, SubClass=0, Protocol=0
+[    5.955123] EXT4-fs (mmcblk0p2): recovery complete
+[    5.959760] [dm962] Linux Driver = V2.45
+[    5.962659] EXT4-fs (mmcblk0p2): mounted filesystem with ordered data mode. Opts: (null)
+[    5.970070] ++++++[dm962]+++++ dm_read_reg() 0x29 0x0a
+[    5.970360] ++++++[dm962]+++++ dm_read_reg() 0x28 0x46
+[    5.970588] ++++++[dm962]+++++ dm_read_reg() 0x2b 0x96
+[    5.970838] ++++++[dm962]+++++ dm_read_reg() 0x2a 0x21
+[    5.971088] ++++++[dm962]+++++ dm_read_reg() 0xF2 0x00
+[    5.971119] ++++++[dm962]+++++  [Analysis.2] 0xF2, D[7] 0 OK
+[    5.971148] ++++++[dm962]+++++  [Analysis.2] 0xF2, D[6] 0 OK
+[    5.971177] ++++++[dm962]+++++  [Analysis.2] 0xF2, D[5] 0 EP1: Empty
+[    5.971205] ++++++[dm962]+++++  [Analysis.2] 0xF2, D[3] 0 OK
+[    5.971232] ++++++[dm962]+++++  [Analysis.2] 0xF2, D[2] 0 OK
+[    5.971258] ++++++[dm962]+++++  [Analysis.2] 0xF2, D[1] 0 OK
+[    5.971285] ++++++[dm962]+++++  [Analysis.2] 0xF2, D[0] 0 Status: TX buffer 0 pkts
+[    5.978090] [dm96] Chk mac addr 00:00:ff:ff:00:00
+[    5.978116] [dm96] [00] [00] [ff] [ff] [00] [00] 
+[    5.978340] [dm96] 9620 tx_fix_mod (DM9_NREV= 2)
+[    5.978365] [dm96] Fixme: work around for 9620 mode
+[    5.978387] [dm96] Add tx_fixup() debug...
+[    5.978836] [dm96] 9620 Mode = 128
+[    6.064565] VFS: Mounted root (ext4 filesystem) on device 179:2.
+[    6.070560] android_work: sent uevent USB_STATE=DISCONNECTED
+[    6.070580] Freeing init memory: 216K
+[    6.083654] dm9620 1-3.2:1.0: eth0: register 'dm9620' at usb-s5p-ehci-3.2, Davicom DM9620 USB Ethernet, 00:00:ff:ff:00:00
+mkdir: can't create directory '/mnt/disk': File exists
+[    7.160494] CPU1: shutdown
+Try to bring eth0 interface up......grep: /etc/mtab: No such file or directory
+[    7.378063] [dm96] Set mac addr 08:90:90:90:90:90
+[    7.381396] [dm96] [08] [90] [90] [90] [90] [90] 
+[    7.400918] dm9620 1-3.2:1.0: eth0: link down
+[    7.408224] link_reset() speed: 10 duplex: 0
+[    7.415747] ADDRCONF(NETDEV_UP): eth0: link is not ready
+Done
+
+Please press Enter to activate this console. 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# cat /proc/version 
+Linux version 3.0.15 (allan@ubuntu-16) (gcc version 4.4.1 (Sourcery G++ Lite 2009q3-67) ) #7 SMP PREEMPT Sun Nov 5 11:06:41 CST 2023
+[root@iTOP-4412]# cat /proc/cmdline 
+root=/dev/mmcblk0p2 rootfstype=ext4 init=/linuxrc console=ttySAC2,115200
+[root@iTOP-4412]# cat /proc/meminfo 
+MemTotal:         614188 kB
+MemFree:          590244 kB
+Buffers:             620 kB
+Cached:             2952 kB
+SwapCached:            0 kB
+Active:             1756 kB
+Inactive:           2164 kB
+Active(anon):        344 kB
+Inactive(anon):        0 kB
+Active(file):       1412 kB
+Inactive(file):     2164 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+HighTotal:        261120 kB
+HighFree:         257224 kB
+LowTotal:         353068 kB
+LowFree:          333020 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:                32 kB
+Writeback:             0 kB
+AnonPages:           332 kB
+Mapped:              856 kB
+Shmem:                 0 kB
+Slab:               4180 kB
+SReclaimable:       1356 kB
+SUnreclaim:         2824 kB
+KernelStack:         504 kB
+PageTables:           12 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:      307092 kB
+Committed_AS:       1420 kB
+VmallocTotal:     122880 kB
+VmallocUsed:       22940 kB
+VmallocChunk:      99196 kB
+[root@iTOP-4412]# cat /proc/zoneinfo 
+Node 0, zone   Normal
+  pages free     83234
+        min      864
+        low      1080
+        high     1296
+        scanned  0
+        spanned  188416
+        present  186944
+    nr_free_pages 83234
+    nr_inactive_anon 0
+    nr_active_anon 0
+    nr_inactive_file 34
+    nr_active_file 124
+    nr_unevictable 0
+    nr_mlock     0
+    nr_anon_pages 0
+    nr_mapped    0
+    nr_file_pages 157
+    nr_dirty     5
+    nr_writeback 0
+    nr_slab_reclaimable 339
+    nr_slab_unreclaimable 705
+    nr_page_table_pages 29
+    nr_kernel_stack 65
+    nr_unstable  0
+    nr_bounce    0
+    nr_vmscan_write 0
+    nr_writeback_temp 0
+    nr_isolated_anon 0
+    nr_isolated_file 0
+    nr_shmem     0
+    nr_dirtied   12
+    nr_written   7
+    nr_anon_transparent_hugepages 0
+        protection: (0, 2022, 2022)
+  pagesets
+    cpu: 0
+              count: 51
+              high:  186
+              batch: 31
+  vm stats threshold: 16
+    cpu: 2
+              count: 183
+              high:  186
+              batch: 31
+  vm stats threshold: 16
+    cpu: 3
+              count: 149
+              high:  186
+              batch: 31
+  vm stats threshold: 16
+  all_unreclaimable: 0
+  start_pfn:         262144
+  inactive_ratio:    1
+Node 0, zone  HighMem
+  pages free     64261
+        min      63
+        low      137
+        high     212
+        scanned  0
+        spanned  73472
+        present  64706
+    nr_free_pages 64261
+    nr_inactive_anon 0
+    nr_active_anon 83
+    nr_inactive_file 507
+    nr_active_file 229
+    nr_unevictable 0
+    nr_mlock     0
+    nr_anon_pages 91
+    nr_mapped    214
+    nr_file_pages 736
+    nr_dirty     4
+    nr_writeback 0
+    nr_slab_reclaimable 0
+    nr_slab_unreclaimable 0
+    nr_page_table_pages 0
+    nr_kernel_stack 0
+    nr_unstable  0
+    nr_bounce    0
+    nr_vmscan_write 0
+    nr_writeback_temp 0
+    nr_isolated_anon 0
+    nr_isolated_file 0
+    nr_shmem     0
+    nr_dirtied   8
+    nr_written   4
+    nr_anon_transparent_hugepages 0
+        protection: (0, 0, 0)
+  pagesets
+    cpu: 0
+              count: 49
+              high:  90
+              batch: 15
+  vm stats threshold: 8
+    cpu: 2
+              count: 76
+              high:  90
+              batch: 15
+  vm stats threshold: 8
+    cpu: 3
+              count: 56
+              high:  90
+              batch: 15
+  vm stats threshold: 8
+  all_unreclaimable: 0
+  start_pfn:         450560
+  inactive_ratio:    1
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# tree /sys/ -L 2
+-/bin/sh: tree: not found
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 
+[root@iTOP-4412]# 

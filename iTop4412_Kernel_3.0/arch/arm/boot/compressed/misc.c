@@ -177,6 +177,8 @@ decompress_kernel(unsigned long output_start, unsigned long free_mem_ptr_p,
 {
 	int ret;
 
+    /* 留意这里的赋值， arch_id
+     * 这里 arch_id 是uboot传进来的，是 2838 */
 	output_data		= (unsigned char *)output_start;
 	free_mem_ptr		= free_mem_ptr_p;
 	free_mem_end_ptr	= free_mem_ptr_end_p;

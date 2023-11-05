@@ -3,8 +3,11 @@
 *.o.cmd
 *.cmd
 *.order
+*.mod.c
 
 .config
+.config.old
+.old_version
 .missing-syscalls.d
 .tmp_System.map
 .tmp_kallsyms1.S

@@ -153,6 +153,7 @@
  * files.  Use virt_to_phys/phys_to_virt/__pa/__va instead.
  */
 #ifndef __virt_to_phys
+/* .config 中定义了 CONFIG_ARM_PATCH_PHYS_VIRT */
 #ifdef CONFIG_ARM_PATCH_PHYS_VIRT
 
 /*

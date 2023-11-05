@@ -52,6 +52,9 @@ extern struct machine_desc *machine_desc;
 /*
  * Machine type table - also only accessible during boot
  */
+/* __arch_info_begin  __arch_info_end  是编译器给定的变量，
+ * 标记了 ".arch.info.init" 段的起始位置 
+ * for_each_machine_desc 用于遍历所有的 machine_desc */
 extern struct machine_desc __arch_info_begin[], __arch_info_end[];
 #define for_each_machine_desc(p)			\
 	for (p = __arch_info_begin; p < __arch_info_end; p++)
@@ -60,6 +63,14 @@ extern struct machine_desc __arch_info_begin[], __arch_info_end[];
  * Set of macros to define architecture features.  This is built into
  * a table by the linker.
  */
+/* MACHINE_START 与 MACHINE_END 
+ * 用来定义一个板级设备， _type 会组成一个 MACH_TYPE__type 的宏
+ * 该宏必须在 include/generated/mach-types.h 文件中 
+ * 是一个唯一的数字，与 uboot 中的 mach_id 需要一致 
+ * _name 只是一个名字，匹配后打印出来 */
+/* 该宏定义的所有结构体都会存放在 ".arch.info.init" 段中，
+ * 上电初始化时，会由 arch/arm/kernel/setup.c 中的
+ * setup_machine_tags 函数 调用 for_each_machine_desc 进行匹配 */
 #define MACHINE_START(_type,_name)			\
 static const struct machine_desc __mach_desc_##_type	\
  __used							\

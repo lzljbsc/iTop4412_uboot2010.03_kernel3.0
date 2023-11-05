@@ -300,6 +300,7 @@ static void __init cacheid_init(void)
 		cacheid = CACHEID_VIVT;
 	}
 
+    /* CPU: VIPT nonaliasing data cache, VIPT aliasing instruction cache */
 	printk("CPU: %s data cache, %s instruction cache\n",
 		cache_is_vivt() ? "VIVT" :
 		cache_is_vipt_aliasing() ? "VIPT aliasing" :
@@ -356,6 +357,8 @@ static void __init setup_processor(void)
 	 * types.  The linker builds this table for us from the
 	 * entries in arch/arm/mm/proc-*.S
 	 */
+    /* lookup_processor_type 是一个汇编函数，
+     * proc_info_list 也是一个表格，在 proc-v7.S 中定义 */
 	list = lookup_processor_type(read_cpuid_id());
 	if (!list) {
 		printk("CPU configuration botched (ID %08x), unable "
@@ -378,6 +381,7 @@ static void __init setup_processor(void)
 	cpu_cache = *list->cache;
 #endif
 
+    /* CPU: ARMv7 Processor [413fc090] revision 0 (ARMv7), cr=10c5387d */
 	printk("CPU: %s [%08x] revision %d (ARMv%s), cr=%08lx\n",
 	       cpu_name, read_cpuid_id(), read_cpuid_id() & 15,
 	       proc_arch[cpu_architecture()], cr_alignment);
@@ -464,7 +468,19 @@ int __init arm_add_memory(phys_addr_t start, unsigned long size)
 {
 	struct membank *bank = &meminfo.bank[meminfo.nr_banks];
 
+    /* iTop4412 开发板实测打印结果  
+     *   arm_add_memory: start: 40000000  size: 08000000
+     *   arm_add_memory: start: 48000000  size: 08000000
+     *   arm_add_memory: start: 50000000  size: 08000000
+     *   arm_add_memory: start: 58000000  size: 08000000
+     *   arm_add_memory: start: 60000000  size: 08000000
+     *   arm_add_memory: start: 68000000  size: 08000000
+     *   arm_add_memory: start: 70000000  size: 08000000
+     *   arm_add_memory: start: 78000000  size: 07f00000
+     * */
+    printk("arm_add_memory: start: 0x%08lx  size: 0x%08lx\r\n", (long unsigned int)start, (long unsigned int)size);
 	if (meminfo.nr_banks >= NR_BANKS) {
+        /* NR_BANKS too low, ignoring high memory */
 		printk(KERN_CRIT "NR_BANKS too low, "
 			"ignoring memory at 0x%08llx\n", (long long)start);
 		return -EINVAL;
@@ -608,6 +624,7 @@ static int __init parse_tag_mem32(const struct tag *tag)
 	return arm_add_memory(tag->u.mem.start, tag->u.mem.size);
 }
 
+/* 解析 atag 中内存信息 */
 __tagtable(ATAG_MEM, parse_tag_mem32);
 
 #if defined(CONFIG_VGA_CONSOLE) || defined(CONFIG_DUMMY_CONSOLE)
@@ -795,6 +812,7 @@ static void __init squash_mem_tags(struct tag *tag)
 			tag->hdr.tag = ATAG_NONE;
 }
 
+/* 重要的解析过程，涉及 atag */
 static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 {
 	struct tag *tags = (struct tag *)&init_tags;
@@ -806,8 +824,12 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 	/*
 	 * locate machine in the list of supported machines.
 	 */
+    /* 遍历 machine 存放的段, .arch.info.int 
+     * 找到与传入的 amchine id 相同的
+     * 传入的为 3698 */
 	for_each_machine_desc(p)
 		if (nr == p->nr) {
+            /* Machine: SMDK4X12 */
 			printk("Machine: %s\n", p->name);
 			mdesc = p;
 			break;
@@ -878,12 +900,18 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 }
 
 
+/* 体系架构相关的内核初始化过程 */
 void __init setup_arch(char **cmdline_p)
 {
 	struct machine_desc *mdesc;
 
 	unwind_init();
 
+    /* setup_arch->machine_arch_type : 3698
+     * 这里的 machine_arch_type = 3698 */
+    printk("setup_arch->machine_arch_type : %d\r\n", machine_arch_type);
+
+    /* 处理器初始化，内部识别处理器类型 */
 	setup_processor();
 	mdesc = setup_machine_fdt(__atags_pointer);
 	if (!mdesc)

@@ -956,7 +956,7 @@ static struct s3c64xx_spi_csinfo spi2_csi[] = {
 static struct spi_board_info spi2_board_info[] __initdata = {
 /* modify by cym 20130529 */
 //#if 1
-#if CONFIG_SPI_SPIDEV
+#ifdef CONFIG_SPI_SPIDEV
 /* end modify */
 	{
 		.modalias = "spidev",
@@ -1985,9 +1985,9 @@ early_param("lcd", setup_width_height);
 #endif
 #endif
 /* end add */
-void init_lcd_type()
+void init_lcd_type(void)
 {
-	int err;
+    //int err;
 
 	if(gpio_request(EXYNOS4_GPC0(3), "GPC0_3"))
                 printk(KERN_WARNING "GPC0_3 Port request error!!!\n");
@@ -2008,10 +2008,11 @@ void init_lcd_type()
         }
 }
 
-int get_lcd_type()
+int get_lcd_type(void)
 {
 	int value1, value2, type = 0;
 	int flags = 0;
+    (void)flags;
 
 	//if(0 == flags)
 	//{
@@ -2047,7 +2048,7 @@ int get_lcd_type()
 }
 EXPORT_SYMBOL(get_lcd_type);
 
-void setup_ft5x_width_height()
+void setup_ft5x_width_height(void)
 {
 	int type = get_lcd_type();
 
@@ -3454,7 +3455,7 @@ static void __init smdk4x12_map_io(void)
 }
 
 
-#ifdef CONFIG_CPU_TYPE_SCP_SUPPER || defined(CONFIG_CPU_TYPE_POP_SUPPER) || defined(CONFIG_CPU_TYPE_POP2G_SUPPER)
+#if defined(CONFIG_CPU_TYPE_SCP_SUPPER) || defined(CONFIG_CPU_TYPE_POP_SUPPER) || defined(CONFIG_CPU_TYPE_POP2G_SUPPER)
 /* add by cym 20130426 */
 #ifdef CONFIG_SMSC911X
 static void __init smdk4x12_smsc911x_init(void)
@@ -3540,10 +3541,8 @@ static void __init smdk4x12_smsc911x_init(void)
 }
 #endif
 /* end add */
-
-
-
 #endif
+
 #ifndef CONFIG_TC4_GB
 static void __init exynos_sysmmu_init(void)
 {
@@ -4734,7 +4733,7 @@ static void __init smdk4x12_machine_init(void)
 
 
 
-#ifdef CONFIG_CPU_TYPE_SCP_SUPPER || defined(CONFIG_CPU_TYPE_POP_SUPPER) || defined(CONFIG_CPU_TYPE_POP2G_SUPPER)
+#if defined(CONFIG_CPU_TYPE_SCP_SUPPER) || defined(CONFIG_CPU_TYPE_POP_SUPPER) || defined(CONFIG_CPU_TYPE_POP2G_SUPPER)
 
 /* add by cym 20130426 */
 #ifdef CONFIG_SMSC911X
@@ -4875,39 +4874,87 @@ static void __init exynos_c2c_reserve(void)
 	BUG_ON(cma_early_region_reserve(&region));
 }
 #endif
-#ifdef CONFIG_TC4_GB
-MACHINE_START(SMDK4212, "SMDK4212")
-	.boot_params	= S5P_PA_SDRAM + 0x100,
-	.init_irq	= exynos4_init_irq,
-	.map_io		= smdk4x12_map_io,
-	.init_machine	= smdk4x12_machine_init,
-	.timer		= &exynos4_timer,
-	#if defined(CONFIG_KERNEL_PANIC_DUMP)		//mj for panic-dump
-	.reserve		= reserve_panic_dump_area,
-	#endif
 
-#ifdef CONFIG_EXYNOS_C2C
-	.reserve	= &exynos_c2c_reserve,
-#endif
-MACHINE_END
 
-MACHINE_START(SMDK4412, "SMDK4212")
-	.boot_params	= S5P_PA_SDRAM + 0x100,
-	.init_irq	= exynos4_init_irq,
-	.map_io		= smdk4x12_map_io,
-	.init_machine	= smdk4x12_machine_init,
-	.timer		= &exynos4_timer,
+/* 未定义 CONFIG_TC4_GB , 屏蔽下面未使用 宏 */
+//#ifdef CONFIG_TC4_GB
+//MACHINE_START(SMDK4212, "SMDK4212")
+	//.boot_params	= S5P_PA_SDRAM + 0x100,
+	//.init_irq	= exynos4_init_irq,
+	//.map_io		= smdk4x12_map_io,
+	//.init_machine	= smdk4x12_machine_init,
+	//.timer		= &exynos4_timer,
+	//#if defined(CONFIG_KERNEL_PANIC_DUMP)		//mj for panic-dump
+	//.reserve		= reserve_panic_dump_area,
+	//#endif
 
-	#if defined(CONFIG_KERNEL_PANIC_DUMP)		//mj for panic-dump
-	.reserve		= reserve_panic_dump_area,
-	#endif
+//#ifdef CONFIG_EXYNOS_C2C
+	//.reserve	= &exynos_c2c_reserve,
+//#endif
+//MACHINE_END
 
-#ifdef CONFIG_EXYNOS_C2C
-	.reserve	= &exynos_c2c_reserve,
-#endif
-MACHINE_END
-#endif
+//MACHINE_START(SMDK4412, "SMDK4212")
+	//.boot_params	= S5P_PA_SDRAM + 0x100,
+	//.init_irq	= exynos4_init_irq,
+	//.map_io		= smdk4x12_map_io,
+	//.init_machine	= smdk4x12_machine_init,
+	//.timer		= &exynos4_timer,
 
+	//#if defined(CONFIG_KERNEL_PANIC_DUMP)		//mj for panic-dump
+	//.reserve		= reserve_panic_dump_area,
+	//#endif
+
+//#ifdef CONFIG_EXYNOS_C2C
+	//.reserve	= &exynos_c2c_reserve,
+//#endif
+//MACHINE_END
+//#endif
+
+/* .config 中定义了 CONFIG_TC4_ICS */
+/* uboot 传进来的 mach_id 是 2838， 对应的是 MACH_TYPE_SMDKC210 
+ * 但 kernel 的 .config 中配置的是 CONFIG_MACH_SMDK4X12 
+ * 对应的是 MACH_TYPE_SMDK4X12 , 
+ * 通过打印分析，在调用 setup.c setup_machine_tags 时，
+ * 传入的 machine_arch_type = 3698 
+ * 3698 对应的是 MACH_TYPE_SMDK4212 , 也就是下面的第一个
+ * 再分析 include/generated/mach-types.h 文件中宏定义 
+ * 发现 MACH_TYPE_SMDK4212 与 MACH_TYPE_SMDK4X12 的值是相同的。。。
+ * 而且下面的这两个宏，其中赋的成员是完全一致的，也就是用那个
+ * machine 都是一样的 */
+/* 
+ * 下面这些是 include/generated/mach-types.h 中摘的
+ * 需要留意 machine_arch_type 的使用
+ * config_for_linux_scp_elite 配置文件中，定义了 CONFIG_MACH_SMDK4X12 
+ * 后面的如果定义了 machine_arch_type 则重新定义为 __machine_arch_type
+ * __machine_arch_type 这个是一个变量，赋值为 uboot 传入的 mach_id
+ * 而没有定义 machine_arch_type , 则 赋值为 include/generated/mach-types.h
+ * 中的 MACH_TYPE_XXXX 
+ *
+#ifdef CONFIG_MACH_SMDK4212                                              
+# ifdef machine_arch_type                                                
+#  undef machine_arch_type                                               
+#  define machine_arch_type __machine_arch_type                          
+# else                                                                   
+#  define machine_arch_type MACH_TYPE_SMDK4212                           
+# endif                                                                  
+# define machine_is_smdk4212()  (machine_arch_type == MACH_TYPE_SMDK4212)
+#else                                                                    
+# define machine_is_smdk4212()  (0)                                      
+#endif                                                                   
+
+#ifdef CONFIG_MACH_SMDK4X12                                              
+# ifdef machine_arch_type                                                
+#  undef machine_arch_type                                               
+#  define machine_arch_type __machine_arch_type                          
+# else                                                                   
+#  define machine_arch_type MACH_TYPE_SMDK4X12                           
+# endif                                                                  
+# define machine_is_smdk4x12()  (machine_arch_type == MACH_TYPE_SMDK4X12)
+#else                                                                    
+# define machine_is_smdk4x12()  (0)                                      
+#endif                                                                   
+
+*/
 #ifdef CONFIG_TC4_ICS
 MACHINE_START(SMDK4212, "SMDK4X12")
 	.boot_params	= S5P_PA_SDRAM + 0x100,

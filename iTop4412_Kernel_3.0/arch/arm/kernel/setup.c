@@ -747,6 +747,11 @@ static struct init_tags {
 	{ 0, ATAG_NONE }
 };
 
+
+/* init_machine 在 arch_initcall 中调用
+ * _initcall 是在内核线程启动后调用的
+ * start_kernel->rest_init->kernel_init->do_basic_setup->do_initcalls
+ * 而 init_machine 的赋值是在 setup_arch 中，比较早的初始化过程 */
 static int __init customize_machine(void)
 {
 	/* customizes platform devices, or adds new ones */

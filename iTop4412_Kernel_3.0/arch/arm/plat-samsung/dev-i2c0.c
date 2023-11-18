@@ -37,6 +37,8 @@ static struct resource s3c_i2c_resource[] = {
 	},
 };
 
+/* i2c0 平台设备
+ * id 就是 bus 号 */
 struct platform_device s3c_device_i2c0 = {
 	.name		  = "s3c2410-i2c",
 #ifdef CONFIG_S3C_DEV_I2C1
@@ -48,6 +50,7 @@ struct platform_device s3c_device_i2c0 = {
 	.resource	  = s3c_i2c_resource,
 };
 
+/* i2c 私有数据，做为 platform_device 的 platform_data  */
 struct s3c2410_platform_i2c default_i2c_data __initdata = {
 	.flags		= 0,
 	.slave_addr	= 0x10,
@@ -59,11 +62,14 @@ void __init s3c_i2c0_set_platdata(struct s3c2410_platform_i2c *pd)
 {
 	struct s3c2410_platform_i2c *npd;
 
+    /* 调用本函数时，传入的 pd = NULL, 使用默认的 default_i2c_data */
 	if (!pd)
 		pd = &default_i2c_data;
 
+    /* 将 default_i2c_data 赋值给 i2c0 设备 */
 	npd = s3c_set_platdata(pd, sizeof(struct s3c2410_platform_i2c), &s3c_device_i2c0);
 
+    /* 赋值 GPIO的配置函数，如果不使用默认的，也可以外部赋值 */
 	if (!npd->cfg_gpio)
 		npd->cfg_gpio = s3c_i2c0_cfg_gpio;
 }

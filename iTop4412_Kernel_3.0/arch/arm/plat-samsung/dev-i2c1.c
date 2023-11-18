@@ -48,6 +48,8 @@ void __init s3c_i2c1_set_platdata(struct s3c2410_platform_i2c *pd)
 {
 	struct s3c2410_platform_i2c *npd;
 
+    /* 传入的 pd = NULL , 使用默认的 default_i2c_data
+     * 并将 bus_num 更改为 1 了 */
 	if (!pd) {
 		pd = &default_i2c_data;
 		pd->bus_num = 1;

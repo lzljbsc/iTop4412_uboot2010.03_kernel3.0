@@ -26,12 +26,16 @@ void __init *s3c_set_platdata(void *pd, size_t pdsize,
 		return NULL;
 	}
 
+    /* kmemdup 是重新分配一段内存，并拷贝一份
+     * 重新拷贝一份，是因为 pd 指向的原始数据，可能会被多个 设备使用
+     * 如果不重新拷贝一份，更改 pd的内容，会导致错误 */
 	npd = kmemdup(pd, pdsize, GFP_KERNEL);
 	if (!npd) {
 		printk(KERN_ERR "%s: cannot clone platform data\n", pdev->name);
 		return NULL;
 	}
 
+    /* 新的 npd 做为 platform_device 的数据 */
 	pdev->dev.platform_data = npd;
 	return npd;
 }

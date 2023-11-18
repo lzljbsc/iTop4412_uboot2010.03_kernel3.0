@@ -131,8 +131,11 @@ char elf_platform[ELF_PLATFORM_SIZE];
 EXPORT_SYMBOL(elf_platform);
 
 static const char *cpu_name;
+/* 指向匹配好的 machine->name */
 static const char *machine_name;
+/* 存放最终需要使用的 cmd_line */
 static char __initdata cmd_line[COMMAND_LINE_SIZE];
+/* 指向匹配好的 machine  */
 struct machine_desc *machine_desc __initdata;
 
 static char default_command_line[COMMAND_LINE_SIZE] __initdata = CONFIG_CMDLINE;
@@ -464,6 +467,9 @@ void __init dump_machine_table(void)
 		/* can't use cpu_relax() here as it may require MMU setup */;
 }
 
+/* 添加内存信息
+ * 给定物理内存的起始地址 、 大小 
+ * 所有的内存信息都存放在了 meminfo 变量中 */
 int __init arm_add_memory(phys_addr_t start, unsigned long size)
 {
 	struct membank *bank = &meminfo.bank[meminfo.nr_banks];
@@ -616,7 +622,7 @@ static int __init parse_tag_core(const struct tag *tag)
 	}
 	return 0;
 }
-
+/* uboot 传递了 ATAG_CORE tag */
 __tagtable(ATAG_CORE, parse_tag_core);
 
 static int __init parse_tag_mem32(const struct tag *tag)
@@ -625,6 +631,8 @@ static int __init parse_tag_mem32(const struct tag *tag)
 }
 
 /* 解析 atag 中内存信息 */
+/* uboot 参数中，将内存信息放在了 ATAG_MEM 中，
+ * 内存信息就是在这里设置的 */
 __tagtable(ATAG_MEM, parse_tag_mem32);
 
 #if defined(CONFIG_VGA_CONSOLE) || defined(CONFIG_DUMMY_CONSOLE)
@@ -695,7 +703,9 @@ static int __init parse_tag_cmdline(const struct tag *tag)
 #endif
 	return 0;
 }
-
+/* uboot 参数中包含 ATAG_CMDLINE tag
+ * 但在uboot分析中，实际传入的 cmdline = NULL 
+ * // TODO: 测试一下 uboot 中传入 cmdline 的情况 */
 __tagtable(ATAG_CMDLINE, parse_tag_cmdline);
 
 /*
@@ -703,6 +713,10 @@ __tagtable(ATAG_CMDLINE, parse_tag_cmdline);
  * The tag table is built by the linker from all the __tagtable
  * declarations.
  */
+/* 特定的 tag 查找解析函数
+ * 所有的解析函数都放在 ".taglist.init" 段中 
+ * 需要解析的tag ，使用 __tagtable() 宏定义
+ * 上面有很多内核已定义的 */
 static int __init parse_tag(const struct tag *tag)
 {
 	extern struct tagtable __tagtable_begin, __tagtable_end;
@@ -721,6 +735,7 @@ static int __init parse_tag(const struct tag *tag)
  * Parse all tags in the list, checking both the global and architecture
  * specific tag tables.
  */
+/* 解析所有的 tags */
 static void __init parse_tags(const struct tag *t)
 {
 	for (; t->hdr.size; t = tag_next(t))
@@ -810,6 +825,7 @@ static void __init reserve_crashkernel(void)
 static inline void reserve_crashkernel(void) {}
 #endif /* CONFIG_KEXEC */
 
+/* 遍历 tags 中 ATAG_MEM ，并置为 ATAG_NONE  */
 static void __init squash_mem_tags(struct tag *tag)
 {
 	for (; tag->hdr.size; tag = tag_next(tag))
@@ -846,9 +862,15 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 		dump_machine_table(); /* does not return */
 	}
 
+    /* __atags_pointer 本代码中为 0
+     * 走 else 分支 */
 	if (__atags_pointer)
 		tags = phys_to_virt(__atags_pointer);
 	else if (mdesc->boot_params) {
+        /* mdesc->boot_params 在 mach-itop4412.c 中定义
+         * = S5P_PA_SDRAM + 0x100
+         * 是一个物理地址, 与 uboot 中需要一致 */
+        /* 定义了 CONFIG_MMU */
 #ifdef CONFIG_MMU
 		/*
 		 * We still are executing with a minimal MMU mapping created
@@ -856,6 +878,8 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 		 * is located in the first MB of RAM.  Anything else will
 		 * fault and silently hang the kernel at this point.
 		 */
+        /* boot_params 的存放，需要在物理地址的前 1M空间中
+         * 运行到这里时， MMU还未映射很大的内存，超出范围则报错 */
 		if (mdesc->boot_params < PHYS_OFFSET ||
 		    mdesc->boot_params >= PHYS_OFFSET + SZ_1M) {
 			printk(KERN_WARNING
@@ -864,10 +888,13 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 		} else
 #endif
 		{
+            /* 将 boot_params 所在物理地址转为虚拟地址 */
 			tags = phys_to_virt(mdesc->boot_params);
 		}
 	}
 
+    /* 未定义 CONFIG_DEPRECATED_PARAM_STRUCT
+     * 是为了兼容老格式的参数 */
 #if defined(CONFIG_DEPRECATED_PARAM_STRUCT)
 	/*
 	 * If we have the old style parameters, convert them to
@@ -877,6 +904,7 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 		convert_to_tag_list(tags);
 #endif
 
+    /* uboot 传入的参数中，第一个就是  ATAG_CORE */
 	if (tags->hdr.tag != ATAG_CORE) {
 #if defined(CONFIG_OF)
 		/*
@@ -888,16 +916,29 @@ static struct machine_desc * __init setup_machine_tags(unsigned int nr)
 		tags = (struct tag *)&init_tags;
 	}
 
+    /* machine_desc 中有 fixup ，则调用
+     * mach-itop4412.c 中并未定义 fixup */
 	if (mdesc->fixup)
 		mdesc->fixup(mdesc, tags, &from, &meminfo);
 
+    /* 参数符合规范，则解析参数 */
 	if (tags->hdr.tag == ATAG_CORE) {
+        /* 因为 meminfo 在前面的 fixup 中可能被设置
+         * 这里需要判断一下，
+         * 如果已经被设置了，则调用 squash_mem_tags 将参数中 ATAG_MEM 的参数都标
+         * 记为 ATAG_NONE, 也就是以 fixup 中为优先 */
 		if (meminfo.nr_banks != 0)
 			squash_mem_tags(tags);
-		save_atags(tags);
-		parse_tags(tags);
+		save_atags(tags);   /* 扩展的处理函数，未实现 */
+		parse_tags(tags);   /* 解析 tags ，这里就会设置 meminfo 内存信息了 */
 	}
 
+    /* 这里的 from 默认指向 default_command_line 
+     * 而 default_command_line 默认值为  CONFIG_CMDLINE (.config 中定义)
+     * 而在 ATAG_CMDLINE tag 解析中，如果 uboot中传入的参数中包含了 ATAG_CMDLINE 
+     * 则在 parse_tag_cmdline 中会使用 uboot中的覆盖默认的
+     * 所以这里的 boot_command_line 最终的内容，
+     * 需要看uboot中是否传入了 ATAG_CMDLINE */
 	/* parse_early_param needs a boot_command_line */
 	strlcpy(boot_command_line, from, COMMAND_LINE_SIZE);
 
@@ -924,6 +965,7 @@ void __init setup_arch(char **cmdline_p)
 	machine_desc = mdesc;
 	machine_name = mdesc->name;
 
+    /* 如果是软重启，则设置软重启标志 */
 	if (mdesc->soft_reboot)
 		reboot_setup("s");
 
@@ -968,6 +1010,7 @@ void __init setup_arch(char **cmdline_p)
 #endif
 	early_trap_init();
 
+    /* 板级的早期初始化，本代码中并未实现 */
 	if (mdesc->init_early)
 		mdesc->init_early();
 }

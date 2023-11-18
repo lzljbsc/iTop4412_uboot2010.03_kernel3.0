@@ -20,6 +20,8 @@ struct platform_device; /* don't need the contents */
 #include <plat/gpio-cfg.h>
 #include <plat/cpu.h>
 
+/* i2c0 的 gpio配置
+ * 与平台相关，更换引脚则更改这里 */
 void s3c_i2c0_cfg_gpio(struct platform_device *dev)
 {
     if (soc_is_exynos5210() || soc_is_exynos5250()) {

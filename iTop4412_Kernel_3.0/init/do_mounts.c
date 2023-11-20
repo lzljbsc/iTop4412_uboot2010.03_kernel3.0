@@ -487,6 +487,7 @@ void __init prepare_namespace(void)
 
 	mount_root();
 out:
+    /* 将 devtmpfs 挂载到 /dev 目录 */
 	devtmpfs_mount("dev");
 	sys_mount(".", "/", NULL, MS_MOVE, NULL);
 	sys_chroot((const char __user __force *)".");

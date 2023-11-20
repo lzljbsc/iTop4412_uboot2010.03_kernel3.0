@@ -26,8 +26,11 @@
 #include <linux/init_task.h>
 #include <linux/slab.h>
 
+/* 文件系统实例，是devtmpfs 文件系统挂载点 */
 static struct vfsmount *dev_mnt;
 
+/* devtmpfs 挂载 
+ * 是否将 devtmpfs 挂载到系统目录，即 /dev */
 #if defined CONFIG_DEVTMPFS_MOUNT
 static int mount_dev = 1;
 #else
@@ -36,6 +39,8 @@ static int mount_dev;
 
 static DEFINE_MUTEX(dirlock);
 
+/* 启动参数，用来控制在内核挂载根文件系统后是否挂载 devtmpfs 
+ * 如果uboot传入了 devtmpfs.mount=0 则不进行挂载 */
 static int __init mount_param(char *str)
 {
 	mount_dev = simple_strtoul(str, NULL, 0);
@@ -68,12 +73,14 @@ static inline int is_blockdev(struct device *dev)
 static inline int is_blockdev(struct device *dev) { return 0; }
 #endif
 
+/* 创建目录 */
 static int dev_mkdir(const char *name, mode_t mode)
 {
 	struct nameidata nd;
 	struct dentry *dentry;
 	int err;
 
+    /* 查找父目录，如果父目录不存在，则返回错误 */
 	err = vfs_path_lookup(dev_mnt->mnt_root, dev_mnt,
 			      name, LOOKUP_PARENT, &nd);
 	if (err)
@@ -95,10 +102,14 @@ static int dev_mkdir(const char *name, mode_t mode)
 	return err;
 }
 
+/* 创建路径 */
 static int create_path(const char *nodepath)
 {
 	int err;
 
+    /* 直接创建路径，如果创建失败
+     * 则认为是有多层目录（多层目录不能直接创建）
+     * 按照目录层次逐个创建 */
 	mutex_lock(&dirlock);
 	err = dev_mkdir(nodepath, 0755);
 	if (err == -ENOENT) {
@@ -130,6 +141,8 @@ out:
 	return err;
 }
 
+/* devtmpfs 创建节点
+ * 被 device_add 调用*/
 int devtmpfs_create_node(struct device *dev)
 {
 	const char *tmp = NULL;
@@ -140,22 +153,28 @@ int devtmpfs_create_node(struct device *dev)
 	struct dentry *dentry;
 	int err;
 
+    /* devtmpfs 必须正确挂载 */
 	if (!dev_mnt)
 		return 0;
 
+    /* 获取设备的节点名称，可能包含 '/' */
 	nodename = device_get_devnode(dev, &mode, &tmp);
 	if (!nodename)
 		return -ENOMEM;
 
+    /* 默认的权限 0600 */
 	if (mode == 0)
 		mode = 0600;
+    /* 设置设备类型标志， 块设备 / 字符设备 */
 	if (is_blockdev(dev))
 		mode |= S_IFBLK;
 	else
 		mode |= S_IFCHR;
 
+    /* 权限相关，暂不分析 */
 	curr_cred = override_creds(&init_cred);
 
+    /* 尝试找一下需要创建的设备路径，找不到就创建一下 */
 	err = vfs_path_lookup(dev_mnt->mnt_root, dev_mnt,
 			      nodename, LOOKUP_PARENT, &nd);
 	if (err == -ENOENT) {
@@ -166,8 +185,10 @@ int devtmpfs_create_node(struct device *dev)
 	if (err)
 		goto out;
 
+    /* 找一下子节点的 dentry 没有则创建 */
 	dentry = lookup_create(&nd, 0);
 	if (!IS_ERR(dentry)) {
+        /* 创建节点 */
 		err = vfs_mknod(nd.path.dentry->d_inode,
 				dentry, mode, dev->devt);
 		if (!err) {
@@ -277,6 +298,8 @@ static int dev_mynode(struct device *dev, struct inode *inode, struct kstat *sta
 	return 1;
 }
 
+/* 溢出 devtmpfs 下的设备节点，
+ * 与 devtmpfs_create_node 相反的流程 */
 int devtmpfs_delete_node(struct device *dev)
 {
 	const char *tmp = NULL;
@@ -347,6 +370,11 @@ out:
  * If configured, or requested by the commandline, devtmpfs will be
  * auto-mounted after the kernel mounted the root filesystem.
  */
+/* 这个函数是被内核自动调用的
+ * 用于在内核已经启动，挂载了根文件系统后，
+ * 将 devtmpfs 挂载到 /dev 目录下 
+ * 被 prepare_namespace 函数调用
+ * prepare_namespace("/dev") */
 int devtmpfs_mount(const char *mntdir)
 {
 	int err;
@@ -369,12 +397,14 @@ int devtmpfs_mount(const char *mntdir)
  * Create devtmpfs instance, driver-core devices will add their device
  * nodes here.
  */
+/* 创建 devtmpfs 实例，驱动核心的设备都将挂载到这里 */
 int __init devtmpfs_init(void)
 {
 	int err;
 	struct vfsmount *mnt;
 	char options[] = "mode=0755";
 
+    /* 向内核注册文件系统， 文件系统类型描述符为 dev_fs_type */
 	err = register_filesystem(&dev_fs_type);
 	if (err) {
 		printk(KERN_ERR "devtmpfs: unable to register devtmpfs "
@@ -382,6 +412,7 @@ int __init devtmpfs_init(void)
 		return err;
 	}
 
+    /* 挂载 devtmpfs 文件系统，细节待分析 */
 	mnt = kern_mount_data(&dev_fs_type, options);
 	if (IS_ERR(mnt)) {
 		err = PTR_ERR(mnt);

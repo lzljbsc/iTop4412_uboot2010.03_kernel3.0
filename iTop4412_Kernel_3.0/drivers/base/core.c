@@ -1188,22 +1188,28 @@ const char *device_get_devnode(struct device *dev,
 
 	*tmp = NULL;
 
+    /* device_type 可以提供特殊的名字 */
 	/* the device type may provide a specific name */
 	if (dev->type && dev->type->devnode)
 		*tmp = dev->type->devnode(dev, mode);
 	if (*tmp)
 		return *tmp;
 
+    /* device class 也能提供特殊的名字 */
 	/* the class may provide a specific name */
 	if (dev->class && dev->class->devnode)
 		*tmp = dev->class->devnode(dev, mode);
 	if (*tmp)
 		return *tmp;
 
+    // TODO: 需要确认设备名字中包含 '!' 的用法
+    /* 最后以 device init_name 做为名字，
+     * 如果名字中不包含 '!', 则直接返回 */
 	/* return name without allocation, tmp == NULL */
 	if (strchr(dev_name(dev), '!') == NULL)
 		return dev_name(dev);
 
+    /* 名字中包含 '!' 则需要替换为 '/' */
 	/* replace '!' in the name with '/' */
 	*tmp = kstrdup(dev_name(dev), GFP_KERNEL);
 	if (!*tmp)

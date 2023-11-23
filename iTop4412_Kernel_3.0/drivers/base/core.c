@@ -27,12 +27,20 @@
 #include "base.h"
 #include "power/power.h"
 
+/* sysfs_deprecated 是一个遗留问题
+ * 关于 /sys/block 目录的存放位置 
+ * 根据网上资料， /sys/block 是最初的目录，
+ * 但 block 更适合在 /sys/class/block/ 下 
+ * 2.6.22 就已经更改了，但为了兼容，就预留了 下面的配置项
+ * 旧的接口 /sys/block/ 保留了，但内容已经变成了指向他们在 
+ * /sys/device 中真实设备的符号链接文件了 */
 #ifdef CONFIG_SYSFS_DEPRECATED
 #ifdef CONFIG_SYSFS_DEPRECATED_V2
 long sysfs_deprecated = 1;
 #else
 long sysfs_deprecated = 0;
 #endif
+/* 一个启动参数，可在 uboot 启动参数中指定 sysfs_deprecated */
 static __init int sysfs_deprecated_setup(char *arg)
 {
 	return strict_strtol(arg, 10, &sysfs_deprecated);
@@ -46,6 +54,9 @@ static struct kobject *dev_kobj;
 struct kobject *sysfs_dev_char_kobj;
 struct kobject *sysfs_dev_block_kobj;
 
+/* 用于判断设备是否为一个分区类型
+ * 只有块设备才具有该属性
+ * 分区类型，具有特有的 device_type , 包含了 uevent 等回调函数 */
 #ifdef CONFIG_BLOCK
 static inline int device_is_not_partition(struct device *dev)
 {
@@ -67,6 +78,8 @@ static inline int device_is_not_partition(struct device *dev)
  * it is attached to.  If it is not attached to a bus either, an empty
  * string will be returned.
  */
+/* 如果绑定到设备，将返回设备的驱动程序名称。如果设备没有绑定到设备，它将返回连
+ * 接到的总线的名称。如果它也没有连接到总线，则将返回一个空字符串。*/
 const char *dev_driver_string(const struct device *dev)
 {
 	struct device_driver *drv;
@@ -75,6 +88,8 @@ const char *dev_driver_string(const struct device *dev)
 	 * so be careful about accessing it.  dev->bus and dev->class should
 	 * never change once they are set, so they don't need special care.
 	 */
+    /* dev->driver 可能在取消绑定的时候设置为 NULL， 
+     * 所以在访问时需要小心； 而 bus class 不会更改，所以直接访问即可 */
 	drv = ACCESS_ONCE(dev->driver);
 	return drv ? drv->name :
 			(dev->bus ? dev->bus->name :
@@ -82,12 +97,18 @@ const char *dev_driver_string(const struct device *dev)
 }
 EXPORT_SYMBOL(dev_driver_string);
 
+/* 使用 device 中包含的 kobject 反向找 device  */
 #define to_dev(obj) container_of(obj, struct device, kobj)
+/* 通过通用的 attribute 找到所属的 device_attribute */
 #define to_dev_attr(_attr) container_of(_attr, struct device_attribute, attr)
 
+/* 用来匹配 attr 和 对应的 show store 方法的， 
+ * 使用这种方法，可以将 属性 / 方法 进行 一一对应，方便匹配调用 
+ * 参考 kobj_attribute */
 static ssize_t dev_attr_show(struct kobject *kobj, struct attribute *attr,
 			     char *buf)
 {
+    /* 查找属性、设备，并调用对应的 show 方法，传入的参数即是 设备、属性 */
 	struct device_attribute *dev_attr = to_dev_attr(attr);
 	struct device *dev = to_dev(kobj);
 	ssize_t ret = -EIO;
@@ -104,6 +125,7 @@ static ssize_t dev_attr_show(struct kobject *kobj, struct attribute *attr,
 static ssize_t dev_attr_store(struct kobject *kobj, struct attribute *attr,
 			      const char *buf, size_t count)
 {
+    /* 查找属性、设备，并调用对应的 show 方法，传入的参数即是 设备、属性 */
 	struct device_attribute *dev_attr = to_dev_attr(attr);
 	struct device *dev = to_dev(kobj);
 	ssize_t ret = -EIO;
@@ -127,11 +149,14 @@ static const struct sysfs_ops dev_sysfs_ops = {
  *	reaches 0. We forward the call to the device's release
  *	method, which should handle actually freeing the structure.
  */
+/* 设备结构释放回调函数
+ * 被 kobject_cleanup 函数调用 */
 static void device_release(struct kobject *kobj)
 {
 	struct device *dev = to_dev(kobj);
 	struct device_private *p = dev->p;
 
+    /* 以设备自身具有的 release 函数为优先 */
 	if (dev->release)
 		dev->release(dev);
 	else if (dev->type && dev->type->release)
@@ -142,9 +167,11 @@ static void device_release(struct kobject *kobj)
 		WARN(1, KERN_ERR "Device '%s' does not have a release() "
 			"function, it is broken and must be fixed.\n",
 			dev_name(dev));
+    /* 最终要单独释放私有数据成员 */
 	kfree(p);
 }
 
+/* 命名空间相关，待分析 */
 static const void *device_namespace(struct kobject *kobj)
 {
 	struct device *dev = to_dev(kobj);
@@ -156,6 +183,10 @@ static const void *device_namespace(struct kobject *kobj)
 	return ns;
 }
 
+/* 所有的 device 都会具有该 ktype 
+ * kobj_type 标识了 kobject 的类型，也可以认为是特有的一些属性 
+ * 通过让所有的 device 都具有这个类型 
+ * 可以统一一些处理，比如资源释放(release) 属性类操作(sysfs_ops) */
 static struct kobj_type device_ktype = {
 	.release	= device_release,
 	.sysfs_ops	= &dev_sysfs_ops,
@@ -163,10 +194,19 @@ static struct kobj_type device_ktype = {
 };
 
 
+/* uevent 过滤处理函数
+ * kset:  kobj 所属的 kset ，可能需要往上好几个父才能找到的
+ * kobj:  需要产生 uevent 事件的 kobject
+ * 这里简单的判断了需要产生 uevent 事件的 kobj 的 kobj_type 
+ * kobj_type 必须得是 device_ktype 这保证了 kobj 是属于一个 设备 device 的
+ * 在 device_initialize 函数中会设置    dev->kobj.kset = devices_kset;
+                                        kobject_init(&dev->kobj, &device_ktype);
+ * 另外，这个设备还必须属于一个 bus 或者 class */
 static int dev_uevent_filter(struct kset *kset, struct kobject *kobj)
 {
 	struct kobj_type *ktype = get_ktype(kobj);
 
+    /* 借助 ktype 判断传入的 kobj 是否属于一个 device */
 	if (ktype == &device_ktype) {
 		struct device *dev = to_dev(kobj);
 		if (dev->bus)
@@ -177,6 +217,8 @@ static int dev_uevent_filter(struct kset *kset, struct kobject *kobj)
 	return 0;
 }
 
+/* uevent 获取 dev name 
+ * 判断 dev->bus 或 dev->class ，返回对应的 name */
 static const char *dev_uevent_name(struct kset *kset, struct kobject *kobj)
 {
 	struct device *dev = to_dev(kobj);
@@ -188,18 +230,30 @@ static const char *dev_uevent_name(struct kset *kset, struct kobject *kobj)
 	return NULL;
 }
 
+/* uevent 设置 dev 特有的环境变量
+ * 该函数在 kobject_uevent.c 中调用
+ * 当需要产生 uevent事件时，先设置了公共的部分环境变量信息，
+ * 然后调用 kobj 所属的 kset 特有的 uevent 函数，设置更多的环境变量 
+ * 该函数就是 dev 设备驱动中设备所特有的 uevent 处理函数 */
+/* 参数：  kset : kobj 所属的 kset 
+ *         kobj : 需要产生 uevent 事件的设备的 kobject 
+ *         env  : 存放环境变量的缓冲区 */
 static int dev_uevent(struct kset *kset, struct kobject *kobj,
 		      struct kobj_uevent_env *env)
 {
+    /* 通过 kobj 反向找所属的 device 
+     * 找到 device 就找到更多的信息了 */
 	struct device *dev = to_dev(kobj);
 	int retval = 0;
 
+    /* 判断设备号，有设备号则添加设备号环境变量 */
 	/* add device node properties if present */
 	if (MAJOR(dev->devt)) {
 		const char *tmp;
 		const char *name;
 		mode_t mode = 0;
 
+        /* 添加主次设备号环境变量 */
 		add_uevent_var(env, "MAJOR=%u", MAJOR(dev->devt));
 		add_uevent_var(env, "MINOR=%u", MINOR(dev->devt));
 		name = device_get_devnode(dev, &mode, &tmp);
@@ -211,12 +265,15 @@ static int dev_uevent(struct kset *kset, struct kobject *kobj,
 		}
 	}
 
+    /* device_type 中包含 name ， 则需设置 DEVTYPE  */
 	if (dev->type && dev->type->name)
 		add_uevent_var(env, "DEVTYPE=%s", dev->type->name);
 
+    /* 有对应的驱动，则设置驱动 name */
 	if (dev->driver)
 		add_uevent_var(env, "DRIVER=%s", dev->driver->name);
 
+    /* 所属的 bus 特有的 uevent ，一般会添加 MODALIAS 环境变量 */
 	/* have the bus specific function add its stuff */
 	if (dev->bus && dev->bus->uevent) {
 		retval = dev->bus->uevent(dev, env);
@@ -225,6 +282,7 @@ static int dev_uevent(struct kset *kset, struct kobject *kobj,
 				 dev_name(dev), __func__, retval);
 	}
 
+    /* class 特有的 uevent  */
 	/* have the class specific function add its stuff */
 	if (dev->class && dev->class->dev_uevent) {
 		retval = dev->class->dev_uevent(dev, env);
@@ -234,6 +292,7 @@ static int dev_uevent(struct kset *kset, struct kobject *kobj,
 				 __func__, retval);
 	}
 
+    /* type 特有的 uevent */
 	/* have the device type specific function add its stuff */
 	if (dev->type && dev->type->uevent) {
 		retval = dev->type->uevent(dev, env);
@@ -246,12 +305,39 @@ static int dev_uevent(struct kset *kset, struct kobject *kobj,
 	return retval;
 }
 
+/* devices_kset 的 kset_uevent_ops
+ * 会被底层的 kobject_uevent.c 中的函数调用 */
 static const struct kset_uevent_ops device_uevent_ops = {
 	.filter =	dev_uevent_filter,
 	.name =		dev_uevent_name,
 	.uevent =	dev_uevent,
 };
 
+/* 各个 device 下的 uevent 属性 show 方法 
+ * 在 openwrt 下的一个示例： 
+ * # cat /sys/devices/platform/leds/uevent 
+ * DRIVER=leds-gpio
+ * OF_NAME=leds
+ * OF_FULLNAME=/leds
+ * OF_COMPATIBLE_0=gpio-leds
+ * OF_COMPATIBLE_N=1
+ * MODALIAS=of:NledsT(null)Cgpio-leds
+ *
+ * # cat /sys/devices/platform/keys/uevent 
+ * DRIVER=gpio-keys
+ * OF_NAME=keys
+ * OF_FULLNAME=/keys
+ * OF_COMPATIBLE_0=gpio-keys
+ * OF_COMPATIBLE_N=1
+ * MODALIAS=of:NkeysT(null)Cgpio-keys
+ *
+ * # cat /sys/class/block/mtdblock3/uevent
+ * MAJOR=31
+ * MINOR=3
+ * DEVNAME=mtdblock3
+ * DEVTYPE=disk
+ *
+ * */
 static ssize_t show_uevent(struct device *dev, struct device_attribute *attr,
 			   char *buf)
 {
@@ -262,6 +348,8 @@ static ssize_t show_uevent(struct device *dev, struct device_attribute *attr,
 	size_t count = 0;
 	int retval;
 
+    /* 找 dev 的 kobj 所属的顶层 kobj 
+     * 对于设备来讲，就是 devices_kset 的 kobj */
 	/* search the kset, the device belongs to */
 	top_kobj = &dev->kobj;
 	while (!top_kobj->kset && top_kobj->parent)
@@ -269,6 +357,7 @@ static ssize_t show_uevent(struct device *dev, struct device_attribute *attr,
 	if (!top_kobj->kset)
 		goto out;
 
+    /* 顶层 kobj 的 kset ， 就是 devices_kset */
 	kset = top_kobj->kset;
 	if (!kset->uevent_ops || !kset->uevent_ops->uevent)
 		goto out;
@@ -295,11 +384,15 @@ out:
 	return count;
 }
 
+/* uevent 属性 store 节点， 用于产生一个 uevent 事件的
+ * 在 /sys/class/block/mtdblock3/uevent 实测， 
+ * 通过 "remove" "add" 可以移除、添加 mtdblock3 设备 */
 static ssize_t store_uevent(struct device *dev, struct device_attribute *attr,
 			    const char *buf, size_t count)
 {
 	enum kobject_action action;
 
+    /* 应用层产生的 uevent 事件，与 device_add device_del 等函数效果一样 */
 	if (kobject_action_type(buf, count, &action) == 0)
 		kobject_uevent(&dev->kobj, action);
 	else
@@ -307,6 +400,8 @@ static ssize_t store_uevent(struct device *dev, struct device_attribute *attr,
 	return count;
 }
 
+/* uevent 属性，每个 device 目录下都会有的属性
+ * 在 device_add 时，自动添加的 */
 static struct device_attribute uevent_attr =
 	__ATTR(uevent, S_IRUGO | S_IWUSR, show_uevent, store_uevent);
 
@@ -465,6 +560,7 @@ static struct device_attribute devt_attr =
 	__ATTR(dev, S_IRUGO, show_dev, NULL);
 
 /* kset to create /sys/devices/  */
+/* 指向 devices 的 kset  */
 struct kset *devices_kset;
 
 /**
@@ -1280,11 +1376,27 @@ struct device *device_find_child(struct device *parent, void *data,
 	return child;
 }
 
+/* 设备初始化，内核启动时候调用，用于创建设备结构最初的数据结构
+ * 创建之后，在 /sys/ 下的目录结构为: 
+ * /sys/
+ *     --devices 
+ *     --dev 
+ *       --block 
+ *       --char */
 int __init devices_init(void)
 {
+    /* 创建 devices 注意这里是一个 kset 
+     * kset 是能够产生 uevent 事件的，
+     * 通过这里的 kset ，也就在注册设备时，会产生 uevent 事件 */
+    /* 在设备初始化时，将 设备的 kobj.kset 指向 devices_kset 
+     *  dev->kobj.kset = devices_kset;
+     *  */
 	devices_kset = kset_create_and_add("devices", &device_uevent_ops, NULL);
 	if (!devices_kset)
 		return -ENOMEM;
+    
+    /* dev_kobj sysfs_dev_block_kobj  sysfs_dev_char_kobj 
+     * 都只是 kobject ， 只是用来建立目录结构的，并且不属于 kset */
 	dev_kobj = kobject_create_and_add("dev", NULL);
 	if (!dev_kobj)
 		goto dev_kobj_err;

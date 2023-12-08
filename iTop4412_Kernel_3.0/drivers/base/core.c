@@ -405,12 +405,19 @@ static ssize_t store_uevent(struct device *dev, struct device_attribute *attr,
 static struct device_attribute uevent_attr =
 	__ATTR(uevent, S_IRUGO | S_IWUSR, show_uevent, store_uevent);
 
+/* 向指定设备下添加属性 
+ * 因为设备中包含了一个 kobject ，对应到一个目录中 
+ * 添加的属性就在这个目录下 
+ * 设备对应的 name 会设置到 kobject 的 name 中 dev_set_name 
+ * 在 /sys/ 下就会有以设备name 命名的文件夹，下面具有很多的属性 */
 static int device_add_attributes(struct device *dev,
 				 struct device_attribute *attrs)
 {
 	int error = 0;
 	int i;
 
+    /* 是一组属性，逐个添加 
+     * 其中一个出错，则移除所有的 */
 	if (attrs) {
 		for (i = 0; attr_name(attrs[i]); i++) {
 			error = device_create_file(dev, &attrs[i]);
@@ -424,6 +431,7 @@ static int device_add_attributes(struct device *dev,
 	return error;
 }
 
+/* 移除指定设备下的属性文件 */
 static void device_remove_attributes(struct device *dev,
 				     struct device_attribute *attrs)
 {
@@ -434,6 +442,7 @@ static void device_remove_attributes(struct device *dev,
 			device_remove_file(dev, &attrs[i]);
 }
 
+/* 添加 bin 类型的属性文件 */
 static int device_add_bin_attributes(struct device *dev,
 				     struct bin_attribute *attrs)
 {
@@ -453,6 +462,7 @@ static int device_add_bin_attributes(struct device *dev,
 	return error;
 }
 
+/* 指定设备下的 bin 属性文件 */
 static void device_remove_bin_attributes(struct device *dev,
 					 struct bin_attribute *attrs)
 {
@@ -463,6 +473,7 @@ static void device_remove_bin_attributes(struct device *dev,
 			device_remove_bin_file(dev, &attrs[i]);
 }
 
+/* 指定设备下添加属性组 */
 static int device_add_groups(struct device *dev,
 			     const struct attribute_group **groups)
 {
@@ -483,6 +494,7 @@ static int device_add_groups(struct device *dev,
 	return error;
 }
 
+/* 指定设备下移除属性组 */
 static void device_remove_groups(struct device *dev,
 				 const struct attribute_group **groups)
 {
@@ -493,6 +505,10 @@ static void device_remove_groups(struct device *dev,
 			sysfs_remove_group(&dev->kobj, groups[i]);
 }
 
+/* 针对一个特定的设备，添加其拥有的属性
+ * 一个设备可能属于一个class，所以拥有公共的 class属性 
+ * 还可能有特定的类型 device_type， 如 part_type ，也有单独的属性 
+ * 还可能有自身特有的一些属性， dev->groups */
 static int device_add_attrs(struct device *dev)
 {
 	struct class *class = dev->class;
@@ -533,6 +549,7 @@ static int device_add_attrs(struct device *dev)
 	return error;
 }
 
+/* 移除指定设备的属性文件，包含了 class type */
 static void device_remove_attrs(struct device *dev)
 {
 	struct class *class = dev->class;
@@ -550,12 +567,15 @@ static void device_remove_attrs(struct device *dev)
 }
 
 
+/* 打印设备号 方法 
+ * 每个 device 都会具有这个属性，用于查看其设备号 */
 static ssize_t show_dev(struct device *dev, struct device_attribute *attr,
 			char *buf)
 {
 	return print_dev_t(buf, dev->devt);
 }
 
+/* dev 属性在 device_add 函数中添加，所有设备都会有该属性 */
 static struct device_attribute devt_attr =
 	__ATTR(dev, S_IRUGO, show_dev, NULL);
 
@@ -568,6 +588,10 @@ struct kset *devices_kset;
  * @dev: device.
  * @attr: device attribute descriptor.
  */
+/* 专用于设备驱动的，创建 sysfs 的属性文件
+ * 实现方式是在 device 的 kobject 下直接创建 属性文件 
+ * 直接调用 sysfs_create_file 
+ * 导出的符号，被很多驱动调用 */
 int device_create_file(struct device *dev,
 		       const struct device_attribute *attr)
 {
@@ -582,6 +606,8 @@ int device_create_file(struct device *dev,
  * @dev: device.
  * @attr: device attribute descriptor.
  */
+/* 专用于设备驱动的，移除 sysfs 的属性文件 
+ * 直接调用 sysfs_remove_file 实现 */
 void device_remove_file(struct device *dev,
 			const struct device_attribute *attr)
 {
@@ -594,6 +620,7 @@ void device_remove_file(struct device *dev,
  * @dev: device.
  * @attr: device binary attribute descriptor.
  */
+/* 专用于设备驱动的，创建 bin 类型的属性文件 */
 int device_create_bin_file(struct device *dev,
 			   const struct bin_attribute *attr)
 {
@@ -609,6 +636,7 @@ EXPORT_SYMBOL_GPL(device_create_bin_file);
  * @dev: device.
  * @attr: device binary attribute descriptor.
  */
+/* 专用于设备驱动的，移除 bin 类型属性文件 */
 void device_remove_bin_file(struct device *dev,
 			    const struct bin_attribute *attr)
 {
@@ -681,16 +709,26 @@ static void klist_children_put(struct klist_node *n)
  * NOTE: Use put_device() to give up your reference instead of freeing
  * @dev directly once you have called this function.
  */
+/* 该函数为 device_register 的前半部分，当然，也是可以单独调用的
+ * 使用 get_device() / put_device() 可以递增 dev 的引用计数 */
 void device_initialize(struct device *dev)
 {
+    /* 设置device 的 kobject 的 所属 kset 
+     * 所有的 dev 都属于 devices_kset , 都在 /sys/devices/ 目录下 */
 	dev->kobj.kset = devices_kset;
+    /* dev 的 kobject 初始化，设置 ktype 为 device_ktype 
+     * 这样，device 的属性都会有统一的处理方式 */
 	kobject_init(&dev->kobj, &device_ktype);
+    /* dma 相关的链表头 */
 	INIT_LIST_HEAD(&dev->dma_pools);
 	mutex_init(&dev->mutex);
+    /* 未使用，暂不分析 */
 	lockdep_set_novalidate_class(&dev->mutex);
 	spin_lock_init(&dev->devres_lock);
 	INIT_LIST_HEAD(&dev->devres_head);
+    /* 电源管理相关，暂不分析 */
 	device_pm_init(dev);
+    /* NUMA 相关，未定义 NUMA 相关宏 */
 	set_dev_node(dev, -1);
 }
 

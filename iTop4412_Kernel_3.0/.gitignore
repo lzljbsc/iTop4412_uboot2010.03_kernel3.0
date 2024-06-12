@@ -4,6 +4,7 @@
 *.cmd
 *.order
 *.mod.c
+*.ko
 
 .config
 .config.old
@@ -16,6 +17,7 @@
 .tmp_vmlinux2
 .tmp_versions/
 .version
+modules.builtin
 
 Module.symvers
 System.map

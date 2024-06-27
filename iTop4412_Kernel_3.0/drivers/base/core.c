@@ -50,8 +50,11 @@ early_param("sysfs.deprecated", sysfs_deprecated_setup);
 
 int (*platform_notify)(struct device *dev) = NULL;
 int (*platform_notify_remove)(struct device *dev) = NULL;
+/* 对应目录  /sys/dev  */
 static struct kobject *dev_kobj;
+/* 对应目录  /sys/dev/char/ */
 struct kobject *sysfs_dev_char_kobj;
+/* 对应目录  /sys/dev/block/ */
 struct kobject *sysfs_dev_block_kobj;
 
 /* 用于判断设备是否为一个分区类型
@@ -732,10 +735,13 @@ void device_initialize(struct device *dev)
 	set_dev_node(dev, -1);
 }
 
+/* 创建 /sys/devices/virtual/ 目录 
+ * 这个目录下存放的都是虚拟设备，真实的设备都是在 /sys/devices/ 目录下的 */
 static struct kobject *virtual_device_parent(struct device *dev)
 {
 	static struct kobject *virtual_dir = NULL;
 
+    /* 创建 virtual 目录，父为 devices_kset->kobj  */
 	if (!virtual_dir)
 		virtual_dir = kobject_create_and_add("virtual",
 						     &devices_kset->kobj);

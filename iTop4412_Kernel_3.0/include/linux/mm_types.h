@@ -31,7 +31,13 @@ struct address_space;
  * a page, though if it is a pagecache page, rmap structures can tell us
  * who is mapping it.
  */
+/* struct page 用来描述物理页面
+ * 系统中的每个物理页面都有一个与其关联的结构体，用来追踪目前使用该页面的情况。
+ * 请注意，我们无法追踪哪些任务正在使用这个页面，尽管如果它是一个页面缓存页面，
+ * rmap结构可以告诉我们谁在映射它 */
 struct page {
+    /* 描述 page的状态和其他信息，关于page的状态标识的具体定义在
+     * linux/page-flags.h 中 */
 	unsigned long flags;		/* Atomic flags, some possibly
 					 * updated asynchronously */
 	atomic_t _count;		/* Usage count, see below. */

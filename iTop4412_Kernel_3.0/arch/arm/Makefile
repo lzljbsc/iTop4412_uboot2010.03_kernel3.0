@@ -178,6 +178,8 @@ machine-$(CONFIG_ARCH_S3C64XX)		:= s3c64xx
 machine-$(CONFIG_ARCH_S5P64X0)		:= s5p64x0
 machine-$(CONFIG_ARCH_S5PC100)		:= s5pc100
 machine-$(CONFIG_ARCH_S5PV210)		:= s5pv210
+# 配置文件定义的 CONFIG_ARCH_EXYNOS
+# 所以 machine-y := exynos
 machine-$(CONFIG_ARCH_EXYNOS)		:= exynos
 machine-$(CONFIG_ARCH_SA1100)		:= sa1100
 machine-$(CONFIG_ARCH_SHARK)		:= shark
@@ -208,6 +210,8 @@ plat-$(CONFIG_PLAT_NOMADIK)	:= nomadik
 plat-$(CONFIG_PLAT_ORION)	:= orion
 plat-$(CONFIG_PLAT_PXA)		:= pxa
 plat-$(CONFIG_PLAT_S3C24XX)	:= s3c24xx samsung
+# 配置文件定义的 CONFIG_PLAT_S5P
+# 所以 plat-y := s5p samsung
 plat-$(CONFIG_PLAT_S5P)		:= s5p samsung
 plat-$(CONFIG_PLAT_SPEAR)	:= spear
 plat-$(CONFIG_PLAT_VERSATILE)	:= versatile
@@ -223,15 +227,28 @@ endif
 TEXT_OFFSET := $(textofs-y)
 
 # The first directory contains additional information for the boot setup code
+# 第一个目录包含引导设置代码的附加信息
+# 如果定义了 CONFIG_MACH_XXX 则 machine-y 就不为空
+# 这里最终效果为 MACHINE := arch/arm/mach-exynos/
+# MACHINE 用来在后面处理 boot/ 目录的编译时，引入 machine 特殊的 Makefile.boot
+# 文件
 ifneq ($(machine-y),)
 MACHINE  := arch/arm/mach-$(word 1,$(machine-y))/
 else
 MACHINE  :=
 endif
 
+# machdirs := arch/arm/mach-exynos/
+# platdirs := arch/arm/plat-s5p/ arch/arm/plat-samsung/
 machdirs := $(patsubst %,arch/arm/mach-%/,$(machine-y))
 platdirs := $(patsubst %,arch/arm/plat-%/,$(plat-y))
 
+# 将 machine plat 相关的目录，也作为头文件包含路径
+# arch/arm/mach-exynos/include/  实际头文件在 mach 目录中
+# arch/arm/plat-s5p/include/ 	 实际头文件在 plat 目录中
+# arch/arm/plat-samsung/include/ 实际头文件在 plat 目录中
+# 所有很多的源码中，包含头文件形式  #include <mach/xxxx.h>  <plat/xxx.h>
+# 是因为这里只到 include 目录，真正的头文件还需要在子目录中
 ifeq ($(KBUILD_SRC),)
 KBUILD_CPPFLAGS += $(patsubst %,-I%include,$(machdirs) $(platdirs))
 else
@@ -249,12 +266,20 @@ endif
 core-$(CONFIG_FPE_FASTFPE)	+= $(FASTFPE_OBJ)
 core-$(CONFIG_VFP)		+= arch/arm/vfp/
 
+# 架构相关的 core-y 目标
+# $(machdirs) $(platdirs) 定义了机器和平台相关的
 # If we have a machine-specific directory, then include it in the build.
 core-y				+= arch/arm/kernel/ arch/arm/mm/ arch/arm/common/
 core-y				+= $(machdirs) $(platdirs)
 
+# 架构相关的 libs-y 目标
+# 这里将架构相关的放在了顶层目录的 libs-y 的前面
 libs-y				:= arch/arm/lib/ $(libs-y)
 
+# 默认的构建目标
+# CONFIG_XIP_KERNEL 主要针对那种在 norflash 直接运行的设备
+# 这类设备无需将镜像拷贝到RAM 中，可以直接运行
+# 需要拷贝到RAM中的，默认构建 zImage 目标
 # Default target when executing plain make
 ifeq ($(CONFIG_XIP_KERNEL),y)
 KBUILD_IMAGE := xipImage
@@ -262,16 +287,34 @@ else
 KBUILD_IMAGE := zImage
 endif
 
+# 架构相关的特有目标，arm架构默认编译 zImage
+# $(KBUILD_IMAGE) 的设置，会导致顶层 Makefile 中的这个变量赋值无效
+# 以架构中设置的为准
 all:	$(KBUILD_IMAGE)
 
+# boot 目录，zImage uImage 等目标，真正编译的位置
 boot := arch/arm/boot
 
+# 架构相关的处理，会与顶层 Makefile 中的 archprepare 共同作用
+# make -f scripts/Makefile.build obj=arch/arm/tools include/generated/mach-types.h
+# 这里用来生成架构相关的 mach-types.h
+# 使用 arch/arm/tools 里面的工具，根据提前定义的 arch/arm/tools/mach-types
+# 使用 awk 工具，生成最终的 include/generated/mach-types.h
+#
+# include/generated/mach-types.h 这个目标在 arch/arm/tools/Makefile 中
 archprepare:
 	$(Q)$(MAKE) $(build)=arch/arm/tools include/generated/mach-types.h
 
 # Convert bzImage to zImage
 bzImage: zImage
 
+# arm架构下的各种镜像，如 make uImage
+# 会使用这个目标，依赖 vmlinux
+# 之后又会进入 $(boot)  arch/arm/boot/ 中处理
+# 真正的 zImage uImage 等目标，是在 arch/arm/boot/Makefile 中定义的
+# $(boot)/$@
+# 留意这里传入的参数 MACHINE=$(MACHINE) ，就是与特定机器相关的
+# exynos 传入的是 arch/arm/mach-exynos/
 zImage Image xipImage bootpImage uImage: vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) MACHINE=$(MACHINE) $(boot)/$@
 

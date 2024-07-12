@@ -2,11 +2,17 @@
 # Building
 # ==========================================================================
 
+# $(obj) 是 make -f 传入的命令行参数，代表要编译的子目录
 src := $(obj)
 
+# 默认构建为 __build, 没指定目录的情况下就用这个
 PHONY := __build
 __build:
 
+# 初始化kbuild文件中使用的所有相关变量，以便
+# 1)它们具有正确的类型
+# 2)它们不从环境中继承任何值
+# 每进入一个新的目录编译，这些变量都应该是全新的
 # Init all relevant variables used in kbuild files so
 # 1) they have correct type
 # 2) they do not inherit any value from the environment
@@ -35,14 +41,24 @@ subdir-ccflags-y :=
 
 include scripts/Kbuild.include
 
+# 对于向后兼容性，检查这些变量是否不会更改
 # For backward compatibility check that these variables do not change
 save-cflags := $(CFLAGS)
 
+# 调用本文件时，会是如下形式, 如
+# $(Q)$(MAKE) $(build)=scripts/basic 展开后为
+# make -f ./scripts/Makefile.build obj=scripts/basic
+# 在本文件最开头，又有  src := $(obj)
+# Kbuild-dir 就是 obj 指向 ojb 的路径
+# Kbuild-file 就是 obj 目录下的 Makefile 或 Kbuild
+# 某些目录下，使用的是 Kbuild ，如 fs/exofs/Kbuild ，没有 Makefile
 # The filename Kbuild has precedence over Makefile
 kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))
 kbuild-file := $(if $(wildcard $(kbuild-dir)/Kbuild),$(kbuild-dir)/Kbuild,$(kbuild-dir)/Makefile)
 include $(kbuild-file)
 
+# 检查 $(kbuild-file) 中是否会更改 CFLAGS ,
+# 是不能更改的，如果需要添加，则应该添加到 EXTRA_CFLAGS 中
 # If the save-* variables changed error out
 ifeq ($(KBUILD_NOPEDANTIC),)
         ifneq ("$(save-cflags)","$(CFLAGS)")
@@ -50,6 +66,7 @@ ifeq ($(KBUILD_NOPEDANTIC),)
         endif
 endif
 
+# 告警类配置
 #
 # make W=... settings
 #
@@ -101,6 +118,18 @@ endif
 
 include scripts/Makefile.lib
 
+# 处理与编译 host 相关的内容
+# host-progs 制定需要编译的主机软件，看下面的处理，已经废弃了，
+# 应该使用 hostprogs-y 代替
+# 如果需要编译主机软件的源码包中， Makefile 中会有如下形式:
+# scripts/basic/Makefile:
+# hostprogs-y	:= fixdep
+# always		:= $(hostprogs-y)
+# $(addprefix $(obj)/,$(filter-out fixdep,$(always))): $(obj)/fixdep
+# hostprogs-y 定义了需要编译的目标， always 汇总了这些目标
+# 在 scripts/Makefile.lib 中，always 又被处理为带有目标路径的目标 $(obj)/fixdep
+# #
+# 这里的 host-progs 已经废弃了，必须太过关注
 ifdef host-progs
 ifneq ($(hostprogs-y),$(host-progs))
 $(warning kbuild: $(obj)/Makefile - Usage of host-progs is deprecated. Please replace with hostprogs-y!)
@@ -108,6 +137,8 @@ hostprogs-y += $(host-progs)
 endif
 endif
 
+# 如果需要编译主机软件，如 scripts/basic/Makefile 中定义的 fixdep
+# 那 hostprogs-y 就不是空， 这里会包含主机软件编译的处理 scripts/Makefile.host
 # Do not include host rules unless needed
 ifneq ($(hostprogs-y)$(hostprogs-m),)
 include scripts/Makefile.host
@@ -128,18 +159,26 @@ endif
 
 # ===========================================================================
 
+# lib 目标
 ifneq ($(strip $(lib-y) $(lib-m) $(lib-n) $(lib-)),)
 lib-target := $(obj)/lib.a
 endif
 
+# builtin 目标
 ifneq ($(strip $(obj-y) $(obj-m) $(obj-n) $(obj-) $(subdir-m) $(lib-target)),)
 builtin-target := $(obj)/built-in.o
 endif
 
+# 对 $(obj)/modules.order 起了个别名，
+# 后面对 $(modorder-target) 的引用，都是 $(obj)/modules.order
 modorder-target := $(obj)/modules.order
 
 # We keep a list of all modules in $(MODVERDIR)
 
+# 默认的编译目标，__build 目标本身没有任何处理命令，全部都是依赖
+# 这部分比较复杂，以后再分析吧。。。。
+# 总之，就是对 $(obj) 指向的目录进行了编译
+# 这里一定要注意使用的是 Makefile 还是 Kbuild 文件
 __build: $(if $(KBUILD_BUILTIN),$(builtin-target) $(lib-target) $(extra-y)) \
 	 $(if $(KBUILD_MODULES),$(obj-m) $(modorder-target)) \
 	 $(subdir-ym) $(always)

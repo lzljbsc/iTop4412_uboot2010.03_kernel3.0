@@ -13,6 +13,9 @@
 
 MKIMAGE         := $(srctree)/scripts/mkuboot.sh
 
+# 引入 machine 相关的特殊文件，其中定义了一些变量，地址相关的
+#    zreladdr-y	:= 0x40008000
+# params_phys-y	:= 0x40000100
 ifneq ($(MACHINE),)
 include $(srctree)/$(MACHINE)/Makefile.boot
 endif
@@ -29,6 +32,7 @@ export ZRELADDR INITRD_PHYS PARAMS_PHYS
 
 targets := Image zImage xipImage uImage
 
+# 区分 XIP 内核，XIP 不编译 zImage
 ifeq ($(CONFIG_XIP_KERNEL),y)
 
 $(obj)/xipImage: vmlinux FORCE
@@ -59,6 +63,8 @@ $(obj)/zImage:	$(obj)/compressed/vmlinux FORCE
 
 endif
 
+# 生成 uImage 的命令
+# 使用的 mkimage 命令
 quiet_cmd_uimage = UIMAGE  $@
       cmd_uimage = $(CONFIG_SHELL) $(MKIMAGE) -A arm -O linux -T kernel \
 		   -C none -a $(LOADADDR) -e $(STARTADDR) \
@@ -72,6 +78,7 @@ endif
 
 $(obj)/uImage: STARTADDR=$(LOADADDR)
 
+# uImage 依赖 zImage
 $(obj)/uImage:	$(obj)/zImage FORCE
 	$(call if_changed,uimage)
 	@echo '  Image $@ is ready'

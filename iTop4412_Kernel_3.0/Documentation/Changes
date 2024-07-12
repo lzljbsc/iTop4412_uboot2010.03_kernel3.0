@@ -1,17 +1,24 @@
+介绍
 Intro
 =====
 
+本文档旨在提供运行3.0内核所需的最低软件级别的列表。
 This document is designed to provide a list of the minimum levels of
 software necessary to run the 3.0 kernels.
 
+本文档最初基于我为2.0编写的“Changes”文件。因此，这要归功于与该文件相同的人(Jared
+Mauch、Axel Boldt、Alessandro Sigala以及网络上无数的其他用户)。
 This document is originally based on my "Changes" file for 2.0.x kernels
 and therefore owes credit to the same people as that file (Jared Mauch,
 Axel Boldt, Alessandro Sigala, and countless other users all over the
 'net).
 
+当前最低要求
 Current Minimal Requirements
 ============================
 
+在你认为遇到bug之前，至少升级到这些软件版本!如果您不确定当前运行的是哪个版本，建
+议的命令应该会告诉您。
 Upgrade to at *least* these software revisions before thinking you've
 encountered a bug!  If you're unsure what version you're currently
 running, the suggested command should tell you.
@@ -45,23 +52,28 @@ o  mcelog                 0.6                     # mcelog --version
 o  iptables               1.4.2                   # iptables -V
 
 
+内核编译
 Kernel compilation
 ==================
 
 GCC
 ---
 
+gcc版本要求可能因计算机中的CPU类型而异。
 The gcc version requirements may vary depending on the type of CPU in your
 computer.
 
 Make
 ----
 
+您将需要Gnu make 3.80或更高版本来构建内核。
 You will need Gnu make 3.80 or later to build the kernel.
 
 Binutils
 --------
 
+IA-32上的Linux最近从使用as86切换到使用gas来组装16位引导代码，从而消除了使用as86
+来编译内核的需要。但是，这个更改意味着您需要最新的binutils版本。
 Linux on IA-32 has recently switched from using as86 to using gas for
 assembling the 16-bit boot code, removing the need for as86 to compile
 your kernel.  This change does, however, mean that you need a recent
